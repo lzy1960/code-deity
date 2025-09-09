@@ -1,17 +1,21 @@
 import { defineStore } from 'pinia';
 import { Decimal } from 'decimal.js';
-import { IGenerator } from '../types';
+import type { IGenerator } from '../types';
 import gameConfig from '../../gameConfig';
 
 interface IGeneratorsState {
   generators: IGenerator[];
 }
 
-const createInitialGenerators = (): IGenerator[] => Array.from({ length: 8 }).map((_, index) => ({
-  id: index,
+export const createInitialGenerators = (): IGenerator[] => gameConfig.generators.map(genConfig => ({
+  id: genConfig.id,
+  name: genConfig.name,
   level: 1, // All generators start at level 1
   quantity: new Decimal(0),
   productionRate: new Decimal(0), // Initial production rate will be calculated by GeneratorSystem
+  baseCost: genConfig.baseCost,
+  baseProduction: genConfig.baseProduction,
+  yieldMultiplier: genConfig.yieldMultiplier,
 }));
 
 export const useGeneratorsStore = defineStore('generators', {

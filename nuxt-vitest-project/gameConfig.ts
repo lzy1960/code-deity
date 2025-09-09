@@ -26,4 +26,13 @@ export default {
   // Offline Progress
   offline_progress_multiplier: 0.5,
   max_offline_time_hours: 12,
+
+  // Generator Definitions
+  generators: [
+    { id: 0, name: 'Basic Script', baseCost: 10, baseProduction: 1, yieldMultiplier: 1.00 },
+    { id: 1, name: 'Loop', baseCost: 100, baseProduction: 10, yieldMultiplier: 1.00 },
+    { id: 2, name: 'Function', baseCost: 1000, baseProduction: 100, yieldMultiplier: 1.00 },
+    { id: 3, name: 'Class', baseCost: 10000, baseProduction: 1000, yieldMultiplier: 1.00 },
+    { id: 4, name: 'Module', baseCost: 100000, baseProduction: 10000, yieldMultiplier: 1.00 },
+  ],
 };

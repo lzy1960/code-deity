@@ -13,10 +13,13 @@ export class GeneratorSystem {
   }
 
   getGeneratorCost(generatorId: number, quantity: Decimal = new Decimal(1)): Decimal {
-    const baseCost = new Decimal(gameConfig.generator_base_cost);
-    const costMultiplier = new Decimal(gameConfig.generator_cost_multiplier);
     const generator = this.generatorsStore.getGenerator(generatorId);
-    const currentQuantity = generator ? generator.quantity : new Decimal(0);
+    if (!generator) {
+      return new Decimal(0);
+    }
+    const baseCost = new Decimal(generator.baseCost);
+    const costMultiplier = new Decimal(gameConfig.generator_cost_multiplier);
+    const currentQuantity = generator.quantity;
 
     let totalCost = new Decimal(0);
     for (let i = 0; i < quantity.toNumber(); i++) {
@@ -28,15 +31,13 @@ export class GeneratorSystem {
   }
 
   getGeneratorProductionRate(generatorId: number): Decimal {
-    // Placeholder for actual production rate calculation based on generator level and other factors
-    // For now, a simple placeholder. This will be expanded based on gameConfig.
     const generator = this.generatorsStore.getGenerator(generatorId);
     if (!generator) {
       return new Decimal(0);
     }
-    const baseProduction = new Decimal(gameConfig.generator_base_production);
-    // Production rate increases with level, and quantity
-    return baseProduction.times(generator.quantity).times(generator.level);
+    const baseProduction = new Decimal(generator.baseProduction);
+    // Production rate increases with level, quantity, and yield multiplier
+    return baseProduction.times(generator.quantity).times(generator.level).times(generator.yieldMultiplier);
   }
 
   buyGenerator(generatorId: number, quantity: Decimal = new Decimal(1)): boolean {

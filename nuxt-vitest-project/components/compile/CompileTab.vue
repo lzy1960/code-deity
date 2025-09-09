@@ -42,7 +42,8 @@ const canCompile = computed(() => player.refactorPoints.greaterThanOrEqualTo(com
 const currentVersion = computed(() => {
   let version = 1;
   for (let i = 0; i < gameConfig.compile_version_unlock_costs.length; i++) {
-    if (player.versionPoints.greaterThanOrEqualTo(gameConfig.compile_version_unlock_costs[i])) {
+    const cost = gameConfig.compile_version_unlock_costs[i];
+    if (cost !== undefined && player.versionPoints.greaterThanOrEqualTo(cost)) {
       version = i + 2;
     } else {
       break;

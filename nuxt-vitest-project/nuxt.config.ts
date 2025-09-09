@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@pinia/nuxt', '@nuxt/test-utils'],
+  modules: ['@pinia/nuxt', '@nuxt/test-utils', '@nuxtjs/tailwindcss'],
   typescript: {
     typeCheck: true
   },

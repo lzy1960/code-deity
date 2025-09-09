@@ -4,6 +4,7 @@
 
 import { db } from './db';
 import Decimal from 'decimal.js';
+import type { IGenerator } from '../game/types/generator';
 
 /**
  * Defines the structure for the game's save data.
@@ -17,6 +18,7 @@ export interface SaveData {
   money: Decimal;
   refactorPoints: Decimal;
   versionPoints: Decimal;
+  generators: IGenerator[];
 }
 
 /**
@@ -98,6 +100,9 @@ export async function saveGame(saveData: SaveData): Promise<void> {
  *
  * @returns A new SaveData object with default values.
  */
+import gameConfig from '../gameConfig';
+import { createInitialGenerators } from '../game/state/generatorsStore';
+
 export function createNewSave(): SaveData {
   return {
     version: CURRENT_SAVE_VERSION,
@@ -105,5 +110,6 @@ export function createNewSave(): SaveData {
     money: new Decimal(0),
     refactorPoints: new Decimal(0),
     versionPoints: new Decimal(0),
+    generators: createInitialGenerators(),
   };
 }
