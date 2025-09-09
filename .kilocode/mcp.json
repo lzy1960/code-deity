@@ -13,9 +13,9 @@
       "alwaysAllow": [
         "parse_prd",
         "get_tasks",
-        "set_task_status",
         "get_task",
-        "update_task"
+        "update_task",
+        "set_task_status"
       ]
     }
   }

@@ -5,6 +5,7 @@ export default {
   // Generator Settings
   generator_base_cost: 10,
   generator_cost_multiplier: 1.15,
+  generator_base_production: 1,
 
   // Prestige Settings
   prestige_formula_exponent: 0.5,
