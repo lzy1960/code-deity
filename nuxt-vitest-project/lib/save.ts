@@ -15,13 +15,15 @@ export interface SaveData {
   // Add other game state properties here.
   lastSaveTime: number;
   money: Decimal;
+  refactorPoints: Decimal;
+  versionPoints: Decimal;
 }
 
 /**
  * The current version of the save data structure.
  * This should be incremented whenever the SaveData interface changes.
  */
-export const CURRENT_SAVE_VERSION = '1.0';
+export const CURRENT_SAVE_VERSION = '1.1';
 
 /**
  * An object to hold migration functions.
@@ -29,12 +31,14 @@ export const CURRENT_SAVE_VERSION = '1.0';
  * that migrates a save object of that version to the next version.
  */
 const migrations: Record<string, (saveData: any) => any> = {
-  // Example migration from '1.0' to '1.1':
-  // '1.0': (saveData) => {
-  //   ...saveData,
-  //   newField: 'defaultValue',
-  //   version: '1.1',
-  // },
+  '1.0': (saveData) => {
+    return {
+      ...saveData,
+      refactorPoints: new Decimal(0),
+      versionPoints: new Decimal(0),
+      version: '1.1',
+    };
+  },
 };
 
 /**
@@ -68,6 +72,8 @@ export async function loadGame(): Promise<SaveData | null> {
   return {
     ...migratedData,
     money: new Decimal(migratedData.money),
+    refactorPoints: new Decimal(migratedData.refactorPoints),
+    versionPoints: new Decimal(migratedData.versionPoints),
   } as SaveData;
 }
 
@@ -80,6 +86,8 @@ export async function saveGame(saveData: SaveData): Promise<void> {
   const dataToSave = {
     ...saveData,
     money: saveData.money.toString(),
+    refactorPoints: saveData.refactorPoints.toString(),
+    versionPoints: saveData.versionPoints.toString(),
     lastSaveTime: Date.now(),
   };
   await db.saveData.put(dataToSave as any, 1);
@@ -95,5 +103,7 @@ export function createNewSave(): SaveData {
     version: CURRENT_SAVE_VERSION,
     lastSaveTime: Date.now(),
     money: new Decimal(0),
+    refactorPoints: new Decimal(0),
+    versionPoints: new Decimal(0),
   };
 }

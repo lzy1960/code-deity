@@ -7,9 +7,21 @@ export default {
   generator_cost_multiplier: 1.15,
   generator_base_production: 1,
 
-  // Prestige Settings
-  prestige_formula_exponent: 0.5,
-  prestige_point_gain: 1,
+  // Refactor System
+  refactor_cost_base: 1000,
+  refactor_point_gain_base: 1,
+  refactor_cost_exponent: 1.5,
+
+  // Compile System
+  compile_cost_base: 100,
+  compile_point_gain_base: 1,
+  compile_cost_exponent: 2,
+  compile_version_unlock_costs: [
+    // Cost in version points to unlock next version tier
+    10, // Version 2
+    100, // Version 3
+    1000, // Version 4
+  ],
 
   // Offline Progress
   offline_progress_multiplier: 0.5,
