@@ -1,0 +1,1 @@
+export type Era = 'Programmer' | 'Architect' | 'Deity';
