@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { Decimal } from 'decimal.js';
-import { IPlayerState } from '../types';
+import type { IPlayerState } from '../types';
 
 export const usePlayerStore = defineStore('player', {
   state: (): IPlayerState => ({
