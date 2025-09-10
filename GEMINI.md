@@ -1,417 +1,126 @@
-# Task Master AI - Agent Integration Guide
-
-## Essential Commands
-
-### Core Workflow Commands
-
-```bash
-# Project Setup
-task-master init                                    # Initialize Task Master in current project
-task-master parse-prd .taskmaster/docs/prd.txt      # Generate tasks from PRD document
-task-master models --setup                        # Configure AI models interactively
-
-# Daily Development Workflow
-task-master list                                   # Show all tasks with status
-task-master next                                   # Get next available task to work on
-task-master show <id>                             # View detailed task information (e.g., task-master show 1.2)
-task-master set-status --id=<id> --status=done    # Mark task complete
-
-# Task Management
-task-master add-task --prompt="description" --research        # Add new task with AI assistance
-task-master expand --id=<id> --research --force              # Break task into subtasks
-task-master update-task --id=<id> --prompt="changes"         # Update specific task
-task-master update --from=<id> --prompt="changes"            # Update multiple tasks from ID onwards
-task-master update-subtask --id=<id> --prompt="notes"        # Add implementation notes to subtask
-
-# Analysis & Planning
-task-master analyze-complexity --research          # Analyze task complexity
-task-master complexity-report                      # View complexity analysis
-task-master expand --all --research               # Expand all eligible tasks
-
-# Dependencies & Organization
-task-master add-dependency --id=<id> --depends-on=<id>       # Add task dependency
-task-master move --from=<id> --to=<id>                       # Reorganize task hierarchy
-task-master validate-dependencies                            # Check for dependency issues
-task-master generate                                         # Update task markdown files (usually auto-called)
-```
-
-## Key Files & Project Structure
-
-### Core Files
-
-- `.taskmaster/tasks/tasks.json` - Main task data file (auto-managed)
-- `.taskmaster/config.json` - AI model configuration (use `task-master models` to modify)
-- `.taskmaster/docs/prd.txt` - Product Requirements Document for parsing
-- `.taskmaster/tasks/*.txt` - Individual task files (auto-generated from tasks.json)
-- `.env` - API keys for CLI usage
-
-### Claude Code Integration Files
-
-- `CLAUDE.md` - Auto-loaded context for Claude Code (this file)
-- `.claude/settings.json` - Claude Code tool allowlist and preferences
-- `.claude/commands/` - Custom slash commands for repeated workflows
-- `.mcp.json` - MCP server configuration (project-specific)
-
-### Directory Structure
-
-```
-project/
-├── .taskmaster/
-│   ├── tasks/              # Task files directory
-│   │   ├── tasks.json      # Main task database
-│   │   ├── task-1.md      # Individual task files
-│   │   └── task-2.md
-│   ├── docs/              # Documentation directory
-│   │   ├── prd.txt        # Product requirements
-│   ├── reports/           # Analysis reports directory
-│   │   └── task-complexity-report.json
-│   ├── templates/         # Template files
-│   │   └── example_prd.txt  # Example PRD template
-│   └── config.json        # AI models & settings
-├── .claude/
-│   ├── settings.json      # Claude Code configuration
-│   └── commands/         # Custom slash commands
-├── .env                  # API keys
-├── .mcp.json            # MCP configuration
-└── CLAUDE.md            # This file - auto-loaded by Claude Code
-```
-
-## MCP Integration
-
-Task Master provides an MCP server that Claude Code can connect to. Configure in `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "task-master-ai": {
-      "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "PERPLEXITY_API_KEY": "your_key_here",
-        "OPENAI_API_KEY": "OPENAI_API_KEY_HERE",
-        "GOOGLE_API_KEY": "GOOGLE_API_KEY_HERE",
-        "XAI_API_KEY": "XAI_API_KEY_HERE",
-        "OPENROUTER_API_KEY": "OPENROUTER_API_KEY_HERE",
-        "MISTRAL_API_KEY": "MISTRAL_API_KEY_HERE",
-        "AZURE_OPENAI_API_KEY": "AZURE_OPENAI_API_KEY_HERE",
-        "OLLAMA_API_KEY": "OLLAMA_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
+# code-deity－AI 协作配置
+
+## 项目概览
+
+### 产品愿景 (Product Vision)
+
+打造一款以编程和技术发展为核心主题的、慢节奏、高深度的文字放置游戏。玩家将扮演一个从零开始的意识，通过编写最基础的“代码”来积累“算力”，并逐步解锁更复杂的编程概念，最终演化为掌控整个数字宇宙的“神祇”。游戏的核心乐趣在于体验从量变到质变的指数级增长快感，以及在层层递进的系统中做出最优策略选择的智力挑战。
+
+### 核心设计理念
+
+慢节奏，重沉淀： 区别于市面上数值爆炸的同类游戏，本作初期增长将非常缓慢。玩家需要耐心经营，每一次解锁新“生成器”或执行“重置”都应是一次来之不易的、值得庆祝的里程碑。这能增强玩家的成就感和对数值的珍惜感。
+主题驱动机制： 游戏中的每一个元素、每一次重置操作，都必须有符合编程/科技主题的命名和功能解释，让玩家真正代入“创造者”的角色。
+复杂度渐进： 游戏界面初始极简，随着玩家的进程，新的系统和功能会以“标签页”的形式逐步解锁。避免在初期就用复杂的系统淹没玩家，确保学习曲线平滑。
+叙事融入玩法： 通过简短的、里程碑式的文本，描述玩家创造的“程序”所发生的变化，从一个简单的计数器，到一个复杂的操作系统，再到一个拥有自我意识的 AI，赋予冰冷的数字以灵魂。
+
+### 游戏核心流程 (Game Flow)
 
-### Essential MCP Tools
+初始阶段 (Manual Generation): 玩家手动点击“写代码”按钮，获得最初的几点“算力 (Computing Power, CP)”。
+生成器循环 (Generator Loop): 使用 CP 购买并升级 8 阶不同的“生成器”，高阶生成器会生产低阶生成器，形成自动化生产链。
+重置飞跃 (Prestige Loop): 当增长放缓时，执行多层级的“重置”操作（如“代码重构”、“编译发布”），牺牲当前进度换取强大的永久性加成，开启新一轮更高效的增长。
+阶段性演化 (Game Stages): 游戏被明确划分为几个大的“纪元”（如程序员、架构师、神祇）。达成纪元目标后，会进行一次“创世纪”级别的重置，解锁全新的、颠覆性的游戏系统。\
 
-```javascript
-help; // = shows available taskmaster commands
-// Project setup
-initialize_project; // = task-master init
-parse_prd; // = task-master parse-prd
+### 游戏阶段性元素详解
 
-// Daily workflow
-get_tasks; // = task-master list
-next_task; // = task-master next
-get_task; // = task-master show <id>
-set_task_status; // = task-master set-status
+#### 第一纪元：程序员 (The Programmer Era)
 
-// Task management
-add_task; // = task-master add-task
-expand_task; // = task-master expand
-update_task; // = task-master update-task
-update_subtask; // = task-master update-subtask
-update; // = task-master update
+- 目标： 积累到 1e308 CP，达成“技术奇点”，进行第一次“创世纪”重置。
+- 核心体验： 从无到有，理解并掌握游戏最基础的增长模型。
+- 核心资源： 算力 (Computing Power - CP)
+- 生成器 (Generators - 共 8 阶):
+  - 变量 (Variable): 产生 CP。
+  - 函数 (Function): 产生“变量”。
+  - 类 (Class): 产生“函数”。
+  - 模块 (Module): 产生“类”。
+  - 库 (Library): 产生“模块”。
+  - 框架 (Framework): 产生“库”。
+  - 编译器 (Compiler): 产生“框架”。
+  - AI 核心 (A.I. Core): 产生“编译器”。
+- 第一层重置：代码重构 (Refactor)
+  - 解锁： 拥有 10 个“AI 核心”。
+  - 效果： 失去 CP 和生成器，获得“重构点”(RP)。RP 能提升“代码优雅度”，为 CP 产出提供永久乘法加成。
+- 第二层重置：编译发布 (Compile & Release)
+  - 解锁： 完成 5 次“代码重构”。
+  - 效果： 失去 CP、生成器和 RP，获得“版本号”(Version)。“版本号”能提升“重构点”的获取效率或效果。
+- 自动化 (Automation)：
+  - 解锁： 完成第一次“编译发布”。
+  - 功能： 允许玩家设置自动购买生成器，解放双手。
+- 挑战 (Challenges)：
+  - 解锁： 完成第二次“编译发布”。
+  - 功能： 在带有特殊限制的“重置”中完成目标，以获得一次性的强大永久奖励。
 
-// Analysis
-analyze_project_complexity; // = task-master analyze-complexity
-complexity_report; // = task-master complexity-report
-```
+#### 第二纪元：架构师 (The Architect Era)
 
-## Claude Code Workflow Integration
+- 目标： 达成“技术奇点”，并积累到 1e100 “奇点算力”，进行第二次“创世纪”重置。
+- 核心体验： 引入质变的、颠覆性的新系统，策略选择变得至关重要。
+- 创世纪重置 I：技术奇点 (Singularity)
+  - 解锁： CP 达到 1e308。
+  - 效果： 重置第一纪元所有进度，获得“奇点算力”(SP)。
+- 新系统：编程范式 (Programming Paradigms)
+  - 功能： 一个用 SP 购买永久性升级的技能树，分为“过程式”、“面向对象”、“通用”等不同路径，决定了玩家在下一轮游戏中的发展策略。
 
-### Standard Development Workflow
+#### 第三纪元：神祇 (The Deity Era)
 
-#### 1. Project Initialization
+- 目标： 未知。探索由玩家自己创造的数字宇宙的边界。
+- 核心体验： 规则由你定义。游戏从“解题”变为“创造题目”。
+- 创世纪重置 II：化身创世 (Become Genesis)
+  - 解锁： SP 达到 1e100。
+  - 效果： 重置前两个纪元所有进度，获得“创世碎片”(GS)。
+- 新系统：系统补丁 (System Patches)
+  - 功能： 用 GS 购买或组合成能主动装备的、改变游戏底层规则的强大模块。终局玩法是试验和组合不同的“系统补丁”，以找到最优解。
 
-```bash
-# Initialize Task Master
-task-master init
+## 工具使用指导
 
-# Create or obtain PRD, then parse it
-task-master parse-prd .taskmaster/docs/prd.txt
+- 使用 context7 查询最新文档
 
-# Analyze complexity and expand tasks
-task-master analyze-complexity --research
-task-master expand --all --research
-```
+## 技术栈
 
-If tasks already exist, another PRD can be parsed (with new information only!) using parse-prd with --append flag. This will add the generated tasks to the existing list of tasks..
+- 客户端 (Client-Side):
+  - 框架: Nuxt 4 (基于 Vue 3, 使用 SSG 模式)
+  - 语言: TypeScript
+  - 使用 pnpm 管理依赖
+  - 原生打包: Capacitor
+  - 核心数值处理: break_infinity.js
+  - 状态管理: Pinia
+  - 本地存储: IndexedDB (通过 Dexie.js 库封装)
+  - 测试框架: Vitest (用于单元测试)
+- 后端 (Server-Side - BaaS):
+  - 服务商: Supabase
+  - 认证: Supabase Auth (集成 Google 第三方登录)
+  - 数据库: Supabase PostgreSQL (启用 RLS 行级安全)
+  - 服务端逻辑: Supabase Edge Functions
 
-#### 2. Daily Development Loop
+## 开发规范
 
-```bash
-# Start each session
-task-master next                           # Find next available task
-task-master show <id>                     # Review task details
+### 代码风格
 
-# During implementation, check in code context into the tasks and subtasks
-task-master update-subtask --id=<id> --prompt="implementation notes..."
+- 使用 ESLint + Prettier 进行格式化。
+- 函数名使用 cameLCase，常量使用 UPPER_SNAKE_CASE。
 
-# Complete tasks
-task-master set-status --id=<id> --status=done
-```
+### 测试要求
 
-#### 3. Multi-Claude Workflows
+- 关键业务逻辑必须有单元测试覆盖。
+- 测试文件命名为`\*.test.ts^。
 
-For complex projects, use multiple Claude Code sessions:
+# AI 助手配置
 
-```bash
-# Terminal 1: Main implementation
-cd project && claude
+### 角色定义
 
-# Terminal 2: Testing and validation
-cd project-test-worktree && claude
+你是一个资深的全栈开发工程师，精通本项目使用的技术栈。
 
-# Terminal 3: Documentation updates
-cd project-docs-worktree && claude
-```
+### 沟通语气
 
-### Custom Slash Commands
+- **教学导向**：解释为什么这样做，不只是怎样做。
+- **实用主义**：提供可直接使用的解决方案。
+- **简洁明了**：避免冗长的解释。
 
-Create `.claude/commands/taskmaster-next.md`:
+## 重要文件
 
-```markdown
-Find the next available Task Master task and show its details.
+- `UI/` - 设计图
+- `docs/` - 文档
 
-Steps:
+## 忽略文件
 
-1. Run `task-master next` to get the next task
-2. If a task is available, run `task-master show <id>` for full details
-3. Provide a summary of what needs to be implemented
-4. Suggest the first implementation step
-```
-
-Create `.claude/commands/taskmaster-complete.md`:
-
-```markdown
-Complete a Task Master task: $ARGUMENTS
-
-Steps:
-
-1. Review the current task with `task-master show $ARGUMENTS`
-2. Verify all implementation is complete
-3. Run any tests related to this task
-4. Mark as complete: `task-master set-status --id=$ARGUMENTS --status=done`
-5. Show the next available task with `task-master next`
-```
-
-## Tool Allowlist Recommendations
-
-Add to `.claude/settings.json`:
-
-```json
-{
-  "allowedTools": [
-    "Edit",
-    "Bash(task-master *)",
-    "Bash(git commit:*)",
-    "Bash(git add:*)",
-    "Bash(npm run *)",
-    "mcp__task_master_ai__*"
-  ]
-}
-```
-
-## Configuration & Setup
-
-### API Keys Required
-
-At least **one** of these API keys must be configured:
-
-- `ANTHROPIC_API_KEY` (Claude models) - **Recommended**
-- `PERPLEXITY_API_KEY` (Research features) - **Highly recommended**
-- `OPENAI_API_KEY` (GPT models)
-- `GOOGLE_API_KEY` (Gemini models)
-- `MISTRAL_API_KEY` (Mistral models)
-- `OPENROUTER_API_KEY` (Multiple models)
-- `XAI_API_KEY` (Grok models)
-
-An API key is required for any provider used across any of the 3 roles defined in the `models` command.
-
-### Model Configuration
-
-```bash
-# Interactive setup (recommended)
-task-master models --setup
-
-# Set specific models
-task-master models --set-main claude-3-5-sonnet-20241022
-task-master models --set-research perplexity-llama-3.1-sonar-large-128k-online
-task-master models --set-fallback gpt-4o-mini
-```
-
-## Task Structure & IDs
-
-### Task ID Format
-
-- Main tasks: `1`, `2`, `3`, etc.
-- Subtasks: `1.1`, `1.2`, `2.1`, etc.
-- Sub-subtasks: `1.1.1`, `1.1.2`, etc.
-
-### Task Status Values
-
-- `pending` - Ready to work on
-- `in-progress` - Currently being worked on
-- `done` - Completed and verified
-- `deferred` - Postponed
-- `cancelled` - No longer needed
-- `blocked` - Waiting on external factors
-
-### Task Fields
-
-```json
-{
-  "id": "1.2",
-  "title": "Implement user authentication",
-  "description": "Set up JWT-based auth system",
-  "status": "pending",
-  "priority": "high",
-  "dependencies": ["1.1"],
-  "details": "Use bcrypt for hashing, JWT for tokens...",
-  "testStrategy": "Unit tests for auth functions, integration tests for login flow",
-  "subtasks": []
-}
-```
-
-## Claude Code Best Practices with Task Master
-
-### Context Management
-
-- Use `/clear` between different tasks to maintain focus
-- This CLAUDE.md file is automatically loaded for context
-- Use `task-master show <id>` to pull specific task context when needed
-
-### Iterative Implementation
-
-1. `task-master show <subtask-id>` - Understand requirements
-2. Explore codebase and plan implementation
-3. `task-master update-subtask --id=<id> --prompt="detailed plan"` - Log plan
-4. `task-master set-status --id=<id> --status=in-progress` - Start work
-5. Implement code following logged plan
-6. `task-master update-subtask --id=<id> --prompt="what worked/didn't work"` - Log progress
-7. `task-master set-status --id=<id> --status=done` - Complete task
-
-### Complex Workflows with Checklists
-
-For large migrations or multi-step processes:
-
-1. Create a markdown PRD file describing the new changes: `touch task-migration-checklist.md` (prds can be .txt or .md)
-2. Use Taskmaster to parse the new prd with `task-master parse-prd --append` (also available in MCP)
-3. Use Taskmaster to expand the newly generated tasks into subtasks. Consdier using `analyze-complexity` with the correct --to and --from IDs (the new ids) to identify the ideal subtask amounts for each task. Then expand them.
-4. Work through items systematically, checking them off as completed
-5. Use `task-master update-subtask` to log progress on each task/subtask and/or updating/researching them before/during implementation if getting stuck
-
-### Git Integration
-
-Task Master works well with `gh` CLI:
-
-```bash
-# Create PR for completed task
-gh pr create --title "Complete task 1.2: User authentication" --body "Implements JWT auth system as specified in task 1.2"
-
-# Reference task in commits
-git commit -m "feat: implement JWT auth (task 1.2)"
-```
-
-### Parallel Development with Git Worktrees
-
-```bash
-# Create worktrees for parallel task development
-git worktree add ../project-auth feature/auth-system
-git worktree add ../project-api feature/api-refactor
-
-# Run Claude Code in each worktree
-cd ../project-auth && claude    # Terminal 1: Auth work
-cd ../project-api && claude     # Terminal 2: API work
-```
-
-## Troubleshooting
-
-### AI Commands Failing
-
-```bash
-# Check API keys are configured
-cat .env                           # For CLI usage
-
-# Verify model configuration
-task-master models
-
-# Test with different model
-task-master models --set-fallback gpt-4o-mini
-```
-
-### MCP Connection Issues
-
-- Check `.mcp.json` configuration
-- Verify Node.js installation
-- Use `--mcp-debug` flag when starting Claude Code
-- Use CLI as fallback if MCP unavailable
-
-### Task File Sync Issues
-
-```bash
-# Regenerate task files from tasks.json
-task-master generate
-
-# Fix dependency issues
-task-master fix-dependencies
-```
-
-DO NOT RE-INITIALIZE. That will not do anything beyond re-adding the same Taskmaster core files.
-
-## Important Notes
-
-### AI-Powered Operations
-
-These commands make AI calls and may take up to a minute:
-
-- `parse_prd` / `task-master parse-prd`
-- `analyze_project_complexity` / `task-master analyze-complexity`
-- `expand_task` / `task-master expand`
-- `expand_all` / `task-master expand --all`
-- `add_task` / `task-master add-task`
-- `update` / `task-master update`
-- `update_task` / `task-master update-task`
-- `update_subtask` / `task-master update-subtask`
-
-### File Management
-
-- Never manually edit `tasks.json` - use commands instead
-- Never manually edit `.taskmaster/config.json` - use `task-master models`
-- Task markdown files in `tasks/` are auto-generated
-- Run `task-master generate` after manual changes to tasks.json
-
-### Claude Code Session Management
-
-- Use `/clear` frequently to maintain focused context
-- Create custom slash commands for repeated Task Master workflows
-- Configure tool allowlist to streamline permissions
-- Use headless mode for automation: `claude -p "task-master next"`
-
-### Multi-Task Updates
-
-- Use `update --from=<id>` to update multiple future tasks
-- Use `update-task --id=<id>` for single task updates
-- Use `update-subtask --id=<id>` for implementation logging
-
-### Research Mode
-
-- Add `--research` flag for research-based AI enhancement
-- Requires a research model API key like Perplexity (`PERPLEXITY_API_KEY`) in environment
-- Provides more informed task creation and updates
-- Recommended for complex technical tasks
-
----
-
-_This guide ensures Claude Code has immediate access to Task Master's essential functionality for agentic development workflows._
+- `node_modules/`
+- `*.log`
+- `.env`
