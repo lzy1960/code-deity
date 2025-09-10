@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs, GeneratorConfig } from '../game/configs'
+import { generatorConfigs, type GeneratorConfig } from '../../game/configs'
 
 // 为了类型安全，我们先定义生成器的接口
 export interface Generator {
@@ -20,6 +20,7 @@ export interface GameState {
   lastUpdateTime: number
   currency: Decimal
   generators: Generator[]
+  rpGain: Decimal // 新增
 }
 
 export const useGameStore = defineStore('game', {
@@ -32,7 +33,8 @@ export const useGameStore = defineStore('game', {
       amount: new Decimal(0),
       bought: 0,
       multiplier: new Decimal(1)
-    }))
+    })),
+    rpGain: new Decimal(5) // 初始化 rpGain
   }),
 
   actions: {
@@ -49,6 +51,12 @@ export const useGameStore = defineStore('game', {
       } else {
         console.log('货币不足！')
       }
+    },
+    refactorCode() { // 新增 refactorCode action
+      console.log('代码重构！')
+      // 这里可以添加重构逻辑，例如增加货币或 RP
+      // this.currency = this.currency.plus(this.rpGain); // 示例：重构增加货币
+      // this.rpGain = new Decimal(0); // 示例：重构后 RP 清零
     }
   },
 

@@ -17,4 +17,4 @@ export class MySubClassedDexie extends Dexie {
   }
 }
 
-export const db = new MySubClassedDexie();
+export const db = process.client ? new MySubClassedDexie() : {} as MySubClassedDexie;
