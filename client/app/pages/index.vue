@@ -39,31 +39,28 @@
           <!-- Refactor Section -->
           <div v-show="activeTab === 'upgrades'">
             <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Code Refactoring (RP)</h2>
-            <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" @refactor="gameStore.refactor" />
+            <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" :current-rp-bonus="gameStore.rpBonus" @refactor="gameStore.refactor" />
             
-            <!-- Placeholder for future upgrade sections like Compile/Release -->
+            <!-- Compile/Release Section -->
             <div v-if="gameStore.isCompileUnlocked" class="mt-6">
-               <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">编译发布</h2>
-               <p class="text-gray-400">编译发布功能待实现...</p>
+              <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Compile & Release (Version)</h2>
+              <CompileSection :version="gameStore.version" @compile-and-release="gameStore.compileAndRelease" />
             </div>
           </div>
 
           <!-- Stats Section -->
           <div v-show="activeTab === 'stats'">
-            <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">统计</h2>
-            <p class="text-gray-400">统计功能待实现...</p>
+            <StatsSection />
           </div>
           
            <!-- Challenges Section -->
           <div v-show="activeTab === 'challenges'">
-            <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">挑战</h2>
-            <p class="text-gray-400">挑战功能待实现...</p>
+            <ChallengesSection />
           </div>
           
            <!-- Automation Section -->
           <div v-show="activeTab === 'automation'">
-            <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">自动化</h2>
-            <p class="text-gray-400">自动化功能待实现...</p>
+            <AutomationSection />
           </div>
         </div>
       </main>
@@ -76,20 +73,20 @@
           <span class="material-symbols-outlined text-2xl">list</span>
           <p class="text-xs font-medium tracking-[0.015em]">Generators</p>
         </a>
-        <a v-if="gameStore.isRefactorUnlocked" @click="activeTab = 'upgrades'" :class="['flex', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'px-4', 'py-1', 'cursor-pointer', activeTab === 'upgrades' ? 'text-white' : 'text-[#9292c9]']">
-          <span class="material-symbols-outlined text-2xl">rocket_launch</span>
+        <a @click="gameStore.isRefactorUnlocked ? activeTab = 'upgrades' : null" :class="getTabClass('upgrades', gameStore.isRefactorUnlocked)" :title="getTabTitle('upgrades', gameStore.isRefactorUnlocked)">
+          <span class="material-symbols-outlined text-2xl">{{ gameStore.isRefactorUnlocked ? 'rocket_launch' : 'lock' }}</span>
           <p class="text-xs font-medium tracking-[0.015em]">Upgrades</p>
         </a>
-        <a @click="activeTab = 'stats'" :class="['flex', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'px-4', 'py-1', 'cursor-pointer', activeTab === 'stats' ? 'text-white' : 'text-[#9292c9]']">
+        <a @click="activeTab = 'stats'" :class="getTabClass('stats', true)">
           <span class="material-symbols-outlined text-2xl">bar_chart</span>
           <p class="text-xs font-medium tracking-[0.015em]">Stats</p>
         </a>
-        <a v-if="gameStore.isAutomationUnlocked" @click="activeTab = 'automation'" :class="['flex', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'px-4', 'py-1', 'cursor-pointer', activeTab === 'automation' ? 'text-white' : 'text-[#9292c9]']">
-          <span class="material-symbols-outlined text-2xl">smart_toy</span>
+        <a @click="gameStore.isAutomationUnlocked ? activeTab = 'automation' : null" :class="getTabClass('automation', gameStore.isAutomationUnlocked)" :title="getTabTitle('automation', gameStore.isAutomationUnlocked)">
+          <span class="material-symbols-outlined text-2xl">{{ gameStore.isAutomationUnlocked ? 'smart_toy' : 'lock' }}</span>
           <p class="text-xs font-medium tracking-[0.015em]">Automation</p>
         </a>
-        <a v-if="gameStore.isChallengesUnlocked" @click="activeTab = 'challenges'" :class="['flex', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'px-4', 'py-1', 'cursor-pointer', activeTab === 'challenges' ? 'text-white' : 'text-[#9292c9]']">
-          <span class="material-symbols-outlined text-2xl">emoji_events</span>
+        <a @click="gameStore.isChallengesUnlocked ? activeTab = 'challenges' : null" :class="getTabClass('challenges', gameStore.isChallengesUnlocked)" :title="getTabTitle('challenges', gameStore.isChallengesUnlocked)">
+          <span class="material-symbols-outlined text-2xl">{{ gameStore.isChallengesUnlocked ? 'emoji_events' : 'lock' }}</span>
           <p class="text-xs font-medium tracking-[0.015em]">Challenges</p>
         </a>
       </nav>
@@ -103,7 +100,11 @@ import { useGameStore } from '~/store/game';
 import AppHeader from '~/components/layout/AppHeader.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
+import CompileSection from '~/components/game/CompileSection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
+import AutomationSection from '~/components/game/AutomationSection.vue';
+import ChallengesSection from '~/components/game/ChallengesSection.vue';
+import StatsSection from '~/components/game/StatsSection.vue';
 
 const gameStore = useGameStore();
 
@@ -133,4 +134,29 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
 watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
   gameStore.setBuyMultiplier('x1')
 })
+
+watch(() => gameStore.refactorCount, (newCount, oldCount) => {
+  if (newCount > oldCount) {
+    activeTab.value = 'generators';
+  }
+});
+
+const getTabClass = (tabName: string, isUnlocked: boolean) => {
+  const baseClasses = 'flex flex-col items-center justify-end gap-1 px-4 py-1';
+  if (!isUnlocked) {
+    return `${baseClasses} text-gray-500 cursor-not-allowed`;
+  }
+  const activeColor = activeTab.value === tabName ? 'text-white' : 'text-[#9292c9]';
+  return `${baseClasses} cursor-pointer ${activeColor}`;
+};
+
+const getTabTitle = (tabName: string, isUnlocked: boolean): string => {
+  if (isUnlocked) return '';
+  switch (tabName) {
+    case 'upgrades': return 'Unlock by purchasing 1 AI Core.';
+    case 'automation': return 'Unlock by performing your first Compile & Release.';
+    case 'challenges': return 'Unlock after your 2nd Compile & Release.';
+    default: return 'Locked';
+  }
+};
 </script>

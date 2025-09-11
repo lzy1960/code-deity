@@ -32,6 +32,9 @@ export interface GameState {
   // Challenges
   challengeCompletions: ChallengeCompletion
   activeChallenge: 'none' | 'challenge1' | 'challenge2'
+
+  // Automation
+  automators: Record<number, boolean>
 }
 
 // #endregion
@@ -57,7 +60,9 @@ export const useGameStore = defineStore('game', {
       challenge1: false,
       challenge2: false
     },
-    activeChallenge: 'none'
+    activeChallenge: 'none',
+
+    automators: {}
   }),
   // #endregion
 
@@ -160,6 +165,10 @@ export const useGameStore = defineStore('game', {
             return new Decimal(0)
         }
 
+        if (this.activeChallenge === 'challenge1' && id <= 4) {
+            return new Decimal(0)
+        }
+
         let production = config.baseProduction
           .times(generator.amount)
           .times(this.buy10Bonus(id))
@@ -170,14 +179,14 @@ export const useGameStore = defineStore('game', {
     },
     
     cps(): Decimal {
-        return this.generatorProduction(1)
+        return this.generatorProduction(1);
     },
 
     // --- Prestige Gain Calculation ---
     refactorGain(): Decimal {
-      if (this.currency.log10() < 308) return new Decimal(0)
+      if (this.currency.log10() < 20) return new Decimal(0)
       const gain = Decimal.floor(
-        Decimal.pow(this.currency.log10() / 308, 1.5)
+        Decimal.pow(this.currency.log10() / 20, 1.5)
       ).times(this.challenge2Bonus)
       return gain
     }
@@ -194,14 +203,31 @@ export const useGameStore = defineStore('game', {
         return
       }
 
-      // Update generators from top to bottom
-      for (let i = 8; i > 1; i--) {
-        const production = this.generatorProduction(i)
-        this.generators[i - 2].amount = this.generators[i - 2].amount.plus(production.times(diff))
+      // Use a two-step loop to prevent cascading calculations within the same tick
+      const productions: Decimal[] = [];
+      for (let i = 8; i >= 1; i--) {
+          productions[i-1] = this.generatorProduction(i);
       }
 
-      // Update currency from the first generator
-      this.currency = this.currency.plus(this.cps.times(diff))
+      for (let i = 8; i > 1; i--) {
+          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1].times(diff));
+      }
+      
+      this.currency = this.currency.plus(productions[0].times(diff));
+
+      // Handle automators
+      if (this.isAutomationUnlocked) {
+        for (let i = 8; i >= 1; i--) {
+          if (this.automators[i]) {
+            // Temporarily set to 'max' for auto-buy, then restore
+            const originalMultiplier = this.buyMultiplier
+            this.setBuyMultiplier('max')
+            this.buyGenerator(i)
+            this.setBuyMultiplier(originalMultiplier)
+          }
+        }
+      }
+
       this.lastUpdateTime = now
     },
 
@@ -225,30 +251,58 @@ export const useGameStore = defineStore('game', {
     setBuyMultiplier(multiplier: BuyMultiplier) {
       this.buyMultiplier = multiplier
     },
+
+    toggleAutomator(id: number) {
+      if (!this.isAutomationUnlocked) return
+      this.automators[id] = !this.automators[id]
+    },
     
     // --- Prestige Actions ---
+    _resetForPrestige(startingCurrency: Decimal = new Decimal(10)) {
+      this.currency = startingCurrency
+      this.generators.forEach(g => {
+        g.amount = new Decimal(0)
+        g.bought = 0
+      })
+      this.lastUpdateTime = Date.now()
+    },
+
     refactor() {
       if (!this.canRefactor) return
 
       const gain = this.refactorGain
+
+      // --- Challenge Completion Check ---
+      if (this.activeChallenge === 'challenge1') {
+        this.challengeCompletions.challenge1 = true
+        this.activeChallenge = 'none' // Auto-exit challenge on completion
+      }
+
       if (gain.gt(0)) {
         this.refactorPoints = this.refactorPoints.plus(gain)
         this.refactorCount += 1
       }
 
-      // Reset state
-      this.currency = new Decimal(10)
-      this.generators.forEach(g => {
-        g.amount = new Decimal(0)
-        g.bought = 0
-      })
+      this._resetForPrestige()
     },
 
     compileAndRelease() {
-        if (!this.isCompileUnlocked) return;
-        this.version += 1;
-        // This also triggers a refactor
-        this.refactor();
+      if (!this.isCompileUnlocked) return
+      this.version += 1
+      // This also triggers a refactor
+      this.refactor()
+    },
+
+    startChallenge(challenge: 'challenge1' | 'challenge2') {
+      if (this.challengeCompletions[challenge]) return // Cannot start a completed challenge
+      this.activeChallenge = challenge
+      this._resetForPrestige()
+    },
+
+    exitChallenge() {
+      if (this.activeChallenge === 'none') return
+      this.activeChallenge = 'none'
+      this._resetForPrestige()
     },
 
     startGameLoop() {
