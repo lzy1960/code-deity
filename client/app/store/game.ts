@@ -4,6 +4,8 @@ import { generatorConfigs } from '../../game/configs'
 
 // #region -------- Interfaces and Types --------
 
+export type BuyMultiplier = 'x1' | 'x10' | 'x100' | 'max'
+
 export interface Generator {
   id: number
   amount: Decimal
@@ -20,6 +22,7 @@ export interface GameState {
   lastUpdateTime: number
   currency: Decimal // CP, Code Power
   generators: Generator[]
+  buyMultiplier: BuyMultiplier
 
   // Prestige Layers
   refactorPoints: Decimal // RP, Refactor Points
@@ -44,6 +47,7 @@ export const useGameStore = defineStore('game', {
       amount: new Decimal(0),
       bought: 0
     })),
+    buyMultiplier: 'x1',
 
     refactorPoints: new Decimal(0),
     refactorCount: 0,
@@ -76,16 +80,55 @@ export const useGameStore = defineStore('game', {
     isCompileUnlocked: state => state.refactorCount >= 5,
     isAutomationUnlocked: state => state.version > 0,
     isChallengesUnlocked: state => state.version >= 2,
+    isMultiplierUnlocked: state => {
+      const moduleGenerator = state.generators.find(g => g.id === 4)
+      return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
+    },
 
     // --- Core Production Calculation ---
     generatorConfig: () => (id: number) => {
       return generatorConfigs.find(c => c.id === id)!
     },
-    generatorCost() {
+
+    // --- Cost & Amount Calculation for Multi-buy ---
+    buyAmount() {
       return (id: number): Decimal => {
+        if (this.buyMultiplier !== 'max') {
+          return new Decimal(parseInt(this.buyMultiplier.slice(1)))
+        }
+        
         const config = this.generatorConfig(id)
         const generator = this.generators.find(g => g.id === id)!
-        return config.baseCost.times(config.costMultiplier.pow(generator.bought))
+        const r = config.costMultiplier
+        const k = generator.bought
+        const B = config.baseCost
+        const C = this.currency
+
+        if (C.lt(B.times(r.pow(k)))) return new Decimal(0)
+
+        // n <= log_r(C * (r - 1) / (B * r^k) + 1)
+        const num = C.times(r.minus(1)).div(B.times(r.pow(k))).plus(1)
+        const n = Decimal.floor(num.log(r.toNumber()))
+        return n.max(0)
+      }
+    },
+    costForAmount() {
+      return (id: number, amount: Decimal): Decimal => {
+        if (amount.eq(0)) return new Decimal(0)
+        const config = this.generatorConfig(id)
+        const generator = this.generators.find(g => g.id === id)!
+        const r = config.costMultiplier
+        const k = generator.bought
+        const B = config.baseCost
+        
+        // cost = B * r^k * (r^n - 1) / (r - 1)
+        return B.times(r.pow(k)).times(r.pow(amount).minus(1)).div(r.minus(1))
+      }
+    },
+    generatorCost() {
+      return (id: number): Decimal => {
+        const amount = this.buyAmount(id)
+        return this.costForAmount(id, amount)
       }
     },
 
@@ -121,12 +164,6 @@ export const useGameStore = defineStore('game', {
           .times(generator.amount)
           .times(this.buy10Bonus(id))
           .times(this.rpBonus)
-        
-        // Higher-tier generators produce lower-tier ones
-        if (id > 1) {
-            const lowerTierProduction = this.generatorProduction(id - 1);
-            production = production.times(lowerTierProduction);
-        }
 
         return production
       }
@@ -173,13 +210,20 @@ export const useGameStore = defineStore('game', {
     },
 
     buyGenerator(id: number) {
-      const cost = this.generatorCost(id)
+      const amountToBuy = this.buyAmount(id)
+      if (amountToBuy.eq(0)) return
+
+      const cost = this.costForAmount(id, amountToBuy)
       if (this.currency.gte(cost)) {
         this.currency = this.currency.minus(cost)
         const generator = this.generators.find(g => g.id === id)!
-        generator.amount = generator.amount.plus(1)
-        generator.bought += 1
+        generator.amount = generator.amount.plus(amountToBuy)
+        generator.bought += amountToBuy.toNumber()
       }
+    },
+
+    setBuyMultiplier(multiplier: BuyMultiplier) {
+      this.buyMultiplier = multiplier
     },
     
     // --- Prestige Actions ---

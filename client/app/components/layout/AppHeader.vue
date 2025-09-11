@@ -18,15 +18,15 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, computed } from 'vue';
+import { computed } from 'vue';
+import type Decimal from 'break_infinity.js';
+import { formatNumber } from '~/utils/format';
 
 const props = defineProps<{
-  currency: number;
+  currency: Decimal;
 }>();
 
-defineEmits(['saveGame', 'loadGame']);
-
 const formattedCurrency = computed(() => {
-  return new Intl.NumberFormat().format(props.currency);
+  return formatNumber(props.currency);
 });
 </script>

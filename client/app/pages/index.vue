@@ -1,14 +1,19 @@
 <template>
   <div class="relative flex size-full min-h-screen flex-col text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
     <div class="flex-grow">
-      <AppHeader :currency="gameStore.currency.toNumber()" />
+      <AppHeader :currency="gameStore.currency" />
 
       <!-- System Message for Refactor Unlock -->
       <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
         [系统提示]：你的代码结构过于臃肿，增长已达瓶颈。或许……你需要一次彻底的重构。
       </div>
 
-      <main class="p-4 space-y-6 pb-24">
+      <main class="relative p-4 space-y-6 pb-24">
+        <!-- Buy Multiplier Selector -->
+        <div v-if="gameStore.isMultiplierUnlocked" class="absolute top-4 right-4 z-10 w-48">
+          <BuyMultiplierSelector />
+        </div>
+
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
           <button @click.prevent="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
@@ -98,6 +103,7 @@ import { useGameStore } from '~/store/game';
 import AppHeader from '~/components/layout/AppHeader.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
+import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 
 const gameStore = useGameStore();
 
@@ -124,5 +130,7 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   }
 });
 
-
+watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
+  gameStore.setBuyMultiplier('x1')
+})
 </script>

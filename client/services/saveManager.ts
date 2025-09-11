@@ -1,4 +1,4 @@
-import { db } from '../utils/db'
+import { db } from '~/utils/db'
 import { useGameStore, type GameState } from '~/store/game'
 import Decimal from 'break_infinity.js'
 
