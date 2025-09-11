@@ -11,7 +11,7 @@
       <main class="p-4 space-y-6 pb-24">
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
-          <button @click="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
+          <button @click.prevent="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
             手动编写代码
           </button>
         </div>
