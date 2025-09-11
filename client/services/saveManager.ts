@@ -1,5 +1,5 @@
 import { db } from '../utils/db'
-import { useGameStore, GameState } from '../store/game'
+import { useGameStore, type GameState } from '~/store/game'
 import Decimal from 'break_infinity.js'
 
 // 辅助函数：将 Decimal 对象序列化为字符串

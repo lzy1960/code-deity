@@ -12,16 +12,6 @@
           <span class="material-symbols-outlined text-yellow-400">paid</span>
           <p class="text-lg font-bold">{{ formattedCurrency }}</p>
         </div>
-        <div class="flex gap-2">
-          <button class="flex items-center justify-center rounded-md bg-[#232348] px-4 py-2 text-sm font-medium transition-colors hover:bg-[#343466]" @click="$emit('saveGame')">
-            <span class="material-symbols-outlined mr-1 text-base">save</span>
-            Save
-          </button>
-          <button class="flex items-center justify-center rounded-md bg-[#232348] px-4 py-2 text-sm font-medium transition-colors hover:bg-[#343466]" @click="$emit('loadGame')">
-            <span class="material-symbols-outlined mr-1 text-base">cloud_upload</span>
-            Load
-          </button>
-        </div>
       </div>
     </div>
   </header>

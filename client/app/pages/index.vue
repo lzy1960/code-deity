@@ -1,7 +1,7 @@
 <template>
   <div class="relative flex size-full min-h-screen flex-col text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
     <div class="flex-grow">
-      <AppHeader :currency="gameStore.currency.toNumber()" @saveGame="$saveGame" @loadGame="$loadGame" />
+      <AppHeader :currency="gameStore.currency.toNumber()" />
 
       <!-- System Message for Refactor Unlock -->
       <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
@@ -34,7 +34,7 @@
           <!-- Refactor Section -->
           <div v-show="activeTab === 'upgrades'">
             <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Code Refactoring (RP)</h2>
-            <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" @refactor="gameStore.refactor" />
+            <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" @refactor="gameStore.refactor" />
             
             <!-- Placeholder for future upgrade sections like Compile/Release -->
             <div v-if="gameStore.isCompileUnlocked" class="mt-6">
@@ -124,8 +124,5 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   }
 });
 
-const { $saveGame, $loadGame } = useNuxtApp() as unknown as {
-  $saveGame: () => void;
-  $loadGame: () => void;
-};
+
 </script>
