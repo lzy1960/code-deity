@@ -11,17 +11,58 @@ export interface GeneratorConfig {
 export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 1,
-    name: '程序员',
+    name: '变量 (Variable)',
     baseCost: new Decimal(10),
     costMultiplier: new Decimal(1.15),
-    baseProduction: new Decimal(1) // 程序员每秒产出 1 货币
+    baseProduction: new Decimal(1)
   },
   {
     id: 2,
-    name: '结对伙伴',
+    name: '函数 (Function)',
     baseCost: new Decimal(100),
-    costMultiplier: new Decimal(1.2),
-    baseProduction: new Decimal(10) // 结对伙伴每秒产出 10 货币
+    costMultiplier: new Decimal(1.20),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 3,
+    name: '类 (Class)',
+    baseCost: new Decimal(1e4),
+    costMultiplier: new Decimal(1.25),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 4,
+    name: '模块 (Module)',
+    baseCost: new Decimal(1e6),
+    costMultiplier: new Decimal(1.30),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 5,
+    name: '库 (Library)',
+    baseCost: new Decimal(1e9),
+    costMultiplier: new Decimal(1.35),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 6,
+    name: '框架 (Framework)',
+    baseCost: new Decimal(1e13),
+    costMultiplier: new Decimal(1.40),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 7,
+    name: '编译器 (Compiler)',
+    baseCost: new Decimal(1e18),
+    costMultiplier: new Decimal(1.45),
+    baseProduction: new Decimal(1)
+  },
+  {
+    id: 8,
+    name: 'AI 核心 (A.I. Core)',
+    baseCost: new Decimal(1e24),
+    costMultiplier: new Decimal(1.50),
+    baseProduction: new Decimal(1)
   }
-  // 后面可以添加更多生成器
 ]

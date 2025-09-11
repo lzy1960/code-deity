@@ -10,7 +10,7 @@
       <div class="flex items-center justify-between rounded-lg bg-[#191933] p-3 shadow-lg">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-yellow-400">paid</span>
-          <p class="text-lg font-bold">{{ currency.toFixed(2) }}</p>
+          <p class="text-lg font-bold">{{ formattedCurrency }}</p>
         </div>
         <div class="flex gap-2">
           <button class="flex items-center justify-center rounded-md bg-[#232348] px-4 py-2 text-sm font-medium transition-colors hover:bg-[#343466]" @click="$emit('saveGame')">
@@ -28,11 +28,15 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 
-defineProps<{
-  currency: number; // Or BigNumber if that's what useGameStore.currency returns
+const props = defineProps<{
+  currency: number;
 }>();
 
 defineEmits(['saveGame', 'loadGame']);
+
+const formattedCurrency = computed(() => {
+  return new Intl.NumberFormat().format(props.currency);
+});
 </script>

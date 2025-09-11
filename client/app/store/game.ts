@@ -1,66 +1,217 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs, type GeneratorConfig } from '../../game/configs'
+import { generatorConfigs } from '../../game/configs'
 
-// 为了类型安全，我们先定义生成器的接口
+// #region -------- Interfaces and Types --------
+
 export interface Generator {
   id: number
-  name: string
   amount: Decimal
   bought: number
-  multiplier: Decimal
-  baseCost: Decimal
-  costMultiplier: Decimal
-  baseProduction: Decimal // 与 GeneratorConfig 保持一致
 }
 
-// 定义 state 的接口
+export interface ChallengeCompletion {
+  challenge1: boolean
+  challenge2: boolean
+}
+
 export interface GameState {
   saveVersion: string
   lastUpdateTime: number
-  currency: Decimal
+  currency: Decimal // CP, Code Power
   generators: Generator[]
-  rpGain: Decimal // 新增
+
+  // Prestige Layers
+  refactorPoints: Decimal // RP, Refactor Points
+  refactorCount: number
+  version: number // Prestige layer 2
+
+  // Challenges
+  challengeCompletions: ChallengeCompletion
+  activeChallenge: 'none' | 'challenge1' | 'challenge2'
 }
 
+// #endregion
+
 export const useGameStore = defineStore('game', {
+  // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.0',
+    saveVersion: '1.0.1',
     lastUpdateTime: Date.now(),
-    currency: new Decimal(10),
+    currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
-      ...config,
+      id: config.id,
       amount: new Decimal(0),
-      bought: 0,
-      multiplier: new Decimal(1)
+      bought: 0
     })),
-    rpGain: new Decimal(5) // 初始化 rpGain
+
+    refactorPoints: new Decimal(0),
+    refactorCount: 0,
+    version: 0,
+
+    challengeCompletions: {
+      challenge1: false,
+      challenge2: false
+    },
+    activeChallenge: 'none'
   }),
+  // #endregion
 
-  actions: {
-    buyGenerator(id: number) {
-      const generator = this.generators.find(g => g.id === id)
-      if (!generator) return
+  // #region -------- GETTERS --------
+  getters: {
+    // --- System Unlocks ---
+    isGeneratorUnlocked: state => (id: number): boolean => {
+      if (id === 1) return state.currency.gte(10) || state.generators[0]!.bought > 0 || state.refactorCount > 0
+      const prevGenerator = state.generators.find(g => g.id === id - 1)
+      return prevGenerator ? prevGenerator.bought > 0 : false
+    },
+    isRefactorUnlocked: state => {
+      const aiCore = state.generators.find(g => g.id === 8)
+      return (aiCore?.bought ?? 0) > 0 || state.refactorCount > 0
+    },
+    canRefactor: state => {
+      const aiCore = state.generators.find(g => g.id === 8)
+      return (aiCore?.bought ?? 0) >= 10
+    },
+    isCompileUnlocked: state => state.refactorCount >= 5,
+    isAutomationUnlocked: state => state.version > 0,
+    isChallengesUnlocked: state => state.version >= 2,
 
-      const cost = generator.baseCost.times(generator.costMultiplier.pow(generator.bought))
-
-      if (this.currency.gte(cost)) {
-        this.currency = this.currency.minus(cost)
-        generator.amount = generator.amount.plus(1)
-        generator.bought += 1
-      } else {
-        console.log('货币不足！')
+    // --- Core Production Calculation ---
+    generatorConfig: () => (id: number) => {
+      return generatorConfigs.find(c => c.id === id)!
+    },
+    generatorCost() {
+      return (id: number): Decimal => {
+        const config = this.generatorConfig(id)
+        const generator = this.generators.find(g => g.id === id)!
+        return config.baseCost.times(config.costMultiplier.pow(generator.bought))
       }
     },
-    refactorCode() { // 新增 refactorCode action
-      console.log('代码重构！')
-      // 这里可以添加重构逻辑，例如增加货币或 RP
-      // this.currency = this.currency.plus(this.rpGain); // 示例：重构增加货币
-      // this.rpGain = new Decimal(0); // 示例：重构后 RP 清零
+
+    buy10Bonus() {
+      return (id: number): Decimal => {
+        const generator = this.generators.find(g => g.id === id)!
+        const bonusPer10 = this.challengeCompletions.challenge1 ? 2.2 : 2
+        const setsOf10 = Math.floor(generator.bought / 10)
+        return Decimal.pow(bonusPer10, setsOf10)
+      }
+    },
+    
+    rpBonus(): Decimal {
+      const baseBonus = this.refactorPoints.times(0.1)
+      const versionBonus = new Decimal(1).plus(this.version * 0.2)
+      return new Decimal(1).plus(baseBonus.times(versionBonus))
+    },
+    
+    challenge2Bonus(): Decimal {
+        return this.challengeCompletions.challenge2 ? new Decimal(1.5) : new Decimal(1)
+    },
+
+    generatorProduction() {
+      return (id: number): Decimal => {
+        const config = this.generatorConfig(id)
+        const generator = this.generators.find(g => g.id === id)!
+
+        if (this.activeChallenge === 'challenge1' && id <= 4) {
+            return new Decimal(0)
+        }
+
+        let production = config.baseProduction
+          .times(generator.amount)
+          .times(this.buy10Bonus(id))
+          .times(this.rpBonus)
+        
+        // Higher-tier generators produce lower-tier ones
+        if (id > 1) {
+            const lowerTierProduction = this.generatorProduction(id - 1);
+            production = production.times(lowerTierProduction);
+        }
+
+        return production
+      }
+    },
+    
+    cps(): Decimal {
+        return this.generatorProduction(1)
+    },
+
+    // --- Prestige Gain Calculation ---
+    refactorGain(): Decimal {
+      if (this.currency.log10() < 308) return new Decimal(0)
+      const gain = Decimal.floor(
+        Decimal.pow(this.currency.log10() / 308, 1.5)
+      ).times(this.challenge2Bonus)
+      return gain
     }
   },
+  // #endregion
 
-  getters: {
-    // 之后会在这里添加 getters，例如 rpGainPreview
+  // #region -------- ACTIONS --------
+  actions: {
+    gameLoop() {
+      const now = Date.now()
+      const diff = new Decimal(now - this.lastUpdateTime).div(1000) // diff in seconds
+      if (diff.lt(0)) {
+        this.lastUpdateTime = now
+        return
+      }
+
+      // Update generators from top to bottom
+      for (let i = 8; i > 1; i--) {
+        const production = this.generatorProduction(i)
+        this.generators[i - 2].amount = this.generators[i - 2].amount.plus(production.times(diff))
+      }
+
+      // Update currency from the first generator
+      this.currency = this.currency.plus(this.cps.times(diff))
+      this.lastUpdateTime = now
+    },
+
+    manualClick() {
+      this.currency = this.currency.plus(1)
+    },
+
+    buyGenerator(id: number) {
+      const cost = this.generatorCost(id)
+      if (this.currency.gte(cost)) {
+        this.currency = this.currency.minus(cost)
+        const generator = this.generators.find(g => g.id === id)!
+        generator.amount = generator.amount.plus(1)
+        generator.bought += 1
+      }
+    },
+    
+    // --- Prestige Actions ---
+    refactor() {
+      if (!this.canRefactor) return
+
+      const gain = this.refactorGain
+      if (gain.gt(0)) {
+        this.refactorPoints = this.refactorPoints.plus(gain)
+        this.refactorCount += 1
+      }
+
+      // Reset state
+      this.currency = new Decimal(10)
+      this.generators.forEach(g => {
+        g.amount = new Decimal(0)
+        g.bought = 0
+      })
+    },
+
+    compileAndRelease() {
+        if (!this.isCompileUnlocked) return;
+        this.version += 1;
+        // This also triggers a refactor
+        this.refactor();
+    },
+
+    startGameLoop() {
+      setInterval(() => {
+        this.gameLoop()
+      }, 50)
+    },
   }
+  // #endregion
 })
