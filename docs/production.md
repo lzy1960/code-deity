@@ -165,3 +165,8 @@
 # UI 设计图说明
 
 UI 设计图的文字描述和对应的 HTML 代码位于 `UI/` 文件夹中。开发界面时可以参考其中的 HTML 代码复刻页面。
+
+- 生成器页面：generator_page
+- 重构页面：upgrades_page
+- 设置页面：settings_page
+- 个人页面：account_page

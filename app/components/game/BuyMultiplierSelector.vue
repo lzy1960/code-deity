@@ -1,10 +1,10 @@
 <template>
-  <div class="flex items-center justify-center rounded-lg bg-[#191933] p-1 shadow-lg">
+  <div class="flex items-center bg-[#182635] rounded-full p-1 text-sm font-bold">
     <button
       v-for="multiplier in multipliers"
       :key="multiplier.value"
-      class="flex-1 cursor-pointer rounded-md px-3 py-1 text-sm font-bold transition-colors"
-      :class="isActive(multiplier.value) ? 'bg-[#4a4a8a] text-white' : 'text-[#9292c9] hover:bg-[#2a2a5f]'"
+      class="px-3 py-1 rounded-full transition-colors"
+      :class="isActive(multiplier.value) ? 'bg-[#3899fa] text-white' : 'text-gray-400 hover:text-white'"
       @click="setMultiplier(multiplier.value)"
     >
       {{ multiplier.label }}

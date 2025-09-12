@@ -1,19 +1,33 @@
 <template>
-  <div class="relative flex size-full min-h-screen flex-col text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
+  <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
     <div class="flex-grow">
-      <AppHeader :currency="gameStore.currency" />
+      <!-- Conditional Header -->
+      <header v-if="activeTab === 'generators' && isGeneratorSectionUnlocked" class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm">
+        <div class="flex items-center p-4 pb-2 justify-between">
+          <div class="w-12"></div>
+          <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Generators</h2>
+          <div class="flex w-12 items-center justify-end">
+            <!-- Settings button can be added later if needed -->
+          </div>
+        </div>
+        <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-3 border-b border-[#21364a]">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-white text-2xl font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-lg">CP</span></p>
+              <p class="text-green-400 text-sm font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
+            </div>
+            <BuyMultiplierSelector v-if="gameStore.isMultiplierUnlocked" />
+          </div>
+        </div>
+      </header>
+      <AppHeader v-else :currency="gameStore.currency" />
 
       <!-- System Message for Refactor Unlock -->
       <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
         [系统提示]：你的代码结构过于臃肿，增长已达瓶颈。或许……你需要一次彻底的重构。
       </div>
 
-      <main class="relative p-4 space-y-6 pb-24">
-        <!-- Buy Multiplier Selector -->
-        <div v-if="gameStore.isMultiplierUnlocked" class="absolute top-4 right-4 z-10 w-48">
-          <BuyMultiplierSelector />
-        </div>
-
+      <main class="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
           <button @click.prevent="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
@@ -25,7 +39,6 @@
         <div v-else>
           <!-- Generators Section -->
           <div v-show="activeTab === 'generators'">
-            <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Generators</h2>
             <div class="space-y-3">
               <GeneratorItem
                 v-for="generator in unlockedGenerators"
@@ -36,14 +49,24 @@
             </div>
           </div>
 
-          <!-- Refactor Section -->
+          <!-- Upgrades Section -->
           <div v-show="activeTab === 'upgrades'">
-            <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Code Refactoring (RP)</h2>
-            <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" :current-rp-bonus="gameStore.rpBonus" @refactor="gameStore.refactor" />
+            <div class="border-b border-gray-700 px-4 mb-4">
+              <div class="flex justify-around">
+                <a @click="upgradesSubTab = 'refactor'" class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center cursor-pointer" :class="upgradesSubTab === 'refactor' ? 'border-b-2 border-b-[#3899fa] text-white' : 'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors'">
+                  <p class="text-base font-bold">Refactor</p>
+                </a>
+                <a v-if="gameStore.isCompileUnlocked" @click="upgradesSubTab = 'deploy'" class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center cursor-pointer" :class="upgradesSubTab === 'deploy' ? 'border-b-2 border-b-[#3899fa] text-white' : 'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors'">
+                  <p class="text-base font-bold">Deploy</p>
+                </a>
+              </div>
+            </div>
+
+            <div v-show="upgradesSubTab === 'refactor'">
+              <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" :current-rp-bonus="gameStore.rpBonus" @refactor="gameStore.refactor" />
+            </div>
             
-            <!-- Compile/Release Section -->
-            <div v-if="gameStore.isCompileUnlocked" class="mt-6">
-              <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Compile & Release (Version)</h2>
+            <div v-if="gameStore.isCompileUnlocked" v-show="upgradesSubTab === 'deploy'">
               <CompileSection :version="gameStore.version" @compile-and-release="gameStore.compileAndRelease" />
             </div>
           </div>
@@ -67,27 +90,27 @@
     </div>
 
     <!-- Dynamic Footer/Navbar -->
-    <footer v-if="isGeneratorSectionUnlocked" class="sticky bottom-0 bg-[#191933]/80 backdrop-blur-sm">
-      <nav class="flex justify-around border-t border-[#232348] py-2">
-        <a @click="activeTab = 'generators'" :class="['flex', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'rounded-full', 'px-4', 'py-1', 'cursor-pointer', activeTab === 'generators' ? 'text-white' : 'text-[#9292c9]']">
-          <span class="material-symbols-outlined text-2xl">list</span>
-          <p class="text-xs font-medium tracking-[0.015em]">Generators</p>
+    <footer v-if="isGeneratorSectionUnlocked" class="sticky bottom-0 bg-[#182635]/80 backdrop-blur-sm border-t border-[#21364a]">
+      <nav class="flex justify-around items-center px-4 pt-2 pb-3">
+        <a @click="activeTab = 'generators'" :class="['flex', 'flex-1', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'cursor-pointer', activeTab === 'generators' ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors']">
+          <span class="material-symbols-outlined"> dns </span>
+          <p class="text-xs font-bold">Generators</p>
         </a>
         <a @click="gameStore.isRefactorUnlocked ? activeTab = 'upgrades' : null" :class="getTabClass('upgrades', gameStore.isRefactorUnlocked)" :title="getTabTitle('upgrades', gameStore.isRefactorUnlocked)">
-          <span class="material-symbols-outlined text-2xl">{{ gameStore.isRefactorUnlocked ? 'rocket_launch' : 'lock' }}</span>
-          <p class="text-xs font-medium tracking-[0.015em]">Upgrades</p>
+          <span class="material-symbols-outlined">{{ gameStore.isRefactorUnlocked ? 'upgrade' : 'lock' }}</span>
+          <p class="text-xs font-medium">Upgrades</p>
         </a>
         <a @click="activeTab = 'stats'" :class="getTabClass('stats', true)">
-          <span class="material-symbols-outlined text-2xl">bar_chart</span>
-          <p class="text-xs font-medium tracking-[0.015em]">Stats</p>
+          <span class="material-symbols-outlined">bar_chart</span>
+          <p class="text-xs font-medium">Stats</p>
         </a>
         <a @click="gameStore.isAutomationUnlocked ? activeTab = 'automation' : null" :class="getTabClass('automation', gameStore.isAutomationUnlocked)" :title="getTabTitle('automation', gameStore.isAutomationUnlocked)">
-          <span class="material-symbols-outlined text-2xl">{{ gameStore.isAutomationUnlocked ? 'smart_toy' : 'lock' }}</span>
-          <p class="text-xs font-medium tracking-[0.015em]">Automation</p>
+          <span class="material-symbols-outlined">{{ gameStore.isAutomationUnlocked ? 'smart_toy' : 'lock' }}</span>
+          <p class="text-xs font-medium">Automation</p>
         </a>
         <a @click="gameStore.isChallengesUnlocked ? activeTab = 'challenges' : null" :class="getTabClass('challenges', gameStore.isChallengesUnlocked)" :title="getTabTitle('challenges', gameStore.isChallengesUnlocked)">
-          <span class="material-symbols-outlined text-2xl">{{ gameStore.isChallengesUnlocked ? 'emoji_events' : 'lock' }}</span>
-          <p class="text-xs font-medium tracking-[0.015em]">Challenges</p>
+          <span class="material-symbols-outlined">{{ gameStore.isChallengesUnlocked ? 'emoji_events' : 'lock' }}</span>
+          <p class="text-xs font-medium">Challenges</p>
         </a>
       </nav>
     </footer>
@@ -97,6 +120,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useGameStore } from '~/store/game';
+import { formatNumber } from '~/utils/format';
 import AppHeader from '~/components/layout/AppHeader.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
@@ -109,6 +133,7 @@ import StatsSection from '~/components/game/StatsSection.vue';
 const gameStore = useGameStore();
 
 const activeTab = ref('generators');
+const upgradesSubTab = ref('refactor');
 const showRefactorSystemMessage = ref(false);
 const hasShownRefactorMessage = ref(false);
 
@@ -142,12 +167,12 @@ watch(() => gameStore.refactorCount, (newCount, oldCount) => {
 });
 
 const getTabClass = (tabName: string, isUnlocked: boolean) => {
-  const baseClasses = 'flex flex-col items-center justify-end gap-1 px-4 py-1';
+  const baseClasses = 'flex flex-1 flex-col items-center justify-end gap-1 cursor-pointer';
   if (!isUnlocked) {
     return `${baseClasses} text-gray-500 cursor-not-allowed`;
   }
-  const activeColor = activeTab.value === tabName ? 'text-white' : 'text-[#9292c9]';
-  return `${baseClasses} cursor-pointer ${activeColor}`;
+  const activeColor = activeTab.value === tabName ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors';
+  return `${baseClasses} ${activeColor}`;
 };
 
 const getTabTitle = (tabName: string, isUnlocked: boolean): string => {

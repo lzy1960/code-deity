@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Space+Grotesk%3Awght%40400%3B500%3B700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+                text-shadow: 0 0 5px #4ade80, 0 0 10px #4ade80, 0 0 15px #4ade80;
+            }
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 20px #4ade80, 0 0 30px #4ade80, 0 0 40px #4ade80;
+            }
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#0D1117]">
+<div class="relative flex size-full min-h-screen flex-col bg-[#0D1117] text-gray-300" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
+<div class="sticky top-0 z-10 bg-[#0D1117]/80 backdrop-blur-sm p-4">
+<div class="flex items-center justify-center text-center">
+<div>
+<p class="text-lg font-bold text-white">Computing Power (CP)</p>
+<p class="text-2xl font-bold text-white">1,234,567,890</p>
+<p class="text-sm text-green-400">(+123,456 CP/s)</p>
+</div>
+</div>
+</div>
+<div class="flex-grow flex flex-col">
+<div class="border-b border-gray-700 px-4">
+<div class="flex justify-around">
+<a class="flex flex-col items-center justify-center border-b-2 border-b-[#3899fa] text-white py-3 px-4 w-1/3 text-center" href="#">
+<p class="text-base font-bold">Refactor</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-b-transparent text-gray-500 py-3 px-4 w-1/3 text-center hover:text-white transition-colors" href="#">
+<p class="text-base font-bold">Deploy</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-b-transparent text-gray-500 py-3 px-4 w-1/3 text-center hover:text-white transition-colors" href="#">
+<p class="text-base font-bold">Challenges</p>
+</a>
+</div>
+</div>
+<div class="flex-grow flex flex-col items-center justify-center text-center p-8">
+<h3 class="text-xl font-bold text-gray-400 mb-4">You will gain from this refactor:</h3>
+<h1 class="text-5xl font-bold text-green-400 pulse-animation">+12,345</h1>
+<p class="text-2xl font-bold text-green-400 mt-2">Refactor Points (RP)</p>
+</div>
+</div>
+<div class="sticky bottom-20 w-full px-4 py-3">
+<button class="flex w-full min-w-[84px] max-w-[480px] mx-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 px-5 bg-[#3899fa] text-white text-lg font-bold leading-normal tracking-wider shadow-lg shadow-[#3899fa]/30 hover:bg-[#2c88e8] transition-all">
+<span class="truncate">[ Confirm Refactor ]</span>
+</button>
+</div>
+<div class="sticky bottom-0 z-10">
+<div class="flex justify-around border-t border-gray-700 bg-[#161B22] p-2">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 rounded-md py-2 text-[#3899fa]" href="#">
+<span class="material-symbols-outlined text-3xl">memory</span>
+<p class="text-xs font-medium">Generators</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 rounded-md py-2 text-gray-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-3xl">settings</span>
+<p class="text-xs font-medium">Settings</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 rounded-md py-2 text-gray-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-3xl">person</span>
+<p class="text-xs font-medium">Account</p>
+</a>
+</div>
+<div class="h-5 bg-[#161B22]"></div>
+</div>
+</div>
+
+</body></html>
