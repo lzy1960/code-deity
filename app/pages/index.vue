@@ -1,26 +1,11 @@
 <template>
   <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
-    <div class="flex-grow">
-      <!-- Conditional Header -->
-      <header v-if="activeTab === 'generators' && isGeneratorSectionUnlocked" class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm">
-        <div class="flex items-center p-4 pb-2 justify-between">
-          <div class="w-12"></div>
-          <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Generators</h2>
-          <div class="flex w-12 items-center justify-end">
-            <!-- Settings button can be added later if needed -->
-          </div>
-        </div>
-        <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-3 border-b border-[#21364a]">
-          <div class="flex justify-between items-start">
-            <div>
-              <p class="text-white text-2xl font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-lg">CP</span></p>
-              <p class="text-green-400 text-sm font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
-            </div>
-            <BuyMultiplierSelector v-if="gameStore.isMultiplierUnlocked" />
-          </div>
-        </div>
-      </header>
-      <AppHeader v-else :currency="gameStore.currency" />
+    <div class="flex-grow flex flex-col">
+      <AppHeader :title="headerTitle">
+        <template #actions>
+          <BuyMultiplierSelector v-if="activeTab === 'generators' && gameStore.isMultiplierUnlocked" />
+        </template>
+      </AppHeader>
 
       <!-- System Message for Refactor Unlock -->
       <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
@@ -89,46 +74,22 @@
       </main>
     </div>
 
-    <!-- Dynamic Footer/Navbar -->
-    <footer v-if="isGeneratorSectionUnlocked" class="sticky bottom-0 bg-[#182635]/80 backdrop-blur-sm border-t border-[#21364a]">
-      <nav class="flex justify-around items-center px-4 pt-2 pb-3">
-        <a @click="activeTab = 'generators'" :class="['flex', 'flex-1', 'flex-col', 'items-center', 'justify-end', 'gap-1', 'cursor-pointer', activeTab === 'generators' ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors']">
-          <span class="material-symbols-outlined"> dns </span>
-          <p class="text-xs font-bold">Generators</p>
-        </a>
-        <a @click="gameStore.isRefactorUnlocked ? activeTab = 'upgrades' : null" :class="getTabClass('upgrades', gameStore.isRefactorUnlocked)" :title="getTabTitle('upgrades', gameStore.isRefactorUnlocked)">
-          <span class="material-symbols-outlined">{{ gameStore.isRefactorUnlocked ? 'upgrade' : 'lock' }}</span>
-          <p class="text-xs font-medium">Upgrades</p>
-        </a>
-        <a @click="activeTab = 'stats'" :class="getTabClass('stats', true)">
-          <span class="material-symbols-outlined">bar_chart</span>
-          <p class="text-xs font-medium">Stats</p>
-        </a>
-        <a @click="gameStore.isAutomationUnlocked ? activeTab = 'automation' : null" :class="getTabClass('automation', gameStore.isAutomationUnlocked)" :title="getTabTitle('automation', gameStore.isAutomationUnlocked)">
-          <span class="material-symbols-outlined">{{ gameStore.isAutomationUnlocked ? 'smart_toy' : 'lock' }}</span>
-          <p class="text-xs font-medium">Automation</p>
-        </a>
-        <a @click="gameStore.isChallengesUnlocked ? activeTab = 'challenges' : null" :class="getTabClass('challenges', gameStore.isChallengesUnlocked)" :title="getTabTitle('challenges', gameStore.isChallengesUnlocked)">
-          <span class="material-symbols-outlined">{{ gameStore.isChallengesUnlocked ? 'emoji_events' : 'lock' }}</span>
-          <p class="text-xs font-medium">Challenges</p>
-        </a>
-      </nav>
-    </footer>
+    <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useGameStore } from '~/store/game';
-import { formatNumber } from '~/utils/format';
 import AppHeader from '~/components/layout/AppHeader.vue';
+import AppFooter from '~/components/layout/AppFooter.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
 import CompileSection from '~/components/game/CompileSection.vue';
-import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
+import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 
 const gameStore = useGameStore();
 
@@ -143,6 +104,14 @@ const isGeneratorSectionUnlocked = computed(() => {
 
 const unlockedGenerators = computed(() => {
   return gameStore.generators.filter(g => gameStore.isGeneratorUnlocked(g.id));
+});
+
+const headerTitle = computed(() => {
+  if (!isGeneratorSectionUnlocked.value) {
+    return '代码神祇 (Code Deity)';
+  }
+  // Capitalize first letter
+  return activeTab.value.charAt(0).toUpperCase() + activeTab.value.slice(1);
 });
 
 watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
@@ -165,23 +134,4 @@ watch(() => gameStore.refactorCount, (newCount, oldCount) => {
     activeTab.value = 'generators';
   }
 });
-
-const getTabClass = (tabName: string, isUnlocked: boolean) => {
-  const baseClasses = 'flex flex-1 flex-col items-center justify-end gap-1 cursor-pointer';
-  if (!isUnlocked) {
-    return `${baseClasses} text-gray-500 cursor-not-allowed`;
-  }
-  const activeColor = activeTab.value === tabName ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors';
-  return `${baseClasses} ${activeColor}`;
-};
-
-const getTabTitle = (tabName: string, isUnlocked: boolean): string => {
-  if (isUnlocked) return '';
-  switch (tabName) {
-    case 'upgrades': return 'Unlock by purchasing 1 AI Core.';
-    case 'automation': return 'Unlock by performing your first Compile & Release.';
-    case 'challenges': return 'Unlock after your 2nd Compile & Release.';
-    default: return 'Locked';
-  }
-};
 </script>

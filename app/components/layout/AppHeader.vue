@@ -1,32 +1,32 @@
 <template>
-  <header class="sticky top-0 z-10 bg-[#111122]/80 backdrop-blur-sm">
+  <header class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm">
     <div class="flex items-center p-4 pb-2 justify-between">
-      <h1 class="text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center">代码神祇 (Code Deity)</h1>
-      <button class="p-2">
-        <span class="material-symbols-outlined text-2xl">settings</span>
-      </button>
+      <div class="w-12"></div>
+      <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
+      <div class="flex w-12 items-center justify-end">
+        <!-- Settings button can be added later if needed -->
+      </div>
     </div>
-    <div class="px-4 pb-4">
-      <div class="flex items-center justify-between rounded-lg bg-[#191933] p-3 shadow-lg">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-yellow-400">paid</span>
-          <p class="text-lg font-bold">{{ formattedCurrency }}</p>
+    <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-3 border-b border-[#21364a]">
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-white text-2xl font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-lg">CP</span></p>
+          <p class="text-green-400 text-sm font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
         </div>
+        <!-- The BuyMultiplierSelector will be placed here via a slot -->
+        <slot name="actions"></slot>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type Decimal from 'break_infinity.js';
+import { useGameStore } from '~/store/game';
 import { formatNumber } from '~/utils/format';
 
-const props = defineProps<{
-  currency: Decimal;
+defineProps<{
+  title: string;
 }>();
 
-const formattedCurrency = computed(() => {
-  return formatNumber(props.currency);
-});
+const gameStore = useGameStore();
 </script>

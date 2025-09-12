@@ -1,22 +1,96 @@
 <template>
-  <footer class="sticky bottom-0 bg-[#191933]/80 backdrop-blur-sm">
-    <nav class="flex justify-around border-t border-[#232348] py-2">
-      <a class="flex flex-col items-center justify-end gap-1 rounded-full px-4 py-1 text-white" href="#">
-        <span class="material-symbols-outlined text-2xl">list</span>
-        <p class="text-xs font-medium tracking-[0.015em]">Generators</p>
-      </a>
-      <a class="flex flex-col items-center justify-end gap-1 px-4 py-1 text-[#9292c9]" href="#">
-        <span class="material-symbols-outlined text-2xl">rocket_launch</span>
-        <p class="text-xs font-medium tracking-[0.015em]">Upgrades</p>
-      </a>
-      <a class="flex flex-col items-center justify-end gap-1 px-4 py-1 text-[#9292c9]" href="#">
-        <span class="material-symbols-outlined text-2xl">bar_chart</span>
-        <p class="text-xs font-medium tracking-[0.015em]">Stats</p>
-      </a>
-    </nav>
+  <footer class="sticky bottom-0 bg-[#182635]/80 backdrop-blur-sm border-t border-[#21364a]">
+    <div class="flex items-center px-2 overflow-x-auto whitespace-nowrap">
+      <nav class="flex justify-around items-center w-full min-w-max pt-2 pb-3">
+        <a 
+          v-for="tab in tabs" 
+          :key="tab.id"
+          @click="handleTabClick(tab)" 
+          :class="getTabClass(tab)" 
+          :title="getTabTitle(tab)"
+        >
+          <span class="material-symbols-outlined">{{ tab.icon }}</span>
+          <p class="text-xs font-medium" :class="{ 'font-bold': isActive(tab.id) }">{{ tab.name }}</p>
+        </a>
+      </nav>
+    </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-// No specific logic needed here beyond the template
+import { useGameStore } from '~/store/game';
+import { useRouter } from 'vue-router';
+
+const props = defineProps<{
+  activeTab: string;
+}>();
+
+const emit = defineEmits(['update:activeTab']);
+const router = useRouter();
+const gameStore = useGameStore();
+
+interface Tab {
+  id: string;
+  name: string;
+  icon: string;
+  isUnlocked: () => boolean;
+  isExternal?: boolean;
+  path?: string;
+}
+
+const tabs: Tab[] = [
+  { id: 'generators', name: 'Generators', icon: 'dns', isUnlocked: () => true },
+  { id: 'upgrades', name: 'Upgrades', icon: 'upgrade', isUnlocked: () => gameStore.isRefactorUnlocked },
+  { id: 'stats', name: 'Stats', icon: 'bar_chart', isUnlocked: () => true },
+  { id: 'automation', name: 'Automation', icon: 'smart_toy', isUnlocked: () => gameStore.isAutomationUnlocked },
+  { id: 'challenges', name: 'Challenges', icon: 'emoji_events', isUnlocked: () => gameStore.isChallengesUnlocked },
+  { id: 'account', name: 'Account', icon: 'account_circle', isUnlocked: () => true, isExternal: true, path: '/account' },
+];
+
+const isActive = (tabId: string) => props.activeTab === tabId;
+
+const handleTabClick = (tab: Tab) => {
+  if (!tab.isUnlocked()) return;
+
+  if (tab.isExternal && tab.path) {
+    router.push(tab.path);
+  } else {
+    emit('update:activeTab', tab.id);
+  }
+};
+
+const getTabClass = (tab: Tab) => {
+  const baseClasses = 'flex flex-1 flex-col items-center justify-end gap-1 cursor-pointer px-4 py-1';
+  if (!tab.isUnlocked()) {
+    return `${baseClasses} text-gray-600 cursor-not-allowed`;
+  }
+  const activeColor = isActive(tab.id) ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors';
+  return `${baseClasses} ${activeColor}`;
+};
+
+const getTabTitle = (tab: Tab): string => {
+  if (tab.isUnlocked()) return '';
+  switch (tab.id) {
+    case 'upgrades': return 'Unlock by purchasing 1 AI Core.';
+    case 'automation': return 'Unlock by performing your first Compile & Release.';
+    case 'challenges': return 'Unlock after your 2nd Compile & Release.';
+    default: return 'Locked';
+  }
+};
 </script>
+
+<style scoped>
+/* For Webkit browsers like Chrome, Safari */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #182635;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: #3899fa;
+  border-radius: 20px;
+}
+</style>
