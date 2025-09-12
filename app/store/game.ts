@@ -78,7 +78,7 @@ export const useGameStore = defineStore('game', {
     },
     isRefactorUnlocked: state => {
       const aiCore = state.generators.find(g => g.id === 8)
-      return (aiCore?.bought ?? 0) > 0 || state.refactorCount > 0
+      return (aiCore?.bought ?? 0) >= 10 || state.refactorCount > 0
     },
     canRefactor: state => {
       const aiCore = state.generators.find(g => g.id === 8)

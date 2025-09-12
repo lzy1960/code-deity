@@ -40,28 +40,28 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 5,
     name: '库 (Library)',
-    baseCost: new Decimal(1e8),
+    baseCost: new Decimal(1e9),
     costMultiplier: new Decimal(1.35),
     baseProduction: new Decimal(1)
   },
   {
     id: 6,
     name: '框架 (Framework)',
-    baseCost: new Decimal(1e11),
+    baseCost: new Decimal(1e13),
     costMultiplier: new Decimal(1.40),
     baseProduction: new Decimal(1)
   },
   {
     id: 7,
     name: '编译器 (Compiler)',
-    baseCost: new Decimal(1e15),
+    baseCost: new Decimal(1e18),
     costMultiplier: new Decimal(1.45),
     baseProduction: new Decimal(1)
   },
   {
     id: 8,
     name: 'AI 核心 (A.I. Core)',
-    baseCost: new Decimal(1e20),
+    baseCost: new Decimal(1e24),
     costMultiplier: new Decimal(1.50),
     baseProduction: new Decimal(1)
   }

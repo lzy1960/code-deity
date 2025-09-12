@@ -41,7 +41,7 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: 'generators', name: 'Generators', icon: 'dns', isUnlocked: () => true },
-  { id: 'upgrades', name: 'Upgrades', icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
+  { id: 'upgrades', name: 'Refactor', icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
   { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
   { id: 'automation', name: 'Automation', icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
   { id: 'challenges', name: 'Challenges', icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
@@ -72,7 +72,7 @@ const getTabClass = (tab: Tab) => {
 const getTabTitle = (tab: Tab): string => {
   if (tab.isUnlocked()) return '';
   switch (tab.id) {
-    case 'upgrades': return 'Unlock by purchasing 1 AI Core.';
+    case 'upgrades': return 'Unlock by purchasing 10 AI Cores.';
     case 'automation': return 'Unlock by performing your first Compile & Release.';
     case 'challenges': return 'Unlock after your 2nd Compile & Release.';
     default: return 'Locked';
