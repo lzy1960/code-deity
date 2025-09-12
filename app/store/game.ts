@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs } from '../../game/configs'
+import { generatorConfigs, automatorCosts } from '../../game/configs'
 
 // #region -------- Interfaces and Types --------
 
@@ -34,7 +34,8 @@ export interface GameState {
   activeChallenge: 'none' | 'challenge1' | 'challenge2'
 
   // Automation
-  automators: Record<number, boolean>
+  purchasedAutomators: Record<number, boolean>
+  automatorStates: Record<number, boolean>
 }
 
 // #endregion
@@ -42,7 +43,7 @@ export interface GameState {
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.1',
+    saveVersion: '1.0.2',
     lastUpdateTime: Date.now(),
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
@@ -62,7 +63,8 @@ export const useGameStore = defineStore('game', {
     },
     activeChallenge: 'none',
 
-    automators: {}
+    purchasedAutomators: {},
+    automatorStates: {}
   }),
   // #endregion
 
@@ -165,10 +167,6 @@ export const useGameStore = defineStore('game', {
             return new Decimal(0)
         }
 
-        if (this.activeChallenge === 'challenge1' && id <= 4) {
-            return new Decimal(0)
-        }
-
         let production = config.baseProduction
           .times(generator.amount)
           .times(this.buy10Bonus(id))
@@ -218,7 +216,7 @@ export const useGameStore = defineStore('game', {
       // Handle automators
       if (this.isAutomationUnlocked) {
         for (let i = 8; i >= 1; i--) {
-          if (this.automators[i]) {
+          if (this.purchasedAutomators[i] && this.automatorStates[i]) {
             // Temporarily set to 'max' for auto-buy, then restore
             const originalMultiplier = this.buyMultiplier
             this.setBuyMultiplier('max')
@@ -252,9 +250,19 @@ export const useGameStore = defineStore('game', {
       this.buyMultiplier = multiplier
     },
 
+    purchaseAutomator(id: number) {
+      if (!this.isAutomationUnlocked || this.purchasedAutomators[id]) return
+      const cost = automatorCosts[id]
+      if (this.refactorPoints.gte(cost)) {
+        this.refactorPoints = this.refactorPoints.minus(cost)
+        this.purchasedAutomators[id] = true
+        this.automatorStates[id] = true // Enable by default on purchase
+      }
+    },
+
     toggleAutomator(id: number) {
-      if (!this.isAutomationUnlocked) return
-      this.automators[id] = !this.automators[id]
+      if (!this.purchasedAutomators[id]) return
+      this.automatorStates[id] = !this.automatorStates[id]
     },
     
     // --- Prestige Actions ---
@@ -289,8 +297,14 @@ export const useGameStore = defineStore('game', {
     compileAndRelease() {
       if (!this.isCompileUnlocked) return
       this.version += 1
-      // This also triggers a refactor
+      // This also triggers a refactor, but we keep automator unlocks
+      const purchased = { ...this.purchasedAutomators }
+      const states = { ...this.automatorStates }
+      
       this.refactor()
+
+      this.purchasedAutomators = purchased
+      this.automatorStates = states
     },
 
     startChallenge(challenge: 'challenge1' | 'challenge2') {
