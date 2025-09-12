@@ -9,7 +9,7 @@
           :class="getTabClass(tab)" 
           :title="getTabTitle(tab)"
         >
-          <span class="material-symbols-outlined">{{ tab.icon }}</span>
+          <Icon :name="`mdi:${tab.icon}`" class="text-2xl" />
           <p class="text-xs font-medium" :class="{ 'font-bold': isActive(tab.id) }">{{ tab.name }}</p>
         </a>
       </nav>
@@ -23,6 +23,7 @@ import { useRouter } from 'vue-router';
 
 const props = defineProps<{
   activeTab: string;
+  context: 'game' | 'account';
 }>();
 
 const emit = defineEmits(['update:activeTab']);
@@ -40,11 +41,11 @@ interface Tab {
 
 const tabs: Tab[] = [
   { id: 'generators', name: 'Generators', icon: 'dns', isUnlocked: () => true },
-  { id: 'upgrades', name: 'Upgrades', icon: 'upgrade', isUnlocked: () => gameStore.isRefactorUnlocked },
-  { id: 'stats', name: 'Stats', icon: 'bar_chart', isUnlocked: () => true },
-  { id: 'automation', name: 'Automation', icon: 'smart_toy', isUnlocked: () => gameStore.isAutomationUnlocked },
-  { id: 'challenges', name: 'Challenges', icon: 'emoji_events', isUnlocked: () => gameStore.isChallengesUnlocked },
-  { id: 'account', name: 'Account', icon: 'account_circle', isUnlocked: () => true, isExternal: true, path: '/account' },
+  { id: 'upgrades', name: 'Upgrades', icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
+  { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
+  { id: 'automation', name: 'Automation', icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
+  { id: 'challenges', name: 'Challenges', icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
+  { id: 'account', name: 'Account', icon: 'account-circle', isUnlocked: () => true, isExternal: true, path: '/account' },
 ];
 
 const isActive = (tabId: string) => props.activeTab === tabId;

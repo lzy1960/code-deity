@@ -22,7 +22,7 @@
         <div class="relative">
           <span v-if="gameStore.buyMultiplier !== 'max'" class="text-xs font-bold rounded-full bg-[#3899fa] text-white px-2 py-0.5 absolute -top-4 -right-4 border-2 border-[#21364a]">{{ gameStore.buyMultiplier }}</span>
           <span v-else class="text-xs font-bold rounded-full bg-[#3899fa] text-white px-2 py-0.5 absolute -top-4 -right-6 border-2 border-[#21364a]">Max ({{ formatNumber(buyAmount) }})</span>
-          <span class="material-symbols-outlined text-xl"> shopping_cart </span>
+          <Icon name="mdi:cart" class="text-xl" />
         </div>
         <p class="text-xs font-medium text-gray-300">Cost:</p>
         <p class="text-lg font-bold">{{ formattedCost }}</p>

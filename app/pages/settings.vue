@@ -4,7 +4,7 @@
       <header class="sticky top-0 z-10 bg-[#0d1218]/80 backdrop-blur-sm">
         <div class="flex items-center p-4">
           <button @click="$router.back()" class="flex size-10 shrink-0 items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+            <Icon name="mdi:arrow-left" class="text-2xl" />
           </button>
           <h1 class="flex-1 text-center text-xl font-bold tracking-tight pr-10">Settings</h1>
         </div>
@@ -16,14 +16,14 @@
               <p class="text-base font-medium">Theme Selection</p>
               <p class="text-[#8eadcc] text-sm">Dark</p>
             </div>
-            <span class="material-symbols-outlined text-[#8eadcc]">chevron_right</span>
+            <Icon name="mdi:chevron-right" class="text-[#8eadcc]" />
           </a>
           <a @click="showAlert('Number Notation')" class="flex items-center gap-4 bg-[#101a23] p-4 rounded-lg min-h-[72px] cursor-pointer">
             <div class="flex flex-col flex-grow justify-center">
               <p class="text-base font-medium">Number Notation</p>
               <p class="text-[#8eadcc] text-sm">Scientific</p>
             </div>
-            <span class="material-symbols-outlined text-[#8eadcc]">chevron_right</span>
+            <Icon name="mdi:chevron-right" class="text-[#8eadcc]" />
           </a>
           <div class="flex items-center gap-4 bg-[#101a23] p-4 rounded-lg min-h-[72px]">
             <div class="flex flex-col flex-grow justify-center">
@@ -40,7 +40,7 @@
           <h2 class="px-4 text-lg font-bold text-[#8eadcc]">Danger Zone</h2>
           <div class="mt-2 bg-[#101a23] p-4 rounded-lg">
             <button @click="eraseData" class="w-full flex items-center justify-center rounded-lg h-12 px-4 bg-red-600/20 text-red-400 text-base font-bold transition-colors hover:bg-red-600/30">
-              <span class="material-symbols-outlined mr-2">delete_forever</span>
+              <Icon name="mdi:delete-forever" class="mr-2" />
               <span>Erase All Data</span>
             </button>
             <p class="mt-2 text-center text-xs text-[#8eadcc]">This action is irreversible and requires multiple confirmations.</p>

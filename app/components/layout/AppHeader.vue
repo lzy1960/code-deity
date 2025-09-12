@@ -5,7 +5,7 @@
       <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
       <div class="flex w-12 items-center justify-end">
         <button @click="$router.push('/settings')" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <span class="material-symbols-outlined"> settings </span>
+          <Icon name="mdi:cog" class="text-2xl" />
         </button>
       </div>
     </div>
