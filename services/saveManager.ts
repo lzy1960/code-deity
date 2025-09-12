@@ -70,5 +70,14 @@ export const saveManager = {
       console.error('加载游戏失败:', error)
       return null
     }
+  },
+
+  async wipeData() {
+    try {
+      await db.saves.clear();
+      console.log('所有数据已清除！');
+    } catch (error) {
+      console.error('清除数据失败:', error);
+    }
   }
 }

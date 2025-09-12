@@ -16,10 +16,18 @@ export default defineNuxtPlugin(() => {
     }
   }
 
+  const wipeData = async () => {
+    await saveManager.wipeData()
+    // Replace the current history entry and navigate to the home page.
+    // This prevents the user from using the "back" button to return to the settings page.
+    window.location.replace('/')
+  }
+
   return {
     provide: {
       saveGame,
-      loadGame
+      loadGame,
+      wipeData
     }
   }
 })
