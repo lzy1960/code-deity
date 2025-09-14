@@ -15,7 +15,7 @@
         <span class="truncate">[ Confirm Refactor ]</span>
       </button>
       <p v-if="!canRefactor" class="text-sm text-gray-400 mt-2">
-        You need at least 10 AI Cores to refactor.
+        You need at least {{ unlockRequirement }} AI Cores to refactor.
       </p>
     </div>
   </div>
@@ -29,6 +29,7 @@ defineProps<{
   potentialRpGain: number;
   canRefactor: boolean;
   currentRpBonus: Decimal;
+  unlockRequirement: number;
 }>();
 
 defineEmits(['refactor']);

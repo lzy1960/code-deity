@@ -19,9 +19,13 @@
         <p class="text-gray-400">Code Power per second (CPS)</p>
         <p class="text-2xl font-bold">{{ formatNumber(gameStore.cps) }}</p>
       </div>
-      <div class="bg-gradient-to-br from-purple-600 to-blue-500 p-4 rounded-lg col-span-1 md:col-span-2 text-center">
-        <p class="text-white/90">Total Production Bonus from RP & Version</p>
+      <div class="bg-gradient-to-br from-purple-600 to-blue-500 p-4 rounded-lg col-span-1 text-center">
+        <p class="text-white/90">RP & Version Bonus</p>
         <p class="text-3xl font-bold text-white">+{{ formatNumber(gameStore.rpBonus.minus(1).times(100)) }}%</p>
+      </div>
+      <div class="p-4 rounded-lg col-span-1 text-center" :class="gameStore.architecturalOverheadPenalty < 1 ? 'bg-red-800/50' : 'bg-green-800/50'">
+        <p class="text-white/90">Architecture Efficiency</p>
+        <p class="text-3xl font-bold text-white">{{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</p>
       </div>
     </div>
 

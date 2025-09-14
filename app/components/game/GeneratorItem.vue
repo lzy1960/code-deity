@@ -8,8 +8,8 @@
         </div>
         <div class="mt-2">
           <p class="text-white text-sm font-medium leading-normal">Multiplier: x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
-          <div class="rounded-full bg-[#2f4d6a] mt-1 h-2 w-full">
-            <div class="h-2 rounded-full bg-[#3899fa]" :style="{ width: `${progressPercentage}%` }"></div>
+          <div class="rounded-full bg-[#2f4d6a] mt-1 h-2 w-full" :title="`Buy ${progressInfo.nextBonus} more to get next bonus`">
+            <div class="h-2 rounded-full bg-[#3899fa]" :style="{ width: `${progressInfo.progress}%` }"></div>
           </div>
         </div>
       </div>
@@ -32,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import Decimal from 'break_infinity.js';
 import { computed } from 'vue';
 import { useGameStore } from '~/store/game';
 import { formatNumber } from '~/utils/format';
@@ -55,12 +56,19 @@ const formattedAmount = computed(() => {
 });
 
 const formattedCost = computed(() => {
+  // If 'max' is selected and we can't afford to buy any...
+  if (gameStore.buyMultiplier === 'max' && buyAmount.value.eq(0)) {
+    // ...display the cost for a single item.
+    const costForOne = gameStore.costForAmount(props.generatorId, new Decimal(1));
+    return formatNumber(costForOne);
+  }
+  // Otherwise, display the cost for the amount we can actually buy.
   return formatNumber(cost.value);
 });
 
-const progressPercentage = computed(() => {
-  if (!generator.value) return 0;
-  return (generator.value.bought % 10) * 10;
+const progressInfo = computed(() => {
+  if (!generator.value) return { progress: 0, nextBonus: 0 };
+  return gameStore.getProgressInfo(props.generatorId);
 });
 
 const buy = () => {

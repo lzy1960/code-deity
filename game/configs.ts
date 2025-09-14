@@ -67,13 +67,8 @@ export const generatorConfigs: GeneratorConfig[] = [
   }
 ]
 
-export const automatorCosts: Record<number, Decimal> = {
-  1: new Decimal(1),
-  2: new Decimal(2),
-  3: new Decimal(5),
-  4: new Decimal(10),
-  5: new Decimal(20),
-  6: new Decimal(50),
-  7: new Decimal(100),
-  8: new Decimal(1000)
+export const prestigeThresholds = {
+  REFACTOR_UNLOCK_AI_CORES: 10,
+  COMPILE_UNLOCK_RP: 25,
+  ARCHITECTURAL_OVERHEAD_AI_CORES: 25
 }

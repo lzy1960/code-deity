@@ -7,9 +7,12 @@
         </template>
       </AppHeader>
 
-      <!-- System Message for Refactor Unlock -->
+      <!-- System Messages -->
       <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
         [系统提示]：你的代码结构过于臃肿，增长已达瓶颈。或许……你需要一次彻底的重构。
+      </div>
+      <div v-if="showOverloadSystemMessage" class="bg-red-500 text-white text-center p-2 font-bold animate-pulse">
+                [系统警告]：架构过载！您的 'AI 核心' 数量已超过最佳阈值 ({{ prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES }})。复杂的单体结构导致了效率衰减，所有算力产出都将受到指数级惩罚。建议立即进行 [代码重构] 以优化架构。
       </div>
 
       <main class="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
@@ -41,18 +44,49 @@
                 <a @click="upgradesSubTab = 'refactor'" class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center cursor-pointer" :class="upgradesSubTab === 'refactor' ? 'border-b-2 border-b-[#3899fa] text-white' : 'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors'">
                   <p class="text-base font-bold">Refactor</p>
                 </a>
-                <a v-if="gameStore.isCompileUnlocked" @click="upgradesSubTab = 'deploy'" class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center cursor-pointer" :class="upgradesSubTab === 'deploy' ? 'border-b-2 border-b-[#3899fa] text-white' : 'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors'">
-                  <p class="text-base font-bold">Deploy</p>
+                <a 
+                  v-if="gameStore.isRefactorUnlocked" 
+                  @click="gameStore.isCompileUnlocked ? upgradesSubTab = 'deploy' : null" 
+                  class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center"
+                  :class="{
+                    'cursor-pointer': gameStore.isCompileUnlocked,
+                    'cursor-not-allowed': !gameStore.isCompileUnlocked,
+                    'border-b-2 border-b-[#3899fa] text-white': upgradesSubTab === 'deploy',
+                    'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors': upgradesSubTab !== 'deploy'
+                  }"
+                  :title="!gameStore.isCompileUnlocked ? `Requires ${prestigeThresholds.COMPILE_UNLOCK_RP} RP to unlock` : ''"
+                >
+                  <p class="text-base font-bold flex items-center">
+                    Deploy
+                    <Icon v-if="!gameStore.isCompileUnlocked" name="mdi:lock" class="ml-1 text-gray-500" />
+                  </p>
                 </a>
               </div>
             </div>
 
             <div v-show="upgradesSubTab === 'refactor'">
-              <RefactorSection :potential-rp-gain="gameStore.refactorGain.toNumber()" :can-refactor="gameStore.canRefactor" :current-rp-bonus="gameStore.rpBonus" @refactor="gameStore.refactor" />
+              <RefactorSection 
+                :potential-rp-gain="gameStore.refactorGain.toNumber()" 
+                :can-refactor="gameStore.canRefactor" 
+                :current-rp-bonus="gameStore.rpBonus" 
+                :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
+                @refactor="gameStore.refactor" 
+              />
             </div>
             
-            <div v-if="gameStore.isCompileUnlocked" v-show="upgradesSubTab === 'deploy'">
-              <CompileSection :version="gameStore.version" @compile-and-release="gameStore.compileAndRelease" />
+            <div v-if="gameStore.isRefactorUnlocked" v-show="upgradesSubTab === 'deploy'">
+              <CompileSection 
+                v-if="gameStore.isCompileUnlocked" 
+                :version="gameStore.version" 
+                :cost="gameStore.compileCost"
+                :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
+                @compile-and-release="gameStore.compileAndRelease" 
+              />
+              <div v-else class="text-center text-gray-400 p-8">
+                <Icon name="mdi:lock-outline" class="text-5xl mb-4" />
+                <h3 class="text-xl font-bold">Unlock Condition</h3>
+                <p class="text-lg">You need to have <span class="font-bold text-green-400">{{ prestigeThresholds.COMPILE_UNLOCK_RP }}</span> Refactor Points (RP) to unlock this feature.</p>
+              </div>
             </div>
           </div>
 
@@ -81,6 +115,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useGameStore } from '~/store/game';
+import { prestigeThresholds } from '~~/game/configs';
 import AppHeader from '~/components/layout/AppHeader.vue';
 import AppFooter from '~/components/layout/AppFooter.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
@@ -97,6 +132,8 @@ const activeTab = ref('generators');
 const upgradesSubTab = ref('refactor');
 const showRefactorSystemMessage = ref(false);
 const hasShownRefactorMessage = ref(false);
+const showOverloadSystemMessage = ref(false);
+const hasShownOverloadMessage = ref(false);
 
 const isGeneratorSectionUnlocked = computed(() => {
   return gameStore.isGeneratorUnlocked(1);
@@ -125,6 +162,16 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   }
 });
 
+watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
+  if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
+    showOverloadSystemMessage.value = true;
+    hasShownOverloadMessage.value = true;
+    setTimeout(() => {
+      showOverloadSystemMessage.value = false;
+    }, 8000);
+  }
+});
+
 watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
   gameStore.setBuyMultiplier('x1')
 })
@@ -132,6 +179,8 @@ watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
 watch(() => gameStore.refactorCount, (newCount, oldCount) => {
   if (newCount > oldCount) {
     activeTab.value = 'generators';
+    // Reset message flags on refactor
+    hasShownOverloadMessage.value = false;
   }
 });
 </script>

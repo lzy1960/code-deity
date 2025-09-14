@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs, automatorCosts } from '../../game/configs'
+import { generatorConfigs, prestigeThresholds } from '~~/game/configs'
 
 // #region -------- Interfaces and Types --------
 
@@ -34,7 +34,6 @@ export interface GameState {
   activeChallenge: 'none' | 'challenge1' | 'challenge2'
 
   // Automation
-  purchasedAutomators: Record<number, boolean>
   automatorStates: Record<number, boolean>
 }
 
@@ -43,7 +42,7 @@ export interface GameState {
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.2',
+    saveVersion: '1.0.4', // version up for state change
     lastUpdateTime: Date.now(),
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
@@ -63,7 +62,6 @@ export const useGameStore = defineStore('game', {
     },
     activeChallenge: 'none',
 
-    purchasedAutomators: {},
     automatorStates: {}
   }),
   // #endregion
@@ -78,18 +76,26 @@ export const useGameStore = defineStore('game', {
     },
     isRefactorUnlocked: state => {
       const aiCore = state.generators.find(g => g.id === 8)
-      return (aiCore?.bought ?? 0) >= 10 || state.refactorCount > 0
+      return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES || state.refactorCount > 0
     },
     canRefactor: state => {
       const aiCore = state.generators.find(g => g.id === 8)
-      return (aiCore?.bought ?? 0) >= 10
+      return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES
     },
-    isCompileUnlocked: state => state.refactorCount >= 5,
+    isCompileUnlocked: state => state.refactorPoints.gte(prestigeThresholds.COMPILE_UNLOCK_RP) || state.version > 0,
     isAutomationUnlocked: state => state.version > 0,
     isChallengesUnlocked: state => state.version >= 2,
     isMultiplierUnlocked: state => {
       const moduleGenerator = state.generators.find(g => g.id === 4)
       return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
+    },
+
+    // --- Soft Cap: Architectural Overhead ---
+    architecturalOverheadPenalty() {
+      const aiCores = this.generators.find(g => g.id === 8)!.bought
+      if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
+      // Penalty = 1 / (1 + 0.2 * log10(AI_Cores_Owned - 24))
+      return 1 / (1 + 0.2 * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
     },
 
     // --- Core Production Calculation ---
@@ -139,12 +145,44 @@ export const useGameStore = defineStore('game', {
       }
     },
 
+    getBuyBonus() {
+      return (bought: number): number => {
+        let bonuses = 0
+        // 0-100: every 10
+        bonuses += Math.min(10, Math.floor(Math.max(0, bought) / 10))
+        // 101-1000: every 20
+        bonuses += Math.min(45, Math.floor(Math.max(0, bought - 100) / 20))
+        // 1001-5000: every 50
+        bonuses += Math.min(80, Math.floor(Math.max(0, bought - 1000) / 50))
+        // 5001+: every 100
+        bonuses += Math.floor(Math.max(0, bought - 5000) / 100)
+        return bonuses
+      }
+    },
+
     buy10Bonus() {
       return (id: number): Decimal => {
         const generator = this.generators.find(g => g.id === id)!
-        const bonusPer10 = this.challengeCompletions.challenge1 ? 2.2 : 2
-        const setsOf10 = Math.floor(generator.bought / 10)
-        return Decimal.pow(bonusPer10, setsOf10)
+        const bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
+        const bonusLevels = this.getBuyBonus(generator.bought)
+        return Decimal.pow(bonusPerLevel, bonusLevels)
+      }
+    },
+
+    getProgressInfo() {
+      return (id: number): { progress: number, nextBonus: number } => {
+        const generator = this.generators.find(g => g.id === id)!
+        const bought = generator.bought
+        if (bought < 100) {
+          return { progress: (bought % 10) / 10 * 100, nextBonus: 10 - (bought % 10) }
+        }
+        if (bought < 1000) {
+          return { progress: ((bought - 100) % 20) / 20 * 100, nextBonus: 20 - ((bought - 100) % 20) }
+        }
+        if (bought < 5000) {
+          return { progress: ((bought - 1000) % 50) / 50 * 100, nextBonus: 50 - ((bought - 1000) % 50) }
+        }
+        return { progress: ((bought - 5000) % 100) / 100 * 100, nextBonus: 100 - ((bought - 5000) % 100) }
       }
     },
     
@@ -177,7 +215,12 @@ export const useGameStore = defineStore('game', {
     },
     
     cps(): Decimal {
-        return this.generatorProduction(1);
+      let finalCps = this.generatorProduction(1)
+      const penalty = this.architecturalOverheadPenalty
+      if (penalty < 1) {
+        finalCps = finalCps.pow(penalty)
+      }
+      return finalCps
     },
 
     // --- Prestige Gain Calculation ---
@@ -187,6 +230,10 @@ export const useGameStore = defineStore('game', {
         Decimal.pow(this.currency.log10() / 20, 1.5)
       ).times(this.challenge2Bonus)
       return gain
+    },
+
+    compileCost(): Decimal {
+      return new Decimal(10).times(Math.pow(this.version + 1, 2))
     }
   },
   // #endregion
@@ -211,12 +258,18 @@ export const useGameStore = defineStore('game', {
           this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1].times(diff));
       }
       
-      this.currency = this.currency.plus(productions[0].times(diff));
+      // Apply Architectural Overhead penalty to final CP gain
+      let cpGain = productions[0]
+      const penalty = this.architecturalOverheadPenalty
+      if (penalty < 1) {
+        cpGain = cpGain.pow(penalty)
+      }
+      this.currency = this.currency.plus(cpGain.times(diff));
 
       // Handle automators
       if (this.isAutomationUnlocked) {
         for (let i = 8; i >= 1; i--) {
-          if (this.purchasedAutomators[i] && this.automatorStates[i]) {
+          if (this.automatorStates[i]) {
             // Temporarily set to 'max' for auto-buy, then restore
             const originalMultiplier = this.buyMultiplier
             this.setBuyMultiplier('max')
@@ -250,18 +303,7 @@ export const useGameStore = defineStore('game', {
       this.buyMultiplier = multiplier
     },
 
-    purchaseAutomator(id: number) {
-      if (!this.isAutomationUnlocked || this.purchasedAutomators[id]) return
-      const cost = automatorCosts[id]
-      if (this.refactorPoints.gte(cost)) {
-        this.refactorPoints = this.refactorPoints.minus(cost)
-        this.purchasedAutomators[id] = true
-        this.automatorStates[id] = true // Enable by default on purchase
-      }
-    },
-
     toggleAutomator(id: number) {
-      if (!this.purchasedAutomators[id]) return
       this.automatorStates[id] = !this.automatorStates[id]
     },
     
@@ -296,14 +338,17 @@ export const useGameStore = defineStore('game', {
 
     compileAndRelease() {
       if (!this.isCompileUnlocked) return
+      const cost = this.compileCost
+      if (this.refactorPoints.lt(cost)) return
+
+      this.refactorPoints = this.refactorPoints.minus(cost)
       this.version += 1
+      
       // This also triggers a refactor, but we keep automator unlocks
-      const purchased = { ...this.purchasedAutomators }
       const states = { ...this.automatorStates }
       
       this.refactor()
 
-      this.purchasedAutomators = purchased
       this.automatorStates = states
     },
 
