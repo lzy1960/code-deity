@@ -4,6 +4,7 @@ import { useGameStore } from '~/store/game'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
+import { useEventListener } from '@vueuse/core'
 
 const gameStore = useGameStore()
 const { $saveGame, $loadGame } = useNuxtApp() as any
@@ -15,6 +16,19 @@ const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
 onConfirm(async () => {
   gameStore.applyOfflineGains()
   await $saveGame() // Save state immediately after applying gains
+})
+
+// 7. Add a global event listeners to save the game when the user leaves the page.
+// Handles tab switching, minimizing
+useEventListener(document, 'visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    $saveGame()
+  }
+})
+// Handles tab closing, page refresh, navigating away
+useEventListener(window, 'pagehide', () => {
+  debugger
+  $saveGame()
 })
 
 onMounted(async () => {
