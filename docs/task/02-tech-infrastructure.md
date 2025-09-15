@@ -1,5 +1,9 @@
 # 任务：技术与基础设施 (Priority: Medium)
 
+- [ ] **集成 Capacitor 实现原生打包 (Priority: Highest)**
+    - **现状:** 项目为纯 Web 应用。
+    - **任务:** 集成 Capacitor，将 Nuxt 应用打包为可在 iOS 和 Android 上运行的原生 App。
+
 - [x] **添加开发者调试菜单**
     - **现状:** ~~无~~ **已完成。**
     - **任务:** ~~创建一个悬浮菜单，用于直接修改CP、RP等核心数值，方便测试。~~ **已创建 `DebugMenu.vue` 组件，并添加 `_dev_` actions 到 `game.ts`。**

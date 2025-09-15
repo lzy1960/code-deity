@@ -108,7 +108,7 @@
       </main>
     </div>
 
-    <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" />
+    <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" context="game" />
   </div>
 </template>
 
