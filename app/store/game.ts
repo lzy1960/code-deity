@@ -94,8 +94,8 @@ export const useGameStore = defineStore('game', {
     architecturalOverheadPenalty() {
       const aiCores = this.generators.find(g => g.id === 8)!.bought
       if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
-      // Penalty = 1 / (1 + 0.2 * log10(AI_Cores_Owned - 24))
-      return 1 / (1 + 0.2 * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
+      // Penalty = 1 / (1 + 0.1 * log10(AI_Cores_Owned - 24))
+      return 1 / (1 + 0.1 * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
     },
 
     // --- Core Production Calculation ---
@@ -218,7 +218,7 @@ export const useGameStore = defineStore('game', {
       let finalCps = this.generatorProduction(1)
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
-        finalCps = finalCps.pow(penalty)
+        finalCps = finalCps.times(penalty)
       }
       return finalCps
     },
@@ -262,7 +262,7 @@ export const useGameStore = defineStore('game', {
       let cpGain = productions[0]
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
-        cpGain = cpGain.pow(penalty)
+        cpGain = cpGain.times(penalty)
       }
       this.currency = this.currency.plus(cpGain.times(diff));
 
