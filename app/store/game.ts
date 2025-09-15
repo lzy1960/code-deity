@@ -17,6 +17,11 @@ export interface ChallengeCompletion {
   challenge2: boolean
 }
 
+export interface OfflineGains {
+  cp: Decimal; // 离线期间获得的总CP
+  diff: number; // 离线了多少秒
+}
+
 export interface GameState {
   saveVersion: string
   lastUpdateTime: number
@@ -35,6 +40,9 @@ export interface GameState {
 
   // Automation
   automatorStates: Record<number, boolean>
+
+  // Offline Gains
+  pendingOfflineGains: OfflineGains | null
 }
 
 // #endregion
@@ -62,7 +70,8 @@ export const useGameStore = defineStore('game', {
     },
     activeChallenge: 'none',
 
-    automatorStates: {}
+    automatorStates: {},
+    pendingOfflineGains: null
   }),
   // #endregion
 
@@ -234,6 +243,10 @@ export const useGameStore = defineStore('game', {
 
     compileCost(): Decimal {
       return new Decimal(10).times(Math.pow(this.version + 1, 2))
+    },
+
+    hasPendingOfflineGains: (state): boolean => {
+      return state.pendingOfflineGains !== null
     }
   },
   // #endregion
@@ -369,6 +382,69 @@ export const useGameStore = defineStore('game', {
         this.gameLoop()
       }, 50)
     },
+
+    calculateOfflineProgress() {
+      const now = Date.now()
+      let diff = (now - this.lastUpdateTime) / 1000
+
+      // Offline time is less than 10 seconds, do nothing.
+      if (diff < 10) {
+        this.lastUpdateTime = now // Still update time to prevent small gaps from accumulating
+        return false
+      }
+
+      // Per production.md, cap offline time to 1 hour (3600 seconds)
+      const effectiveDiff = Math.min(diff, 3600)
+
+      // --- Simulate gains for the effectiveDiff ---
+      // This is a simplified simulation. A full simulation would be too slow.
+      // We take the production rate at the start of the offline period and multiply it.
+      const tempGens = this.generators.map(g => ({ ...g, amount: new Decimal(g.amount) }))
+      const productions: Decimal[] = []
+      for (let i = 8; i >= 1; i--) {
+        const config = this.generatorConfig(i)
+        const generator = tempGens.find(g => g.id === i)!
+        let production = config.baseProduction
+          .times(generator.amount)
+          .times(this.buy10Bonus(i))
+          .times(this.rpBonus)
+        if (this.activeChallenge === 'challenge1' && i <= 4) {
+          production = new Decimal(0)
+        }
+        productions[i - 1] = production
+      }
+
+      for (let i = 8; i > 1; i--) {
+        tempGens[i - 2]!.amount = tempGens[i - 2]!.amount.plus(productions[i - 1]!.times(effectiveDiff))
+      }
+
+      let cpGain = productions[0]!
+      const penalty = this.architecturalOverheadPenalty
+      if (penalty < 1) {
+        cpGain = cpGain.times(penalty) // Use multiplication as per our design change
+      }
+      
+      const totalCpGained = this.currency.plus(cpGain.times(effectiveDiff)).minus(this.currency)
+
+      if (totalCpGained.gt(0)) {
+        this.pendingOfflineGains = {
+          cp: totalCpGained,
+          diff: effectiveDiff
+        }
+        // IMPORTANT: We do NOT update lastUpdateTime here. It will be updated when gains are applied.
+        return true
+      }
+
+      return false
+    },
+
+    applyOfflineGains() {
+      if (!this.pendingOfflineGains) return
+
+      this.currency = this.currency.plus(this.pendingOfflineGains.cp)
+      this.lastUpdateTime = Date.now() // Rer-calculate from now
+      this.pendingOfflineGains = null
+    }
   }
   // #endregion
 })
