@@ -556,6 +556,39 @@ export const useGameStore = defineStore('game', {
       this._resetForPrestige()
     },
 
+    hardReset() {
+      // Manually reset all state properties to their initial values
+      // This is more robust than this.$reset() and avoids potential issues.
+      this.saveVersion = '1.0.5'
+      this.lastUpdateTime = Date.now()
+      this.lastCloudSync = null
+      this.currency = new Decimal(0)
+      this.generators = generatorConfigs.map(config => ({
+        id: config.id,
+        amount: new Decimal(0),
+        bought: 0
+      }))
+      this.buyMultiplier = 'x1'
+      this.refactorPoints = new Decimal(0)
+      this.refactorCount = 0
+      this.version = 0
+      this.singularityPoints = new Decimal(0)
+      this.singularityCount = 0
+      this.challengeCompletions = {
+        challenge1: false,
+        challenge2: false,
+        challenge3: false,
+        challenge4: false
+      }
+      this.activeChallenge = 'none'
+      this.automatorStates = {}
+      this.pendingOfflineGains = null
+      this.unlockedNarratives = []
+      this.narrativeQueue = []
+
+      console.log('Game state has been manually reset to initial values.')
+    },
+
     startGameLoop() {
       setInterval(() => {
         this.gameLoop()

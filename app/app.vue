@@ -5,11 +5,18 @@ import { useAuthStore } from '~/store/auth'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
+import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
 import { useEventListener } from '@vueuse/core'
+
+import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
+import { App } from '@capacitor/app';
 
 const gameStore = useGameStore()
 const authStore = useAuthStore()
 const { $loadGame, $saveGameLocal } = useNuxtApp() as any
+const exitConfirmationModal = useExitConfirmationModal()
+const router = useRouter()
+const route = useRoute()
 
 // Get user state from the module's composable
 const user = useSupabaseUser()
@@ -61,6 +68,32 @@ onMounted(async () => {
   setInterval(() => {
     $saveGameLocal()
   }, 15000)
+
+  // 7. Listen for the hardware back button on Android
+  App.addListener('backButton', () => {
+    if (route.path !== '/') {
+      // If we are not on the main page, navigate back.
+      router.back();
+    } else {
+      // If we are on the main page, show the exit confirmation.
+      exitConfirmationModal.show();
+    }
+  });
+
+  // 8. Listen for app state changes (background/foreground)
+  App.addListener('appStateChange', async (state) => {
+    if (state.isActive) {
+      // App came to foreground, check for offline progress
+      await $loadGame();
+      gameStore.calculateOfflineProgress();
+      if (gameStore.hasPendingOfflineGains) {
+        reveal();
+      }
+    } else {
+      // App went to background, ensure game is saved
+      $saveGameLocal();
+    }
+  });
 })
 </script>
 
@@ -69,6 +102,7 @@ onMounted(async () => {
     <NuxtPage />
     <GameNarrativeManager />
     <DevDebugMenu v-if="isDev" />
+    <ExitConfirmationModal />
 
     <!-- 
       The modal component is now a generic frame.

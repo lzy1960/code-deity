@@ -45,7 +45,7 @@ const tabs: Tab[] = [
   { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
   { id: 'automation', name: 'Automation', icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
   { id: 'challenges', name: 'Challenges', icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
-  { id: 'account', name: 'Account', icon: 'account-circle', isUnlocked: () => true, isExternal: true, path: '/account' },
+  
 ];
 
 const isActive = (tabId: string) => props.activeTab === tabId;

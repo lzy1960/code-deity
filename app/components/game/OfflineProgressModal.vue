@@ -1,7 +1,7 @@
 <template>
   <teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="isRevealed" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <Transition name="modal-bounce">
+      <div v-if="isRevealed" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-[#1C2836] rounded-2xl shadow-xl w-full max-w-md text-white text-center p-8 border-2 border-[#3899fa]/50">
           <!-- Slot for any content -->
           <slot />
@@ -20,23 +20,24 @@ defineProps<{
 </script>
 
 <style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
+.modal-bounce-enter-active,
+.modal-bounce-leave-active {
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.modal-bounce-enter-from,
+.modal-bounce-leave-to {
   opacity: 0;
 }
 
-.modal-fade-enter-active .bg-\[\#1C2836\],
-.modal-fade-leave-active .bg-\[\#1C2836\] {
-  transition: transform 0.3s ease;
+.modal-bounce-enter-active .bg-\[\#1C2836\],
+.modal-bounce-leave-active .bg-\[\#1C2836\] {
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.modal-fade-enter-from .bg-\[\#1C2836\],
-.modal-fade-leave-to .bg-\[\#1C2836\] {
-  transform: scale(0.95);
+.modal-bounce-enter-from .bg-\[\#1C2836\],
+.modal-bounce-leave-to .bg-\[\#1C2836\] {
+  transform: scale(0.8);
+  opacity: 0;
 }
 </style>

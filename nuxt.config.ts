@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     head: {
       meta: [
         {
-          name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
+          name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
         }
       ]
     }
@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     // url: process.env.SUPABASE_URL,
     // key: process.env.SUPABASE_KEY,
     redirectOptions: {
-      login: '/account',
+      login: '/settings',
       callback: '/confirm', // Supabase will redirect here after login
       exclude: ['/'], // Allow visiting the main page without being logged in
     }

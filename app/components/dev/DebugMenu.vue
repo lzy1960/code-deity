@@ -10,8 +10,11 @@ const isExpanded = ref(false)
 
 // Drag and drop functionality
 const el = ref<HTMLElement | null>(null)
+const handle = ref<HTMLElement | null>(null) // Create a ref for the handle
+
 const { style } = useDraggable(el, {
   initialValue: { x: window.innerWidth - 250, y: 40 },
+  handle: handle, // Pass the handle ref to useDraggable
 })
 
 // Input values - initialize them once
@@ -34,9 +37,9 @@ function refreshValues() {
 </script>
 
 <template>
-  <div ref="el" :style="style" style="position: fixed; cursor: move" class="bg-gray-800/80 backdrop-blur-md rounded-lg shadow-2xl text-white font-mono text-sm z-[2000]">
+  <div ref="el" :style="style" style="position: fixed;" class="bg-gray-800/80 backdrop-blur-md rounded-lg shadow-2xl text-white font-mono text-sm z-[2000]">
     <!-- Handle for dragging -->
-    <div class="handle p-2 border-b border-white/10 flex items-center justify-between">
+    <div ref="handle" class="handle p-2 border-b border-white/10 flex items-center justify-between" style="touch-action: none;">
       <span class="font-bold">Dev Menu</span>
       <div>
         <button @click="refreshValues" title="Refresh values" class="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-xs mr-2">

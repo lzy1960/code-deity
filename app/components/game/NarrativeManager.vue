@@ -78,7 +78,7 @@ function hideNarrative() {
 <style scoped>
 .narrative-container {
   position: fixed;
-  top: 20px;
+  top: calc(20px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
@@ -184,4 +184,6 @@ function hideNarrative() {
   opacity: 0;
   transform: translateY(-20px) scale(0.95);
 }
+
+
 </style>

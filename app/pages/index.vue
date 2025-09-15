@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
+  <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'>
     <div class="flex-grow flex flex-col">
       <AppHeader :title="headerTitle">
         <template #actions>
@@ -32,7 +32,7 @@
                 v-for="generator in unlockedGenerators"
                 :key="generator.id"
                 :generator-id="generator.id"
-                @buy="gameStore.buyGenerator(generator.id)"
+                @buy="buyGenerator(generator.id)"
               />
             </div>
           </div>
@@ -125,6 +125,7 @@ import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const gameStore = useGameStore();
 
@@ -150,6 +151,10 @@ const headerTitle = computed(() => {
   // Capitalize first letter
   return activeTab.value.charAt(0).toUpperCase() + activeTab.value.slice(1);
 });
+
+const buyGenerator = (id: number) => {
+  gameStore.buyGenerator(id);
+};
 
 watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   if (isUnlocked && !hasShownRefactorMessage.value) {
@@ -181,6 +186,25 @@ watch(() => gameStore.refactorCount, (newCount, oldCount) => {
     activeTab.value = 'generators';
     // Reset message flags on refactor
     hasShownOverloadMessage.value = false;
+  }
+});
+
+// Watch for unlocks to provide haptic feedback
+watch(() => unlockedGenerators.value.length, (newLength, oldLength) => {
+  if (newLength > oldLength && oldLength > 0) { // oldLength > 0 to avoid vibration on initial load
+    Haptics.impact({ style: ImpactStyle.Light });
+  }
+});
+
+watch(() => gameStore.isRefactorUnlocked, (isUnlocked, wasUnlocked) => {
+  if (isUnlocked && !wasUnlocked) {
+    Haptics.impact({ style: ImpactStyle.Medium });
+  }
+});
+
+watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
+  if (isUnlocked && !wasUnlocked) {
+    Haptics.impact({ style: ImpactStyle.Medium });
   }
 });
 </script>

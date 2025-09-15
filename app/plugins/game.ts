@@ -35,7 +35,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   const wipeData = async () => {
     await saveManager.wipeData(authStore.user, supabase)
-    window.location.replace('/')
+    // By calling the store's own hardReset action, we ensure all state is
+    // cleared consistently and the logic is centralized within the store.
+    gameStore.hardReset()
   }
 
   return {
