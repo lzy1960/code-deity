@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useGameStore } from '~/store/game'
+import { useAuthStore } from '~/store/auth'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import { useEventListener } from '@vueuse/core'
 
 const gameStore = useGameStore()
+const authStore = useAuthStore()
 const { $saveGame, $loadGame } = useNuxtApp() as any
+
+// Get user state from the module's composable
+const user = useSupabaseUser()
+
+// Watch for changes in the user state and update our auth store
+watch(user, (newUser) => {
+  authStore.setUser(newUser)
+}, { immediate: true })
+
 
 const isDev = computed(() => process.env.NODE_ENV === 'development')
 

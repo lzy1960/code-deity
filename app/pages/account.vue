@@ -3,12 +3,25 @@
     <div class="flex-1">
       <AppHeader title="Account" />
       <div class="p-4 space-y-6">
-        <div class="bg-[#1C2836] rounded-lg p-6 text-center">
+
+        <!-- Logged in state -->
+        <div v-if="authStore.isLoggedIn" class="bg-[#1C2836] rounded-lg p-6 text-center space-y-4">
+          <p class="text-gray-300">Logged in as:</p>
+          <p class="text-lg font-bold text-white">{{ authStore.user?.email }}</p>
+          <button @click="logout" class="w-full flex items-center justify-center gap-3 bg-red-600/80 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600/100 transition-colors">
+            <Icon name="mdi:logout" class="h-6 w-6" />
+            <span>Log Out</span>
+          </button>
+        </div>
+
+        <!-- Logged out state -->
+        <div v-else class="bg-[#1C2836] rounded-lg p-6 text-center">
           <button @click="loginWithGoogle" class="w-full flex items-center justify-center gap-3 bg-[#3899fa] text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-colors">
             <Icon name="mdi:google" class="h-6 w-6" />
             <span>Log in with Google Account</span>
           </button>
         </div>
+
         <div class="bg-[#1C2836] rounded-lg p-6">
           <div class="flex items-center justify-between">
             <div>
@@ -39,10 +52,25 @@
 <script setup lang="ts">
 import AppHeader from '~/components/layout/AppHeader.vue';
 import AppFooter from '~/components/layout/AppFooter.vue';
+import { useAuthStore } from '~/store/auth';
 
-const loginWithGoogle = () => {
-  alert('Login with Google - Not yet implemented.');
-  // Future implementation: call Supabase auth
+const authStore = useAuthStore();
+const supabase = useSupabaseClient();
+
+const loginWithGoogle = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+  });
+  if (error) {
+    alert('Error logging in: ' + error.message);
+  }
+};
+
+const logout = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    alert('Error logging out: ' + error.message);
+  }
 };
 
 const syncNow = () => {
