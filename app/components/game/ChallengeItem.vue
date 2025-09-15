@@ -16,7 +16,7 @@
         <Icon name="ph:x-circle-bold" class="mr-1" />
         退出挑战
       </button>
-      <button v-else @click="$emit('start')" class="w-full rounded-lg px-4 py-2.5 text-sm font-bold bg-blue-600/80 text-white hover:bg-blue-600/100 border border-blue-500 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-blue-600/20">
+      <button v-else @click="$emit('start')" :disabled="isAnyChallengeActive" class="w-full rounded-lg px-4 py-2.5 text-sm font-bold bg-blue-600/80 text-white hover:bg-blue-600/100 border border-blue-500 transition-all duration-200 transform hover:scale-105 shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none">
         <Icon name="ph:play-circle-bold" class="mr-1" />
         开始挑战
       </button>
@@ -34,6 +34,7 @@ const props = defineProps<{
   reward: string;
   isCompleted: boolean;
   isActive: boolean;
+  isAnyChallengeActive: boolean;
 }>();
 
 defineEmits(['start', 'exit']);
@@ -41,6 +42,7 @@ defineEmits(['start', 'exit']);
 const containerClass = computed(() => {
   if (props.isCompleted) return 'bg-white/5 border border-green-500/30';
   if (props.isActive) return 'bg-blue-900/50 ring-2 ring-blue-500 shadow-2xl shadow-blue-500/20';
+  if (props.isAnyChallengeActive) return 'bg-white/5 border border-white/10 opacity-50 cursor-not-allowed';
   return 'bg-white/5 border border-white/10';
 });
 </script>

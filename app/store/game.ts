@@ -15,6 +15,8 @@ export interface Generator {
 export interface ChallengeCompletion {
   challenge1: boolean
   challenge2: boolean
+  challenge3: boolean
+  challenge4: boolean
 }
 
 export interface OfflineGains {
@@ -36,7 +38,7 @@ export interface GameState {
 
   // Challenges
   challengeCompletions: ChallengeCompletion
-  activeChallenge: 'none' | 'challenge1' | 'challenge2'
+  activeChallenge: 'none' | 'challenge1' | 'challenge2' | 'challenge3' | 'challenge4'
 
   // Automation
   automatorStates: Record<number, boolean>
@@ -70,7 +72,9 @@ export const useGameStore = defineStore('game', {
 
     challengeCompletions: {
       challenge1: false,
-      challenge2: false
+      challenge2: false,
+      challenge3: false,
+      challenge4: false
     },
     activeChallenge: 'none',
 
@@ -119,6 +123,26 @@ export const useGameStore = defineStore('game', {
       return generatorConfigs.find(c => c.id === id)!
     },
 
+    effectiveGeneratorConfig() {
+      return (id: number) => {
+        const originalConfig = this.generatorConfig(id)
+        // Must be a new object to avoid mutation
+        const effectiveConfig = { ...originalConfig }
+
+        // Apply permanent rewards first
+        if (this.challengeCompletions.challenge4) {
+          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.95)
+        }
+
+        // Apply temporary challenge restrictions
+        if (this.activeChallenge === 'challenge4') {
+          effectiveConfig.costMultiplier = effectiveConfig.costMultiplier.plus(0.02)
+        }
+
+        return effectiveConfig
+      }
+    },
+
     // --- Cost & Amount Calculation for Multi-buy ---
     buyAmount() {
       return (id: number): Decimal => {
@@ -126,7 +150,7 @@ export const useGameStore = defineStore('game', {
           return new Decimal(parseInt(this.buyMultiplier.slice(1)))
         }
         
-        const config = this.generatorConfig(id)
+        const config = this.effectiveGeneratorConfig(id)
         const generator = this.generators.find(g => g.id === id)!
         const r = config.costMultiplier
         const k = generator.bought
@@ -144,7 +168,7 @@ export const useGameStore = defineStore('game', {
     costForAmount() {
       return (id: number, amount: Decimal): Decimal => {
         if (amount.eq(0)) return new Decimal(0)
-        const config = this.generatorConfig(id)
+        const config = this.effectiveGeneratorConfig(id)
         const generator = this.generators.find(g => g.id === id)!
         const r = config.costMultiplier
         const k = generator.bought
@@ -164,10 +188,16 @@ export const useGameStore = defineStore('game', {
     getBuyBonus() {
       return (bought: number): number => {
         let bonuses = 0
-        // 0-100: every 10
-        bonuses += Math.min(10, Math.floor(Math.max(0, bought) / 10))
-        // 101-1000: every 20
-        bonuses += Math.min(45, Math.floor(Math.max(0, bought - 100) / 20))
+        const tier1BonusCap = this.challengeCompletions.challenge3 ? 12 : 10
+        const tier1MaxBought = tier1BonusCap * 10
+
+        // 0-100 (or 120 with reward): every 10
+        bonuses += Math.min(tier1BonusCap, Math.floor(Math.max(0, bought) / 10))
+        
+        // 101 (or 121) - 1000: every 20
+        const tier2BonusCount = Math.floor(Math.max(0, bought - tier1MaxBought) / 20)
+        bonuses += Math.min(45, tier2BonusCount) // This cap might need adjustment if tier1MaxBought changes, but for now it's a simple extension.
+        
         // 1001-5000: every 50
         bonuses += Math.min(80, Math.floor(Math.max(0, bought - 1000) / 50))
         // 5001+: every 100
@@ -178,6 +208,14 @@ export const useGameStore = defineStore('game', {
 
     buy10Bonus() {
       return (id: number): Decimal => {
+        // Apply challenge restrictions first
+        if (this.activeChallenge === 'challenge1' && id <= 7) {
+          return new Decimal(1)
+        }
+        if (this.activeChallenge === 'challenge3') {
+          return new Decimal(1)
+        }
+
         const generator = this.generators.find(g => g.id === id)!
         const bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
         const bonusLevels = this.getBuyBonus(generator.bought)
@@ -203,12 +241,16 @@ export const useGameStore = defineStore('game', {
     },
     
     rpBonus(): Decimal {
+      if (this.activeChallenge === 'challenge2') return new Decimal(1)
+
       const baseBonus = this.refactorPoints.times(0.1)
       const versionBonus = new Decimal(1).plus(this.version * 0.2)
       return new Decimal(1).plus(baseBonus.times(versionBonus))
     },
 
     globalMultiplier(): Decimal {
+      if (this.activeChallenge === 'challenge2') return new Decimal(1)
+
       let totalBonus = new Decimal(0)
       for (const gen of this.generators) {
         const config = this.generatorConfig(gen.id)
@@ -225,16 +267,12 @@ export const useGameStore = defineStore('game', {
 
     generatorProduction() {
       return (id: number): Decimal => {
-        const config = this.generatorConfig(id)
+        const config = this.effectiveGeneratorConfig(id)
         const generator = this.generators.find(g => g.id === id)!
 
-        if (this.activeChallenge === 'challenge1' && id <= 4) {
-            return new Decimal(0)
-        }
-
-        let production = config.baseProduction
+        const production = config.baseProduction
           .times(generator.amount)
-          .times(this.buy10Bonus(id))
+          .times(this.buy10Bonus(id)) // This now contains the challenge logic
           .times(this.rpBonus)
           .times(this.globalMultiplier)
 
@@ -361,6 +399,15 @@ export const useGameStore = defineStore('game', {
       if (this.activeChallenge === 'challenge1') {
         this.challengeCompletions.challenge1 = true
         this.activeChallenge = 'none' // Auto-exit challenge on completion
+      } else if (this.activeChallenge === 'challenge2') {
+        this.challengeCompletions.challenge2 = true
+        this.activeChallenge = 'none'
+      } else if (this.activeChallenge === 'challenge3') {
+        this.challengeCompletions.challenge3 = true
+        this.activeChallenge = 'none'
+      } else if (this.activeChallenge === 'challenge4') {
+        this.challengeCompletions.challenge4 = true
+        this.activeChallenge = 'none'
       }
 
       if (gain.gt(0)) {
@@ -389,7 +436,7 @@ export const useGameStore = defineStore('game', {
       this.checkNarrativeMilestones()
     },
 
-    startChallenge(challenge: 'challenge1' | 'challenge2') {
+    startChallenge(challenge: 'challenge1' | 'challenge2' | 'challenge3' | 'challenge4') {
       if (this.challengeCompletions[challenge]) return // Cannot start a completed challenge
       this.activeChallenge = challenge
       this._resetForPrestige()
