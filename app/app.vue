@@ -9,7 +9,7 @@ import { useEventListener } from '@vueuse/core'
 
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { $saveGame, $loadGame } = useNuxtApp() as any
+const { $loadGame, $saveGameLocal } = useNuxtApp() as any
 
 // Get user state from the module's composable
 const user = useSupabaseUser()
@@ -28,20 +28,16 @@ const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
 // 2. Define what happens when the user confirms
 onConfirm(async () => {
   gameStore.applyOfflineGains()
-  await $saveGame() // Save state immediately after applying gains
 })
 
-// 7. Add a global event listeners to save the game when the user leaves the page.
-// Handles tab switching, minimizing
+// Add a global event listeners to save the game locally when the user leaves the page.
 useEventListener(document, 'visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
-    $saveGame()
+    $saveGameLocal()
   }
 })
-// Handles tab closing, page refresh, navigating away
 useEventListener(window, 'pagehide', () => {
-  debugger
-  $saveGame()
+  $saveGameLocal()
 })
 
 onMounted(async () => {
@@ -55,16 +51,15 @@ onMounted(async () => {
   if (gameStore.hasPendingOfflineGains) {
     reveal()
   } else {
-    const wasOffline = gameStore.calculateOfflineProgress()
-    if (wasOffline) {
+    gameStore.calculateOfflineProgress()
+    if (gameStore.hasPendingOfflineGains) {
       reveal()
-      await $saveGame()
     }
   }
 
-  // 6. Set up auto-save
+  // 6. Set up auto-save (local only)
   setInterval(() => {
-    $saveGame()
+    $saveGameLocal()
   }, 15000)
 })
 </script>

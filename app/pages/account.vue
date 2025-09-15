@@ -26,7 +26,8 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-lg">Cloud Sync</p>
-              <p class="text-sm text-gray-400">Last Sync: Never</p>
+              <p v-if="gameStore.lastCloudSync" class="text-sm text-gray-400">Last Sync: {{ lastSyncTimeAgo }}</p>
+              <p v-else class="text-sm text-gray-400">Last Sync: Never</p>
             </div>
             <button @click="syncNow" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
               Sync Now
@@ -43,6 +44,23 @@
             <Icon name="mdi:chevron-right" class="text-gray-400" />
           </a>
         </div>
+
+        <!-- Danger Zone -->
+        <div class="border-t-2 border-red-500/30 pt-6">
+          <h3 class="text-xl font-bold text-red-400">Danger Zone</h3>
+          <div class="mt-4 bg-[#1C2836] rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-lg">Wipe All Data</p>
+                <p class="text-sm text-gray-400">Permanently delete all local and cloud save data.</p>
+              </div>
+              <button @click="wipeAllData" class="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                Wipe Data
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
     <AppFooter context="account" active-tab="account" />
@@ -53,9 +71,15 @@
 import AppHeader from '~/components/layout/AppHeader.vue';
 import AppFooter from '~/components/layout/AppFooter.vue';
 import { useAuthStore } from '~/store/auth';
+import { useGameStore } from '~/store/game';
+import { useTimeAgo } from '@vueuse/core';
 
 const authStore = useAuthStore();
+const gameStore = useGameStore();
 const supabase = useSupabaseClient();
+const { $saveGameCloud, $loadGame, $wipeData } = useNuxtApp() as any
+
+const lastSyncTimeAgo = useTimeAgo(computed(() => gameStore.lastCloudSync ?? 0))
 
 const loginWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
@@ -73,9 +97,13 @@ const logout = async () => {
   }
 };
 
-const syncNow = () => {
-  alert('Cloud Sync - Not yet implemented.');
-  // Future implementation: sync with Supabase
+const syncNow = async () => {
+  // A simple sync is to save the current state to the cloud,
+  // then immediately load from the cloud to resolve any conflicts.
+  alert('Syncing with cloud...');
+  await $saveGameCloud();
+  await $loadGame();
+  alert('Sync complete!');
 };
 
 const exportSave = () => {
@@ -86,5 +114,13 @@ const exportSave = () => {
 const importSave = () => {
   alert('Import Save - Not yet implemented.');
   // Future implementation: open file picker and load save
+};
+
+const wipeAllData = async () => {
+  if (window.confirm('Are you absolutely sure you want to wipe all data? This action cannot be undone.')) {
+    await $wipeData();
+    alert('All data has been wiped. The page will now reload.');
+    window.location.reload();
+  }
 };
 </script>

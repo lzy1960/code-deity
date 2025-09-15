@@ -20,7 +20,7 @@ import { computed } from 'vue';
 import { useGameStore } from '~/store/game';
 
 const gameStore = useGameStore();
-const { $saveGame } = useNuxtApp() as any;
+const { $saveGameLocal } = useNuxtApp() as any;
 
 const unlockedGenerators = computed(() => 
   gameStore.generators.filter(g => gameStore.isGeneratorUnlocked(g.id))
@@ -30,6 +30,6 @@ const generatorConfig = (id: number) => gameStore.generatorConfig(id);
 
 const toggleAutomator = (id: number) => {
   gameStore.toggleAutomator(id);
-  $saveGame(); // Immediately save the game state after toggling
+  $saveGameLocal(); // Immediately save the game state after toggling
 };
 </script>

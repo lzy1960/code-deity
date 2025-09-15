@@ -1,31 +1,47 @@
 import { defineNuxtPlugin } from '#app'
 import { useGameStore } from '~/store/game'
+import { useAuthStore } from '~/store/auth'
 import { saveManager } from '~~/services/saveManager'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
   const gameStore = useGameStore()
+  const authStore = useAuthStore()
+  const supabase = useSupabaseClient()
 
-  const saveGame = async () => {
-    await saveManager.save(gameStore.$state)
+  const saveGameLocal = async () => {
+    await saveManager.save(gameStore.toJSON(), authStore.user, supabase, { cloud: false })
+    console.log('Game saved locally!')
+  }
+
+  const saveGameCloud = async () => {
+    await saveManager.save(gameStore.toJSON(), authStore.user, supabase, { cloud: true })
+    if (authStore.user) {
+      gameStore.setLastCloudSync(Date.now())
+    }
   }
 
   const loadGame = async () => {
-    const loadedState = await saveManager.load()
+    const { data: loadedState, source } = await saveManager.load(authStore.user, supabase)
+    
     if (loadedState) {
-      gameStore.$patch(loadedState)
+      gameStore.hydrate(loadedState)
+
+      // If loaded from cloud, immediately save it back to local storage
+      if (source === 'cloud') {
+        await saveGameLocal()
+      }
     }
   }
 
   const wipeData = async () => {
-    await saveManager.wipeData()
-    // Replace the current history entry and navigate to the home page.
-    // This prevents the user from using the "back" button to return to the settings page.
+    await saveManager.wipeData(authStore.user, supabase)
     window.location.replace('/')
   }
 
   return {
     provide: {
-      saveGame,
+      saveGameLocal,
+      saveGameCloud,
       loadGame,
       wipeData
     }

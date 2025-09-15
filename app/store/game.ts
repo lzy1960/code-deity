@@ -27,6 +27,7 @@ export interface OfflineGains {
 export interface GameState {
   saveVersion: string
   lastUpdateTime: number
+  lastCloudSync: number | null // Timestamp of the last successful cloud sync
   currency: Decimal // CP, Code Power
   generators: Generator[]
   buyMultiplier: BuyMultiplier
@@ -35,6 +36,10 @@ export interface GameState {
   refactorPoints: Decimal // RP, Refactor Points
   refactorCount: number
   version: number // Prestige layer 2
+
+  // Singularity
+  singularityPoints: Decimal // SP, Singularity Points
+  singularityCount: number
 
   // Challenges
   challengeCompletions: ChallengeCompletion
@@ -58,6 +63,7 @@ export const useGameStore = defineStore('game', {
   state: (): GameState => ({
     saveVersion: '1.0.5', // version up for state change
     lastUpdateTime: Date.now(),
+    lastCloudSync: null,
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
       id: config.id,
@@ -69,6 +75,9 @@ export const useGameStore = defineStore('game', {
     refactorPoints: new Decimal(0),
     refactorCount: 0,
     version: 0,
+
+    singularityPoints: new Decimal(0),
+    singularityCount: 0,
 
     challengeCompletions: {
       challenge1: false,
@@ -304,12 +313,75 @@ export const useGameStore = defineStore('game', {
 
     hasPendingOfflineGains: (state): boolean => {
       return state.pendingOfflineGains !== null
+    },
+
+    // --- Singularity ---
+    canSingularity: state => state.currency.gte('1e308'),
+
+    singularityGain(): Decimal {
+      if (!this.canSingularity) return new Decimal(0)
+      // Formula: SP = floor(log10(CP) - 308) ^ 1.5
+      const gain = Decimal.floor(
+        Decimal.pow(this.currency.log10() - 308, 1.5)
+      )
+      return gain.max(0)
     }
   },
   // #endregion
 
   // #region -------- ACTIONS --------
   actions: {
+    /**
+     * Hydrates the store from a plain JavaScript object (e.g., from a save file).
+     * This ensures all complex objects like Decimal are re-instantiated correctly.
+     */
+    hydrate(stateToLoad: any) {
+      this.currency = new Decimal(stateToLoad.currency)
+      this.refactorPoints = new Decimal(stateToLoad.refactorPoints)
+      
+      this.generators = stateToLoad.generators.map((g: any) => ({
+        id: g.id,
+        amount: new Decimal(g.amount),
+        bought: g.bought,
+      }))
+
+      // Copy over all other primitive properties
+      const primitiveKeys: (keyof GameState)[] = [
+        'saveVersion', 'lastUpdateTime', 'buyMultiplier', 'refactorCount', 'version',
+        'challengeCompletions', 'activeChallenge', 'automatorStates', 'unlockedNarratives'
+      ];
+      
+      for (const key of primitiveKeys) {
+        if (stateToLoad.hasOwnProperty(key)) {
+          this[key] = stateToLoad[key] as any;
+        }
+      }
+      // Handle nullable fields separately
+      this.lastCloudSync = stateToLoad.lastCloudSync ?? null;
+      this.singularityPoints = new Decimal(stateToLoad.singularityPoints ?? 0)
+      this.singularityCount = stateToLoad.singularityCount ?? 0
+    },
+
+    /**
+     * Returns a plain JavaScript object representation of the state,
+     * suitable for serialization.
+     */
+    toJSON(): object {
+      const state = this.$state;
+      const replacer = (key: string, value: any) => {
+        if (value instanceof Decimal) {
+          return value.toString();
+        }
+        return value;
+      };
+      // A bit of a hack to force serialization of Decimals
+      return JSON.parse(JSON.stringify(state, replacer));
+    },
+
+    setLastCloudSync(timestamp: number) {
+      this.lastCloudSync = timestamp;
+    },
+
     gameLoop() {
       const now = Date.now()
       const diff = new Decimal(now - this.lastUpdateTime).div(1000) // diff in seconds
@@ -433,6 +505,42 @@ export const useGameStore = defineStore('game', {
       this.refactor()
 
       this.automatorStates = states
+      this.checkNarrativeMilestones()
+    },
+
+    singularityReset() {
+      if (!this.canSingularity) return
+
+      const spGain = this.singularityGain
+      if (spGain.gt(0)) {
+        this.singularityPoints = this.singularityPoints.plus(spGain)
+        this.singularityCount += 1
+      }
+
+      // --- HARD RESET ---
+      // Reset all first era progress
+      this.currency = new Decimal(10)
+      this.generators.forEach(g => {
+        g.amount = new Decimal(0)
+        g.bought = 0
+      })
+      this.refactorPoints = new Decimal(0)
+      this.refactorCount = 0
+      this.version = 0
+      this.lastUpdateTime = Date.now()
+
+      // Reset all challenges (unless a meta-upgrade prevents this in the future)
+      this.challengeCompletions = {
+        challenge1: false,
+        challenge2: false,
+        challenge3: false,
+        challenge4: false
+      }
+      this.activeChallenge = 'none'
+
+      // We keep automation unlocks as a QoL feature
+      // this.automatorStates = {}
+
       this.checkNarrativeMilestones()
     },
 
