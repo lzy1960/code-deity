@@ -12,14 +12,14 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 1,
     name: '变量 (Variable)',
-    baseCost: new Decimal(10),
+    baseCost: new Decimal(5),
     costMultiplier: new Decimal(1.15),
     baseProduction: new Decimal(1)
   },
   {
     id: 2,
     name: '函数 (Function)',
-    baseCost: new Decimal(100),
+    baseCost: new Decimal(40),
     costMultiplier: new Decimal(1.20),
     baseProduction: new Decimal(1)
   },
