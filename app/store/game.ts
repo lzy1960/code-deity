@@ -207,6 +207,17 @@ export const useGameStore = defineStore('game', {
       const versionBonus = new Decimal(1).plus(this.version * 0.2)
       return new Decimal(1).plus(baseBonus.times(versionBonus))
     },
+
+    globalMultiplier(): Decimal {
+      let totalBonus = new Decimal(0)
+      for (const gen of this.generators) {
+        const config = this.generatorConfig(gen.id)
+        if (config.globalMultiplierBonus && config.globalMultiplierBonus > 0) {
+          totalBonus = totalBonus.plus(gen.bought * config.globalMultiplierBonus)
+        }
+      }
+      return new Decimal(1).plus(totalBonus)
+    },
     
     challenge2Bonus(): Decimal {
         return this.challengeCompletions.challenge2 ? new Decimal(1.5) : new Decimal(1)
@@ -225,6 +236,7 @@ export const useGameStore = defineStore('game', {
           .times(generator.amount)
           .times(this.buy10Bonus(id))
           .times(this.rpBonus)
+          .times(this.globalMultiplier)
 
         return production
       }

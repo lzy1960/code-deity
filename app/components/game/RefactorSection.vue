@@ -26,7 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
 import type Decimal from 'break_infinity.js';
 import { formatNumber } from '~/utils/format';
 

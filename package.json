@@ -22,6 +22,9 @@
   },
   "devDependencies": {
     "@nuxt/icon": "^2.0.0",
-    "@nuxtjs/tailwindcss": "^6.14.0"
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "jsdom": "^27.0.0",
+    "vitest": "^3.2.4"
   }
 }

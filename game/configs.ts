@@ -6,6 +6,7 @@ export interface GeneratorConfig {
   baseCost: Decimal
   costMultiplier: Decimal
   baseProduction: Decimal
+  globalMultiplierBonus?: number // 每购买一个，为所有生成器提供的全局乘法加成
 }
 
 export const generatorConfigs: GeneratorConfig[] = [
@@ -56,14 +57,16 @@ export const generatorConfigs: GeneratorConfig[] = [
     name: '编译器 (Compiler)',
     baseCost: new Decimal(1e18),
     costMultiplier: new Decimal(1.45),
-    baseProduction: new Decimal(1)
+    baseProduction: new Decimal(1),
+    globalMultiplierBonus: 0.01 // +1% per purchase
   },
   {
     id: 8,
     name: 'AI 核心 (A.I. Core)',
     baseCost: new Decimal(1e24),
     costMultiplier: new Decimal(1.50),
-    baseProduction: new Decimal(1)
+    baseProduction: new Decimal(1),
+    globalMultiplierBonus: 0.02 // +2% per purchase
   }
 ]
 
