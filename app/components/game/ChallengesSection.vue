@@ -1,8 +1,5 @@
 <template>
-  <div class="space-y-4">
-    <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Challenges</h2>
-    <p class="text-gray-400">Complete challenges under special rules to earn powerful, permanent rewards.</p>
-
+  <div class="space-y-5">
     <ChallengeItem 
       title="挑战 1：原始计算"
       rule="1-4 阶生成器产量为 0。"
@@ -15,7 +12,7 @@
     />
 
     <!-- Placeholder for future challenges -->
-    <div class="rounded-lg p-4 bg-gray-800/50 text-center">
+    <div class="rounded-lg p-6 bg-white/5 text-center border border-dashed border-white/20">
       <p class="text-gray-400">更多挑战即将到来...</p>
     </div>
 

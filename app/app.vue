@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useGameStore } from '~/store/game'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
@@ -8,6 +8,8 @@ import { useEventListener } from '@vueuse/core'
 
 const gameStore = useGameStore()
 const { $saveGame, $loadGame } = useNuxtApp() as any
+
+const isDev = computed(() => process.env.NODE_ENV === 'development')
 
 // 1. Use the composable to get modal controls
 const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
@@ -59,6 +61,8 @@ onMounted(async () => {
 <template>
   <div>
     <NuxtPage />
+    <GameNarrativeManager />
+    <DevDebugMenu v-if="isDev" />
 
     <!-- 
       The modal component is now a generic frame.

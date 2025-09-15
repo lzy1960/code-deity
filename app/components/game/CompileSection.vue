@@ -1,20 +1,27 @@
 <template>
-  <div class="flex-grow flex flex-col items-center justify-center text-center p-8">
-    <h3 class="text-xl font-bold text-gray-400 mb-4">Compile & Release a new version</h3>
-    <h1 class="text-5xl font-bold text-teal-400">+1</h1>
-    <p class="text-2xl font-bold text-teal-400 mt-2">Version</p>
-    <p class="text-sm text-gray-300 mt-4">Current Version: {{ version }}. Each version boosts RP effectiveness by 20%.</p>
-    <p class="text-sm text-gray-300 mt-2">Cost: <span class="font-bold text-red-400">{{ formatNumber(cost) }}</span> Refactor Points</p>
+  <div class="flex-grow flex flex-col items-center justify-center text-center p-4 md:p-8">
+
+    <div class="mb-6">
+      <p class="text-base text-gray-300/80">Compile & Release a new version:</p>
+      <h1 class="text-6xl md:text-7xl font-bold text-teal-400 my-2">+1</h1>
+      <p class="text-2xl font-semibold text-teal-400/90">Version</p>
+    </div>
+
+    <p class="text-base text-gray-400/80 mb-4">Current Version: <span class="font-bold text-white">{{ version }}</span></p>
+    <p class="text-base text-gray-400/80 mb-8">Cost: <span class="font-bold text-red-400">{{ formatNumber(cost) }}</span> Refactor Points</p>
     
-    <div class="w-full max-w-[480px] mx-auto mt-8">
+    <div class="w-full max-w-sm mx-auto">
       <button
-        class="flex w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 px-5 text-white text-lg font-bold leading-normal tracking-wider shadow-lg transition-all"
-        :class="canCompile ? 'bg-teal-600 hover:bg-teal-700 shadow-teal-600/30' : 'bg-gray-600 cursor-not-allowed opacity-50'"
+        class="w-full rounded-xl h-16 text-xl font-bold text-white transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+        :class="canCompile ? 'bg-teal-600 hover:bg-teal-500 shadow-lg shadow-teal-600/30 hover:scale-105 active:scale-100' : 'bg-gray-700'"
         :disabled="!canCompile"
         @click="$emit('compileAndRelease')"
       >
-        <span class="truncate">[ Compile & Release ]</span>
+        [ Compile & Release ]
       </button>
+      <p v-if="!canCompile && version === 0" class="text-sm text-gray-400 mt-3">
+        You need at least 25 Refactor Points to compile for the first time.
+      </p>
     </div>
   </div>
 </template>

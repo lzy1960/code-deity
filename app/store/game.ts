@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs, prestigeThresholds } from '~~/game/configs'
+import { generatorConfigs, prestigeThresholds, type NarrativeMilestone, narrativeMilestones } from '~~/game/configs'
 
 // #region -------- Interfaces and Types --------
 
@@ -43,6 +43,10 @@ export interface GameState {
 
   // Offline Gains
   pendingOfflineGains: OfflineGains | null
+
+  // Narrative
+  unlockedNarratives: string[]
+  narrativeQueue: NarrativeMilestone[]
 }
 
 // #endregion
@@ -50,7 +54,7 @@ export interface GameState {
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.4', // version up for state change
+    saveVersion: '1.0.5', // version up for state change
     lastUpdateTime: Date.now(),
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
@@ -71,7 +75,10 @@ export const useGameStore = defineStore('game', {
     activeChallenge: 'none',
 
     automatorStates: {},
-    pendingOfflineGains: null
+    pendingOfflineGains: null,
+
+    unlockedNarratives: [],
+    narrativeQueue: []
   }),
   // #endregion
 
@@ -293,10 +300,12 @@ export const useGameStore = defineStore('game', {
       }
 
       this.lastUpdateTime = now
+      this.checkNarrativeMilestones()
     },
 
     manualClick() {
       this.currency = this.currency.plus(1)
+      this.checkNarrativeMilestones()
     },
 
     buyGenerator(id: number) {
@@ -310,6 +319,7 @@ export const useGameStore = defineStore('game', {
         generator.amount = generator.amount.plus(amountToBuy)
         generator.bought += amountToBuy.toNumber()
       }
+      this.checkNarrativeMilestones()
     },
 
     setBuyMultiplier(multiplier: BuyMultiplier) {
@@ -347,6 +357,7 @@ export const useGameStore = defineStore('game', {
       }
 
       this._resetForPrestige()
+      this.checkNarrativeMilestones()
     },
 
     compileAndRelease() {
@@ -363,6 +374,7 @@ export const useGameStore = defineStore('game', {
       this.refactor()
 
       this.automatorStates = states
+      this.checkNarrativeMilestones()
     },
 
     startChallenge(challenge: 'challenge1' | 'challenge2') {
@@ -444,7 +456,70 @@ export const useGameStore = defineStore('game', {
       this.currency = this.currency.plus(this.pendingOfflineGains.cp)
       this.lastUpdateTime = Date.now() // Rer-calculate from now
       this.pendingOfflineGains = null
-    }
+    },
+
+    // --- Narrative Actions ---
+    checkNarrativeMilestones() {
+      for (const milestone of narrativeMilestones) {
+        if (this.unlockedNarratives.includes(milestone.id)) {
+          continue
+        }
+
+        let conditionMet = false
+        const { type, value, generatorId } = milestone.condition
+
+        switch (type) {
+          case 'currency':
+            if (this.currency.gte(value as number)) {
+              conditionMet = true
+            }
+            break
+          case 'generator_bought':
+            if (generatorId) {
+              const generator = this.generators.find(g => g.id === generatorId)
+              if (generator && generator.bought >= (value as number)) {
+                conditionMet = true
+              }
+            }
+            break
+          case 'refactor_count':
+            if (this.refactorCount >= (value as number)) {
+              conditionMet = true
+            }
+            break
+          case 'version_count':
+            if (this.version >= (value as number)) {
+              conditionMet = true
+            }
+            break
+        }
+
+        if (conditionMet) {
+          this.unlockedNarratives.push(milestone.id)
+          this.narrativeQueue.push(milestone)
+        }
+      }
+    },
+
+    shiftNarrativeQueue(): NarrativeMilestone | undefined {
+      return this.narrativeQueue.shift()
+    },
+
+    // --- Dev Actions ---
+    _dev_setCurrency(amount: string) {
+      try {
+        this.currency = new Decimal(amount)
+      } catch (e) {
+        console.error('Invalid Decimal format for currency', e)
+      }
+    },
+    _dev_setRefactorPoints(amount: string) {
+      try {
+        this.refactorPoints = new Decimal(amount)
+      } catch (e) {
+        console.error('Invalid Decimal format for RP', e)
+      }
+    },
   }
   // #endregion
 })
