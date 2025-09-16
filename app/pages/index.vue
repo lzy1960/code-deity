@@ -10,24 +10,27 @@ import CompileSection from '~/components/game/CompileSection.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
-import SingularityStats from '~/components/game/SingularityStats.vue';
 import SingularitySection from '~/components/game/SingularitySection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 import AdBoostButton from '~/components/game/AdBoostButton.vue';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { useSingularityModal } from '~/composables/useSingularityModal';
+import { useToast } from '~/composables/useToast';
 
 const gameStore = useGameStore();
+const singularityModal = useSingularityModal();
+const toast = useToast();
 
 const activeTab = ref('generators');
 const upgradesSubTab = ref('refactor');
-const showRefactorSystemMessage = ref(false);
 const hasShownRefactorMessage = ref(false);
-const showOverloadSystemMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
 
 const handleSingularityReset = () => {
-  gameStore.performSingularityReset();
-  activeTab.value = 'singularity';
+  singularityModal.show(() => {
+    gameStore.performSingularityReset();
+    activeTab.value = 'singularity';
+  });
 };
 
 const isGeneratorSectionUnlocked = computed(() => {
@@ -52,22 +55,24 @@ const buyGenerator = (id: number) => {
 
 watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   if (isUnlocked && !hasShownRefactorMessage.value) {
-    showRefactorSystemMessage.value = true;
+    toast.addToast(
+      '代码结构已达瓶颈，建议进行重构',
+      'warning',
+      5000
+    );
     hasShownRefactorMessage.value = true;
     activeTab.value = 'upgrades';
-    setTimeout(() => {
-      showRefactorSystemMessage.value = false;
-    }, 5000);
   }
 });
 
 watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
   if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
-    showOverloadSystemMessage.value = true;
+    toast.addToast(
+      `架构过载：AI核心数量过多导致效率衰减`,
+      'error',
+      8000
+    );
     hasShownOverloadMessage.value = true;
-    setTimeout(() => {
-      showOverloadSystemMessage.value = false;
-    }, 8000);
   }
 });
 
@@ -104,34 +109,15 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 </script>
 
 <template>
-  <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'>
-    <div class="flex-grow flex flex-col">
-      <AppHeader :title="headerTitle">
-        <template #actions>
-          <BuyMultiplierSelector v-if="activeTab === 'generators' && gameStore.isMultiplierUnlocked" />
-        </template>
-      </AppHeader>
+  <div class="relative flex size-full h-screen flex-col overflow-hidden bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'>
+    <AppHeader :title="headerTitle" :can-singularity="gameStore.canSingularity" @singularity-click="handleSingularityReset">
+      <template #actions>
+        <BuyMultiplierSelector v-if="activeTab === 'generators' && gameStore.isMultiplierUnlocked" />
+      </template>
+    </AppHeader>
 
-      <!-- System Messages -->
-      <div v-if="showRefactorSystemMessage" class="bg-yellow-500 text-black text-center p-2 font-bold animate-pulse">
-        [系统提示]：你的代码结构过于臃肿，增长已达瓶颈。或许……你需要一次彻底的重构。
-      </div>
-      <div v-if="showOverloadSystemMessage" class="bg-red-500 text-white text-center p-2 font-bold animate-pulse">
-                [系统警告]：架构过载！您的 'AI 核心' 数量已超过最佳阈值 ({{ prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES }})。复杂的单体结构导致了效率衰减，所有算力产出都将受到指数级惩罚。建议立即进行 [代码重构] 以优化架构。
-      </div>
-
-      <!-- Singularity Call to Action -->
-      <div v-if="gameStore.canSingularity" class="p-4">
-        <div class="bg-purple-900 border-2 border-purple-500 rounded-lg text-center p-4 animate-pulse">
-          <h2 class="text-2xl font-bold text-yellow-300 mb-2">技术奇点已达到！</h2>
-          <p class="mb-4">你已经走到了当前纪元的尽头。超越这个极限，进入新的演化阶段，解锁全新的力量！</p>
-          <button @click="handleSingularityReset" class="px-6 py-3 bg-yellow-400 text-purple-900 font-bold rounded-lg shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105">
-            化身创世
-          </button>
-        </div>
-      </div>
-
-      <main class="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
+    <main class="flex-1 overflow-y-auto">
+      <div class="p-4 space-y-4 pb-24">
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
           <button @click.prevent="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
@@ -223,12 +209,11 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
           <!-- Singularity Section -->
           <div v-show="activeTab === 'singularity'">
-            <SingularityStats />
             <SingularitySection />
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
 
     <AdBoostButton v-if="isGeneratorSectionUnlocked" />
     <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" context="game" />

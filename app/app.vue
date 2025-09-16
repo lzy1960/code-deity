@@ -7,6 +7,8 @@ import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
 import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
+import SingularityConfirmationModal from '~/components/game/SingularityConfirmationModal.vue'
+import ToastManager from '~/components/layout/ToastManager.vue'
 import { useEventListener } from '@vueuse/core'
 
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
@@ -119,6 +121,8 @@ onMounted(async () => {
     <DevDebugMenu v-if="isDev" />
     <ExitConfirmationModal />
     <ParadigmPurchaseModal />
+    <SingularityConfirmationModal />
+    <ToastManager />
 
     <!-- 
       The modal component is now a generic frame.

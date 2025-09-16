@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import { useGameStore } from '~/store/game';
 import { useRouter } from 'vue-router';
+import { useToast } from '~/composables/useToast';
 
 const props = defineProps<{
   activeTab: string;
@@ -29,6 +30,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:activeTab']);
 const router = useRouter();
 const gameStore = useGameStore();
+const toast = useToast();
 
 interface Tab {
   id: string;
@@ -51,7 +53,10 @@ const tabs: Tab[] = [
 const isActive = (tabId: string) => props.activeTab === tabId;
 
 const handleTabClick = (tab: Tab) => {
-  if (!tab.isUnlocked()) return;
+  if (!tab.isUnlocked()) {
+    toast.addToast(getTabTitle(tab), 'warning');
+    return;
+  }
 
   if (tab.isExternal && tab.path) {
     router.push(tab.path);

@@ -1,7 +1,12 @@
 <template>
-  <header class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm">
+  <header class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm transition-all duration-500" :class="{ 'shadow-[0_0_15px_rgba(192,132,252,0.5)] border-b border-purple-400/50': canSingularity }">
     <div class="flex items-center p-4 pb-2 justify-between">
-      <div class="w-12"></div>
+      <div class="w-auto">
+        <button v-if="canSingularity" @click="$emit('singularityClick')" class="px-3 h-10 rounded-lg bg-purple-600 text-white font-bold text-sm animate-pulse shadow-lg shadow-purple-500/50 flex items-center justify-center gap-2">
+          <Icon name="mdi:creation" class="text-xl" />
+          <span>技术奇点</span>
+        </button>
+      </div>
       <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
       <div class="flex w-12 items-center justify-end gap-2">
         <NuxtLink to="/settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
@@ -42,7 +47,10 @@ import { formatNumber } from '~/utils/format';
 
 defineProps<{
   title: string;
+  canSingularity: boolean;
 }>();
+
+defineEmits(['singularityClick']);
 
 const gameStore = useGameStore();
 const authStore = useAuthStore();

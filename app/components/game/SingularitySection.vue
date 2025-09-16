@@ -1,9 +1,16 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4 px-4">
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-4 px-4">
       <h2 class="text-2xl font-bold text-purple-300" style="text-shadow: 0 0 5px rgba(192, 132, 252, 0.5);">编程范式</h2>
-      <div class="text-lg bg-black/20 px-3 py-1 rounded-lg">
-        奇点算力 (SP): <span class="font-bold text-green-400">{{ formatNumber(gameStore.singularityPower) }}</span>
+      <div class="flex items-center gap-3 text-sm">
+        <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
+          <span class="text-gray-400">SP: </span>
+          <span class="font-bold text-green-400">{{ formatNumber(gameStore.singularityPower) }}</span>
+        </div>
+        <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
+          <span class="text-gray-400">奇点: </span>
+          <span class="font-bold text-purple-400">{{ formatNumber(gameStore.singularityCount) }}</span>
+        </div>
       </div>
     </div>
 

@@ -5,8 +5,9 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       @click.self="modal.hide()"
     >
-      <div class="w-full max-w-md rounded-2xl bg-gray-800 shadow-2xl border border-gray-700 m-4">
-        <div class="p-6 text-center">
+      <div class="relative w-full max-w-md rounded-2xl bg-transparent shadow-2xl m-4 overflow-hidden border border-purple-500/20">
+        <div class="animated-border"></div>
+        <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-6 text-center">
           <h2 class="text-2xl font-bold text-purple-300 mb-3">
             解锁新的范式？
           </h2>
@@ -59,5 +60,37 @@ const modal = useParadigmPurchaseModal()
 .modal-bounce-leave-to {
   opacity: 0;
   transform: scale(0.8);
+}
+
+.animated-border {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent,
+    rgba(192, 132, 252, 0.7), /* purple-300 */
+    transparent 35%
+  );
+  transform: translate(-50%, -50%);
+  animation: rotate 5s cubic-bezier(0.65, -0.5, 0.25, 1.5) infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+    opacity: 0.7;
+  }
 }
 </style>
