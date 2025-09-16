@@ -42,10 +42,10 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'generators', name: 'Generators', icon: 'dns', isUnlocked: () => true },
   { id: 'upgrades', name: 'Refactor', icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
-  { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
   { id: 'automation', name: 'Automation', icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
   { id: 'challenges', name: 'Challenges', icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
-  
+  { id: 'singularity', name: 'Singularity', icon: 'creation', isUnlocked: () => gameStore.unlockedSingularity },
+  { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
 ];
 
 const isActive = (tabId: string) => props.activeTab === tabId;

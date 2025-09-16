@@ -1,0 +1,163 @@
+<html><head>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Space+Grotesk%3Awght%40400%3B500%3B700" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<meta charset="utf-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --locked-bg: #21262d;
+        --locked-border: #444c56;
+        --affordable-bg: #1c2b41;
+        --affordable-border: #3899fa;
+        --purchased-bg: #373322;
+        --purchased-border: #e6b400;
+      }
+      .node-card {
+        @apply bg-[var(--locked-bg)] border-[var(--locked-border)] border-2 rounded-lg p-4 transition-all duration-300;
+      }
+      .node-card.locked {
+        @apply border-dashed;
+      }
+      .node-card.affordable {
+        @apply bg-[var(--affordable-bg)] border-solid border-[var(--affordable-border)] hover:shadow-[0_0_15px_rgba(56,153,250,0.5)];
+      }
+      .node-card.purchased {
+        @apply bg-[var(--purchased-bg)] border-solid border-[var(--purchased-border)] border-2;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#101a23]">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-[#101a23] dark justify-between group/design-root overflow-x-hidden" style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'>
+<div class="flex-grow">
+<header class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm">
+<div class="flex items-center p-4 justify-between">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-white text-2xl">
+                      arrow_back_ios
+                  </span>
+<h1 class="text-white text-2xl font-bold">🌌 Singularity</h1>
+</div>
+<div class="bg-gray-800/50 rounded-full px-4 py-2">
+<p class="text-white text-base font-medium">SP: <span class="font-bold text-[#e6b400]">12,345</span></p>
+</div>
+</div>
+</header>
+<main class="p-4">
+<h2 class="text-white text-xl font-bold mb-4">Paradigm Tree</h2>
+<div class="relative space-y-4">
+<div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-600"></div>
+<div class="absolute left-6 top-1/2 h-0.5 w-1/4 bg-gray-600"></div>
+<div class="absolute left-[37.5%] top-1/2 h-1/2 w-0.5 bg-gray-600"></div>
+<div class="absolute left-1/2 top-1/2 h-0.5 w-1/4 bg-gray-600 rotate-180"></div>
+<div class="absolute right-[37.5%] top-1/2 h-1/2 w-0.5 bg-gray-600"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex-shrink-0 w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600">
+<span class="material-symbols-outlined text-3xl text-white">data_object</span>
+</div>
+<div class="node-card purchased flex-1">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm font-medium text-[#e6b400]">Purchased</p>
+<h3 class="text-white text-lg font-bold">Core Concepts</h3>
+<p class="text-gray-400 text-sm">Unlock the fundamental principles of programming.</p>
+</div>
+<div class="w-12 h-12 bg-center bg-no-repeat bg-cover rounded-md" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8xV-k6t3b8ZZ-t4KU03jFQjSexKqUM4ruwMjDaHd7UXGicQmO830NulTGqcI7gl4SVcxiJ1yYXxK-pPCQl6OxzCeovjfIueKTbzzvdEOXTrfCmAR95X6Ao479MhhXN4vtRCuWDaWTR3nNRYYcsdFIoZsAviqmvZvkyDxfztxKzsXpzk4j4Cv8zfuw7Hcz9Er8g_16a3btoh0x6vS72_xirqIZLWQJrVNbx7kSliMXe5y_RmV4rwcYW9QUM0vEdjx4Tq74EP0Fi6M");'></div>
+</div>
+<button class="mt-2 w-full text-center rounded-md py-1.5 bg-gray-600 text-gray-400 text-sm font-medium" disabled="">
+<span class="truncate">10 SP</span>
+</button>
+</div>
+</div>
+<div class="pl-8 pt-8">
+<div class="flex gap-4">
+<div class="w-1/2 space-y-4 relative">
+<div class="absolute -left-2 -top-8 bottom-0 w-0.5 bg-gray-600"></div>
+<div class="absolute -left-2 top-6 h-0.5 w-4 bg-gray-600"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex-shrink-0 w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600">
+<span class="material-symbols-outlined text-3xl text-white">list_alt</span>
+</div>
+</div>
+<div class="node-card affordable">
+<p class="text-sm font-medium text-[#3899fa]">Affordable</p>
+<h3 class="text-white text-lg font-bold">Procedural</h3>
+<p class="text-gray-400 text-sm">Focus on step-by-step execution.</p>
+<button class="mt-2 w-full text-center rounded-md py-1.5 bg-[#3899fa] text-white text-sm font-medium">
+<span class="truncate">40 SP</span>
+</button>
+</div>
+</div>
+<div class="w-1/2 space-y-4 relative">
+<div class="absolute -left-2 -top-8 bottom-0 w-0.5 bg-gray-600"></div>
+<div class="absolute -left-2 top-6 h-0.5 w-4 bg-gray-600"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex-shrink-0 w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600">
+<span class="material-symbols-outlined text-3xl text-white">hub</span>
+</div>
+</div>
+<div class="node-card locked">
+<p class="text-sm font-medium text-gray-500">Locked</p>
+<h3 class="text-white text-lg font-bold">Object-Oriented</h3>
+<p class="text-gray-400 text-sm">Organize code into reusable objects.</p>
+<button class="mt-2 w-full text-center rounded-md py-1.5 bg-gray-700 text-gray-500 text-sm font-medium" disabled="">
+<span class="truncate">50 SP</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex-shrink-0 w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600">
+<span class="material-symbols-outlined text-3xl text-white">database</span>
+</div>
+<div class="node-card locked flex-1">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm font-medium text-gray-500">Locked</p>
+<h3 class="text-white text-lg font-bold">Data Structures</h3>
+<p class="text-gray-400 text-sm">Master the organization and manipulation of data.</p>
+</div>
+<div class="w-12 h-12 bg-center bg-no-repeat bg-cover rounded-md" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-Rk6HDwITI8rN_XgH74Kk5BI7bDBy6uG215FstXDwP6iyyjgeGLhcUkaHWkiWT_zttDOvni5PGS5xC-Dilcpx79PAbHU1aRstsYLUtQ3kLI7fKE_Ne1UDilys2DNarZSdpuLW8pyLY63c_uTBGmK5yaLTWIe6QAyEeUGc6FYgGg-xLRKLVi4AIhhnLp_IxmBcKYEw2CDZOh6isZJgpTMe6IC3fEiXwgIFGeDSxxHu-AhXMz2u-MQCgIwQLWNDzUUsG6yYTI112EY");'></div>
+</div>
+<button class="mt-2 w-full text-center rounded-md py-1.5 bg-gray-700 text-gray-500 text-sm font-medium" disabled="">
+<span class="truncate">20 SP</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex-shrink-0 w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600">
+<span class="material-symbols-outlined text-3xl text-white">memory</span>
+</div>
+<div class="node-card locked flex-1">
+<p class="text-sm font-medium text-gray-500">Locked</p>
+<h3 class="text-white text-lg font-bold">Algorithms</h3>
+<p class="text-gray-400 text-sm">Learn efficient problem-solving techniques.</p>
+<button class="mt-2 w-full text-center rounded-md py-1.5 bg-gray-700 text-gray-500 text-sm font-medium" disabled="">
+<span class="truncate">30 SP</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<footer class="sticky bottom-0 bg-[#101a23]/80 backdrop-blur-sm pt-2">
+<div class="flex flex-col gap-3 px-4 py-3">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#3899fa] text-white text-base font-bold leading-normal tracking-[0.015em] w-full">
+<span class="truncate">Confirm Upgrade (1)</span>
+</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#d93434] hover:bg-red-700 text-white text-base font-bold leading-normal tracking-[0.015em] w-full">
+<span class="truncate">Execute Singularity Reset</span>
+</button>
+</div>
+</footer>
+</div>
+
+</body></html>

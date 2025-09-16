@@ -18,8 +18,8 @@ const { style } = useDraggable(el, {
 })
 
 // Input values - initialize them once
-const cpInput = ref(gameStore.currency.toExponential(2))
-const rpInput = ref(gameStore.refactorPoints.toExponential(2))
+const cpInput = ref('1e500')
+const rpInput = ref('10000')
 
 function setCurrency() {
   gameStore._dev_setCurrency(cpInput.value)

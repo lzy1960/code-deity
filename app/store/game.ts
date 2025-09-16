@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
 import { generatorConfigs, prestigeThresholds, type NarrativeMilestone, narrativeMilestones } from '~~/game/configs'
+import { paradigmConfigs } from '~~/game/paradigms.configs'
 
 // #region -------- Interfaces and Types --------
 
@@ -38,7 +39,9 @@ export interface GameState {
   version: number // Prestige layer 2
 
   // Singularity
-  singularityPoints: Decimal // SP, Singularity Points
+  singularityPower: Decimal // SP, Singularity Power
+  unlockedSingularity: boolean
+  paradigms: Record<string, boolean>
   singularityCount: number
 
   // Challenges
@@ -76,7 +79,9 @@ export const useGameStore = defineStore('game', {
     refactorCount: 0,
     version: 0,
 
-    singularityPoints: new Decimal(0),
+    singularityPower: new Decimal(0),
+    unlockedSingularity: false,
+    paradigms: {},
     singularityCount: 0,
 
     challengeCompletions: {
@@ -226,7 +231,14 @@ export const useGameStore = defineStore('game', {
         }
 
         const generator = this.generators.find(g => g.id === id)!
-        const bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
+        
+        // Base bonus
+        let bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
+        // Paradigm bonus
+        if (this.paradigms.oop) {
+          bonusPerLevel *= 1.1
+        }
+
         const bonusLevels = this.getBuyBonus(generator.bought)
         return Decimal.pow(bonusPerLevel, bonusLevels)
       }
@@ -254,7 +266,13 @@ export const useGameStore = defineStore('game', {
 
       const baseBonus = this.refactorPoints.times(0.1)
       const versionBonus = new Decimal(1).plus(this.version * 0.2)
-      return new Decimal(1).plus(baseBonus.times(versionBonus))
+      
+      let multiplier = new Decimal(1)
+      if (this.paradigms.functional) {
+        multiplier = multiplier.times(1.2)
+      }
+
+      return new Decimal(1).plus(baseBonus.times(versionBonus).times(multiplier))
     },
 
     globalMultiplier(): Decimal {
@@ -279,11 +297,22 @@ export const useGameStore = defineStore('game', {
         const config = this.effectiveGeneratorConfig(id)
         const generator = this.generators.find(g => g.id === id)!
 
-        const production = config.baseProduction
+        let production = config.baseProduction
           .times(generator.amount)
           .times(this.buy10Bonus(id)) // This now contains the challenge logic
           .times(this.rpBonus)
           .times(this.globalMultiplier)
+
+        // --- Apply Paradigm Bonuses ---
+        if (this.paradigms.procedural) {
+          production = production.times(1.5)
+        }
+        if (this.paradigms.structured && (id === 2 || id === 3)) { // Function & Class
+          production = production.times(2)
+        }
+        if (this.paradigms.declarative && (id === 6 || id === 7)) { // Framework & Compiler
+          production = production.times(2)
+        }
 
         return production
       }
@@ -358,7 +387,9 @@ export const useGameStore = defineStore('game', {
       }
       // Handle nullable fields separately
       this.lastCloudSync = stateToLoad.lastCloudSync ?? null;
-      this.singularityPoints = new Decimal(stateToLoad.singularityPoints ?? 0)
+      this.singularityPower = new Decimal(stateToLoad.singularityPower ?? 0)
+      this.unlockedSingularity = stateToLoad.unlockedSingularity ?? false
+      this.paradigms = stateToLoad.paradigms ?? {}
       this.singularityCount = stateToLoad.singularityCount ?? 0
     },
 
@@ -508,13 +539,14 @@ export const useGameStore = defineStore('game', {
       this.checkNarrativeMilestones()
     },
 
-    singularityReset() {
+    performSingularityReset() {
       if (!this.canSingularity) return
 
       const spGain = this.singularityGain
       if (spGain.gt(0)) {
-        this.singularityPoints = this.singularityPoints.plus(spGain)
+        this.singularityPower = this.singularityPower.plus(spGain)
         this.singularityCount += 1
+        this.unlockedSingularity = true
       }
 
       // --- HARD RESET ---
@@ -542,6 +574,31 @@ export const useGameStore = defineStore('game', {
       // this.automatorStates = {}
 
       this.checkNarrativeMilestones()
+    },
+
+    purchaseParadigm(paradigmId: string) {
+      const config = paradigmConfigs.find(p => p.id === paradigmId)
+      if (!config) {
+        console.error(`Paradigm with id ${paradigmId} not found.`)
+        return
+      }
+
+      // 1. Check if already purchased
+      if (this.paradigms[paradigmId]) return
+
+      // 2. Check for cost
+      if (this.singularityPower.lt(config.cost)) return
+
+      // 3. Check for dependencies
+      if (config.requires) {
+        for (const reqId of config.requires) {
+          if (!this.paradigms[reqId]) return // Dependency not met
+        }
+      }
+
+      // All checks passed, purchase the paradigm
+      this.singularityPower = this.singularityPower.minus(config.cost)
+      this.paradigms[paradigmId] = true
     },
 
     startChallenge(challenge: 'challenge1' | 'challenge2' | 'challenge3' | 'challenge4') {
@@ -572,7 +629,9 @@ export const useGameStore = defineStore('game', {
       this.refactorPoints = new Decimal(0)
       this.refactorCount = 0
       this.version = 0
-      this.singularityPoints = new Decimal(0)
+      this.singularityPower = new Decimal(0)
+      this.unlockedSingularity = false
+      this.paradigms = {}
       this.singularityCount = 0
       this.challengeCompletions = {
         challenge1: false,

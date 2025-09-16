@@ -143,3 +143,47 @@ describe('Game Store - Core Mechanics', () => {
     })
   })
 })
+
+describe('Game Store - Singularity & Paradigms', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('should not purchase a paradigm if SP is insufficient', () => {
+    store.singularityPower = new Decimal(0)
+    store.purchaseParadigm('procedural')
+    expect(store.paradigms.procedural).toBeUndefined()
+  })
+
+  it('should purchase a paradigm successfully with enough SP', () => {
+    store.singularityPower = new Decimal(10)
+    store.purchaseParadigm('procedural') // cost is 1
+    expect(store.paradigms.procedural).toBe(true)
+    expect(store.singularityPower.toString()).toBe('9')
+  })
+
+  it('should not purchase a paradigm if dependencies are not met', () => {
+    store.singularityPower = new Decimal(10)
+    store.purchaseParadigm('structured') // requires 'procedural'
+    expect(store.paradigms.structured).toBeUndefined()
+  })
+
+  it('should purchase a paradigm with dependencies if they are met', () => {
+    store.singularityPower = new Decimal(10)
+    store.paradigms.procedural = true // manually unlock dependency
+    store.purchaseParadigm('structured') // cost is 3
+    expect(store.paradigms.structured).toBe(true)
+    expect(store.singularityPower.toString()).toBe('7')
+  })
+
+  it('should not be able to purchase the same paradigm twice', () => {
+    store.singularityPower = new Decimal(10)
+    store.purchaseParadigm('procedural')
+    expect(store.singularityPower.toString()).toBe('9')
+    store.purchaseParadigm('procedural') // try to buy again
+    expect(store.singularityPower.toString()).toBe('9') // SP should not be deducted again
+  })
+})

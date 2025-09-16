@@ -15,6 +15,17 @@
                 [系统警告]：架构过载！您的 'AI 核心' 数量已超过最佳阈值 ({{ prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES }})。复杂的单体结构导致了效率衰减，所有算力产出都将受到指数级惩罚。建议立即进行 [代码重构] 以优化架构。
       </div>
 
+      <!-- Singularity Call to Action -->
+      <div v-if="gameStore.canSingularity" class="p-4">
+        <div class="bg-purple-900 border-2 border-purple-500 rounded-lg text-center p-4 animate-pulse">
+          <h2 class="text-2xl font-bold text-yellow-300 mb-2">技术奇点已达到！</h2>
+          <p class="mb-4">你已经走到了当前纪元的尽头。超越这个极限，进入新的演化阶段，解锁全新的力量！</p>
+          <button @click="handleSingularityReset" class="px-6 py-3 bg-yellow-400 text-purple-900 font-bold rounded-lg shadow-lg hover:bg-yellow-500 transition-all transform hover:scale-105">
+            化身创世
+          </button>
+        </div>
+      </div>
+
       <main class="flex-grow overflow-y-auto p-4 space-y-4 pb-24">
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
@@ -104,6 +115,12 @@
           <div v-show="activeTab === 'automation'">
             <AutomationSection />
           </div>
+
+          <!-- Singularity Section -->
+          <div v-show="activeTab === 'singularity'">
+            <SingularityStats />
+            <SingularitySection />
+          </div>
         </div>
       </main>
     </div>
@@ -124,6 +141,8 @@ import CompileSection from '~/components/game/CompileSection.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
+import SingularityStats from '~/components/game/SingularityStats.vue';
+import SingularitySection from '~/components/game/SingularitySection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
@@ -135,6 +154,11 @@ const showRefactorSystemMessage = ref(false);
 const hasShownRefactorMessage = ref(false);
 const showOverloadSystemMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
+
+const handleSingularityReset = () => {
+  gameStore.performSingularityReset();
+  activeTab.value = 'singularity';
+};
 
 const isGeneratorSectionUnlocked = computed(() => {
   return gameStore.isGeneratorUnlocked(1);

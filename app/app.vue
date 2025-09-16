@@ -6,6 +6,7 @@ import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
+import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
 import { useEventListener } from '@vueuse/core'
 
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
@@ -103,6 +104,7 @@ onMounted(async () => {
     <GameNarrativeManager />
     <DevDebugMenu v-if="isDev" />
     <ExitConfirmationModal />
+    <ParadigmPurchaseModal />
 
     <!-- 
       The modal component is now a generic frame.
