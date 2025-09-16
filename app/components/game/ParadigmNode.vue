@@ -19,6 +19,13 @@
     <div class="mt-3 text-center rounded-md py-1.5 text-sm font-medium" :class="buttonClass">
       <span>{{ paradigm.cost }} SP</span>
     </div>
+
+    <!-- Refactor Button -->
+    <div v-if="isPurchased && !gameStore.activeRefactoring" class="mt-2">
+      <button @click.stop="$emit('requestRefactor', paradigm.id)" class="w-full text-xs text-center text-gray-400 hover:text-red-400 hover:underline">
+        申请重构
+      </button>
+    </div>
   </div>
 </template>
 
@@ -33,8 +40,10 @@ const props = defineProps<{
   paradigm: Paradigm
   isPurchased: boolean
   isPurchasable: boolean
-  lockReason: 'sp' | 'dependency' | null
+  lockReason: 'sp' | 'dependency' | 'exclusive' | null
 }>()
+
+defineEmits(['requestRefactor'])
 
 const statusText = computed(() => {
   if (props.isPurchased) return '已解锁'
@@ -47,8 +56,15 @@ const statusText = computed(() => {
       .join(', ')
     return `需要: ${missingDeps}`
   }
-  // If locked but not because of dependency, it must be SP.
-  // We don't show "SP不足" here as per the new design.
+
+  if (props.lockReason === 'exclusive') {
+    return '互斥选择'
+  }
+
+  if (props.lockReason === 'sp') {
+    return 'SP 不足'
+  }
+
   return '已锁定'
 })
 
@@ -73,6 +89,8 @@ const statusTextColor = computed(() => {
   if (props.isPurchased) return 'text-green-400'
   if (props.isPurchasable) return 'text-purple-400'
   if (props.lockReason === 'dependency') return 'text-red-400'
+  if (props.lockReason === 'exclusive') return 'text-yellow-400'
+  if (props.lockReason === 'sp') return 'text-orange-400'
   return 'text-gray-500'
 })
 

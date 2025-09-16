@@ -61,6 +61,14 @@ export interface GameState {
   // Ad Boosts
   adBoostExpiry: number | null
   adBoostCooldownExpiry: number | null
+
+  // Technical Debt
+  activeRefactoring: {
+    paradigmId: string;
+    frozenParadigms: string[];
+    frozenSP: Decimal;
+    cpCost: Decimal;
+  } | null
 }
 
 // #endregion
@@ -103,7 +111,9 @@ export const useGameStore = defineStore('game', {
     narrativeQueue: [],
 
     adBoostExpiry: null,
-    adBoostCooldownExpiry: null
+    adBoostCooldownExpiry: null,
+
+    activeRefactoring: null
   }),
   // #endregion
 
@@ -375,6 +385,10 @@ export const useGameStore = defineStore('game', {
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
         finalCps = finalCps.times(penalty)
+      }
+      // Apply Technical Debt penalty
+      if (this.activeRefactoring) {
+        finalCps = finalCps.times(0.9) // 10% penalty
       }
       return finalCps
     },
@@ -907,6 +921,79 @@ export const useGameStore = defineStore('game', {
 
     shiftNarrativeQueue(): NarrativeMilestone | undefined {
       return this.narrativeQueue.shift()
+    },
+
+    // --- Technical Debt Actions ---
+    calculateRefactorCost(paradigmId: string) {
+      // 1. Find all downstream paradigms to be frozen
+      const toFreeze = new Set<string>([paradigmId])
+      const queue = [paradigmId]
+      while (queue.length > 0) {
+        const currentId = queue.shift()!
+        for (const p of paradigmConfigs) {
+          if (p.requires?.includes(currentId) && this.paradigms[p.id] && !toFreeze.has(p.id)) {
+            toFreeze.add(p.id)
+            queue.push(p.id)
+          }
+        }
+      }
+      const frozenParadigms = Array.from(toFreeze)
+
+      // 2. Calculate frozen SP and CP cost
+      let frozenSP = new Decimal(0)
+      for (const id of frozenParadigms) {
+        const config = paradigmConfigs.find(p => p.id === id)
+        if (config) {
+          frozenSP = frozenSP.plus(config.cost)
+        }
+      }
+      // Cost formula: 10^(total_frozen_sp * 1.5 + 308)
+      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 308)
+
+      return { frozenParadigms, frozenSP, cpCost }
+    },
+
+    requestParadigmRefactor(paradigmId: string) {
+      if (this.activeRefactoring || !this.paradigms[paradigmId]) return
+
+      const { frozenParadigms, frozenSP, cpCost } = this.calculateRefactorCost(paradigmId)
+
+      // 3. Set active refactoring state and remove paradigms
+      this.activeRefactoring = {
+        paradigmId,
+        frozenParadigms,
+        frozenSP,
+        cpCost,
+      }
+
+      for (const id of frozenParadigms) {
+        delete this.paradigms[id]
+      }
+    },
+
+    cancelParadigmRefactor() {
+      if (!this.activeRefactoring) return
+
+      // Restore paradigms
+      for (const id of this.activeRefactoring.frozenParadigms) {
+        this.paradigms[id] = true
+      }
+
+      this.activeRefactoring = null
+    },
+
+    confirmParadigmRefactor() {
+      if (!this.activeRefactoring) return
+      if (this.currency.lt(this.activeRefactoring.cpCost)) return
+
+      // Pay the cost
+      this.currency = this.currency.minus(this.activeRefactoring.cpCost)
+
+      // Refund SP
+      this.singularityPower = this.singularityPower.plus(this.activeRefactoring.frozenSP)
+
+      // Complete the process
+      this.activeRefactoring = null
     },
 
     // --- Dev Actions ---

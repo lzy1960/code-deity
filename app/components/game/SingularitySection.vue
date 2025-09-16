@@ -36,6 +36,7 @@
             :is-purchased="props.data.isPurchased"
             :is-purchasable="props.data.isPurchasable"
             :lock-reason="props.data.lockReason"
+            @request-refactor="gameStore.requestParadigmRefactor"
           />
         </template>
 
@@ -72,8 +73,26 @@ const areDependenciesMet = (p: Paradigm): boolean => !p.requires || p.requires.e
 const canAfford = (p: Paradigm): boolean => gameStore.singularityPower.gte(p.cost)
 const isPurchasable = (p: Paradigm): boolean => !isPurchased(p.id) && canAfford(p) && areDependenciesMet(p)
 
-const getLockReason = (p: Paradigm): 'sp' | 'dependency' | null => {
+const forks: Record<string, string[]> = {
+  'pointer_arithmetic': ['memory_management', 'bit_manipulation'],
+  'design_patterns': ['polymorphism', 'dependency_injection'],
+  'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
+}
+
+const getLockReason = (p: Paradigm): 'sp' | 'dependency' | 'exclusive' | null => {
   if (isPurchasable(p) || isPurchased(p.id)) return null
+  
+  // Check for mutual exclusion first, as it's a hard lock
+  for (const parent in forks) {
+    const children = forks[parent]
+    if (children.includes(p.id)) {
+      const otherChild = children.find(c => c !== p.id)!
+      if (isPurchased(otherChild)) {
+        return 'exclusive'
+      }
+    }
+  }
+
   if (!areDependenciesMet(p)) return 'dependency'
   if (!canAfford(p)) return 'sp'
   return null
