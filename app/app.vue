@@ -9,6 +9,7 @@ import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue
 import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
 import SingularityConfirmationModal from '~/components/game/SingularityConfirmationModal.vue'
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
+import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
 import { useEventListener } from '@vueuse/core'
 
@@ -124,6 +125,7 @@ onMounted(async () => {
     <ParadigmPurchaseModal />
     <SingularityConfirmationModal />
     <TechDebtPanel />
+    <HelpModal />
     <ToastManager />
 
     <!-- 

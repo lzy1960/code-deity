@@ -8,7 +8,10 @@
         </button>
       </div>
       <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
-      <div class="flex w-12 items-center justify-end gap-2">
+      <div class="flex w-auto items-center justify-end gap-2">
+        <button @click="helpModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
+          <Icon name="mdi:help-circle-outline" class="text-3xl" />
+        </button>
         <NuxtLink to="/settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
           <Icon name="mdi:cog" class="text-3xl" />
         </NuxtLink>
@@ -44,6 +47,7 @@
 import { useGameStore } from '~/store/game';
 import { useAuthStore } from '~/store/auth';
 import { formatNumber } from '~/utils/format';
+import { useHelpModal } from '~/composables/useHelpModal';
 
 defineProps<{
   title: string;
@@ -54,6 +58,7 @@ defineEmits(['singularityClick']);
 
 const gameStore = useGameStore();
 const authStore = useAuthStore();
+const helpModal = useHelpModal();
 </script>
 
 <style scoped>
