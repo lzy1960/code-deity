@@ -264,7 +264,7 @@ export const useGameStore = defineStore('game', {
         const generator = this.generators.find(g => g.id === id)!
         
         // Base bonus
-        let bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
+        let bonusPerLevel = this.challengeCompletions.challenge1 ? 1.65 : 1.5
         
         const bonusLevels = this.getBuyBonus(generator.bought)
         let bonus = Decimal.pow(bonusPerLevel, bonusLevels)

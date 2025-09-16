@@ -6,67 +6,81 @@ export interface GeneratorConfig {
   baseCost: Decimal
   costMultiplier: Decimal
   baseProduction: Decimal
-  globalMultiplierBonus?: number // 每购买一个，为所有生成器提供的全局乘法加成
+  globalMultiplierBonus?: number
 }
 
+/**
+ * # V4 Balance Pass: The Great Divide
+ * ## Design Philosophy: Stretching the Milestones
+ * Instead of nerfing production efficiency (e.g., baseProduction < 1), which feels counter-intuitive,
+ * this pass dramatically increases the `baseCost` of mid-to-late game generators.
+ * This transforms the act of unlocking the next generator from a routine task into a major,
+ * multi-hour or even multi-day milestone, creating significant "walls" for the player to overcome.
+ * This approach preserves the thematic integrity of "1 Compiler produces 1 Framework" while achieving
+ * the necessary slowdown of the overall game pace.
+ */
 export const generatorConfigs: GeneratorConfig[] = [
+  // Early game remains challenging but accessible
   {
     id: 1,
     name: '变量 (Variable)',
-    baseCost: new Decimal(5),
-    costMultiplier: new Decimal(1.15),
+    baseCost: new Decimal(10),
+    costMultiplier: new Decimal(1.20),
     baseProduction: new Decimal(1)
   },
   {
     id: 2,
     name: '函数 (Function)',
-    baseCost: new Decimal(40),
-    costMultiplier: new Decimal(1.20),
+    baseCost: new Decimal(100),
+    costMultiplier: new Decimal(1.25),
     baseProduction: new Decimal(1)
   },
   {
     id: 3,
     name: '类 (Class)',
-    baseCost: new Decimal(1e4),
-    costMultiplier: new Decimal(1.25),
-    baseProduction: new Decimal(1)
-  },
-  {
-    id: 4,
-    name: '模块 (Module)',
-    baseCost: new Decimal(1e6),
+    baseCost: new Decimal(5e3),
     costMultiplier: new Decimal(1.30),
     baseProduction: new Decimal(1)
   },
+  // --- The First Wall ---
+  {
+    id: 4,
+    name: '模块 (Module)',
+    baseCost: new Decimal(5e7),      // Increased x10
+    costMultiplier: new Decimal(1.35),
+    baseProduction: new Decimal(1)
+  },
+  // --- The Great Divide ---
   {
     id: 5,
     name: '库 (Library)',
-    baseCost: new Decimal(1e9),
-    costMultiplier: new Decimal(1.35),
+    baseCost: new Decimal(1e14),     // Massively increased from 5e11
+    costMultiplier: new Decimal(1.40),
     baseProduction: new Decimal(1)
   },
   {
     id: 6,
     name: '框架 (Framework)',
-    baseCost: new Decimal(1e13),
-    costMultiplier: new Decimal(1.40),
+    baseCost: new Decimal(1e22),     // Massively increased from 1e18
+    costMultiplier: new Decimal(1.45),
     baseProduction: new Decimal(1)
   },
+  // --- The Final Push ---
   {
     id: 7,
     name: '编译器 (Compiler)',
-    baseCost: new Decimal(1e18),
-    costMultiplier: new Decimal(1.45),
+    baseCost: new Decimal(1e32),     // Massively increased from 1e25
+    costMultiplier: new Decimal(1.50),
     baseProduction: new Decimal(1),
-    globalMultiplierBonus: 0.01 // +1% per purchase
+    globalMultiplierBonus: 0.001
   },
   {
     id: 8,
     name: 'AI 核心 (A.I. Core)',
-    baseCost: new Decimal(1e24),
-    costMultiplier: new Decimal(1.50),
+    baseCost: new Decimal(1e44),     // Massively increased from 1e34
+    costMultiplier: new Decimal(1.55),
     baseProduction: new Decimal(1),
-    globalMultiplierBonus: 0.02 // +2% per purchase
+    globalMultiplierBonus: 0.002
   }
 ]
 
