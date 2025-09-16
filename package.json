@@ -11,6 +11,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^7.0.3",
     "@capacitor/app": "^7.1.0",
     "@capacitor/haptics": "^7.0.2",
     "@nuxtjs/supabase": "1.6.2",

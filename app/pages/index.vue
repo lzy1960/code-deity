@@ -1,3 +1,108 @@
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import { useGameStore } from '~/store/game';
+import { prestigeThresholds } from '~~/game/configs';
+import AppHeader from '~/components/layout/AppHeader.vue';
+import AppFooter from '~/components/layout/AppFooter.vue';
+import GeneratorItem from '~/components/game/GeneratorItem.vue';
+import RefactorSection from '~/components/game/RefactorSection.vue';
+import CompileSection from '~/components/game/CompileSection.vue';
+import AutomationSection from '~/components/game/AutomationSection.vue';
+import ChallengesSection from '~/components/game/ChallengesSection.vue';
+import StatsSection from '~/components/game/StatsSection.vue';
+import SingularityStats from '~/components/game/SingularityStats.vue';
+import SingularitySection from '~/components/game/SingularitySection.vue';
+import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
+import AdBoostButton from '~/components/game/AdBoostButton.vue';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+
+const gameStore = useGameStore();
+
+const activeTab = ref('generators');
+const upgradesSubTab = ref('refactor');
+const showRefactorSystemMessage = ref(false);
+const hasShownRefactorMessage = ref(false);
+const showOverloadSystemMessage = ref(false);
+const hasShownOverloadMessage = ref(false);
+
+const handleSingularityReset = () => {
+  gameStore.performSingularityReset();
+  activeTab.value = 'singularity';
+};
+
+const isGeneratorSectionUnlocked = computed(() => {
+  return gameStore.isGeneratorUnlocked(1);
+});
+
+const unlockedGenerators = computed(() => {
+  return gameStore.generators.filter(g => gameStore.isGeneratorUnlocked(g.id));
+});
+
+const headerTitle = computed(() => {
+  if (!isGeneratorSectionUnlocked.value) {
+    return '代码神祇 (Code Deity)';
+  }
+  // Capitalize first letter
+  return activeTab.value.charAt(0).toUpperCase() + activeTab.value.slice(1);
+});
+
+const buyGenerator = (id: number) => {
+  gameStore.buyGenerator(id);
+};
+
+watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
+  if (isUnlocked && !hasShownRefactorMessage.value) {
+    showRefactorSystemMessage.value = true;
+    hasShownRefactorMessage.value = true;
+    activeTab.value = 'upgrades';
+    setTimeout(() => {
+      showRefactorSystemMessage.value = false;
+    }, 5000);
+  }
+});
+
+watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
+  if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
+    showOverloadSystemMessage.value = true;
+    hasShownOverloadMessage.value = true;
+    setTimeout(() => {
+      showOverloadSystemMessage.value = false;
+    }, 8000);
+  }
+});
+
+watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
+  gameStore.setBuyMultiplier('x1')
+})
+
+watch(() => gameStore.refactorCount, (newCount, oldCount) => {
+  if (newCount > oldCount) {
+    activeTab.value = 'generators';
+    // Reset message flags on refactor
+    hasShownOverloadMessage.value = false;
+  }
+});
+
+// Watch for unlocks to provide haptic feedback
+watch(() => unlockedGenerators.value.length, (newLength, oldLength) => {
+  if (newLength > oldLength && oldLength > 0) { // oldLength > 0 to avoid vibration on initial load
+    Haptics.impact({ style: ImpactStyle.Light });
+  }
+});
+
+watch(() => gameStore.isRefactorUnlocked, (isUnlocked, wasUnlocked) => {
+  if (isUnlocked && !wasUnlocked) {
+    Haptics.impact({ style: ImpactStyle.Medium });
+  }
+});
+
+watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
+  if (isUnlocked && !wasUnlocked) {
+    Haptics.impact({ style: ImpactStyle.Medium });
+  }
+});
+</script>
+
 <template>
   <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'>
     <div class="flex-grow flex flex-col">
@@ -125,110 +230,7 @@
       </main>
     </div>
 
+    <AdBoostButton v-if="isGeneratorSectionUnlocked" />
     <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" context="game" />
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useGameStore } from '~/store/game';
-import { prestigeThresholds } from '~~/game/configs';
-import AppHeader from '~/components/layout/AppHeader.vue';
-import AppFooter from '~/components/layout/AppFooter.vue';
-import GeneratorItem from '~/components/game/GeneratorItem.vue';
-import RefactorSection from '~/components/game/RefactorSection.vue';
-import CompileSection from '~/components/game/CompileSection.vue';
-import AutomationSection from '~/components/game/AutomationSection.vue';
-import ChallengesSection from '~/components/game/ChallengesSection.vue';
-import StatsSection from '~/components/game/StatsSection.vue';
-import SingularityStats from '~/components/game/SingularityStats.vue';
-import SingularitySection from '~/components/game/SingularitySection.vue';
-import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-
-const gameStore = useGameStore();
-
-const activeTab = ref('generators');
-const upgradesSubTab = ref('refactor');
-const showRefactorSystemMessage = ref(false);
-const hasShownRefactorMessage = ref(false);
-const showOverloadSystemMessage = ref(false);
-const hasShownOverloadMessage = ref(false);
-
-const handleSingularityReset = () => {
-  gameStore.performSingularityReset();
-  activeTab.value = 'singularity';
-};
-
-const isGeneratorSectionUnlocked = computed(() => {
-  return gameStore.isGeneratorUnlocked(1);
-});
-
-const unlockedGenerators = computed(() => {
-  return gameStore.generators.filter(g => gameStore.isGeneratorUnlocked(g.id));
-});
-
-const headerTitle = computed(() => {
-  if (!isGeneratorSectionUnlocked.value) {
-    return '代码神祇 (Code Deity)';
-  }
-  // Capitalize first letter
-  return activeTab.value.charAt(0).toUpperCase() + activeTab.value.slice(1);
-});
-
-const buyGenerator = (id: number) => {
-  gameStore.buyGenerator(id);
-};
-
-watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
-  if (isUnlocked && !hasShownRefactorMessage.value) {
-    showRefactorSystemMessage.value = true;
-    hasShownRefactorMessage.value = true;
-    activeTab.value = 'upgrades';
-    setTimeout(() => {
-      showRefactorSystemMessage.value = false;
-    }, 5000);
-  }
-});
-
-watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
-  if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
-    showOverloadSystemMessage.value = true;
-    hasShownOverloadMessage.value = true;
-    setTimeout(() => {
-      showOverloadSystemMessage.value = false;
-    }, 8000);
-  }
-});
-
-watch(() => gameStore.isMultiplierUnlocked, (isUnlocked) => {
-  gameStore.setBuyMultiplier('x1')
-})
-
-watch(() => gameStore.refactorCount, (newCount, oldCount) => {
-  if (newCount > oldCount) {
-    activeTab.value = 'generators';
-    // Reset message flags on refactor
-    hasShownOverloadMessage.value = false;
-  }
-});
-
-// Watch for unlocks to provide haptic feedback
-watch(() => unlockedGenerators.value.length, (newLength, oldLength) => {
-  if (newLength > oldLength && oldLength > 0) { // oldLength > 0 to avoid vibration on initial load
-    Haptics.impact({ style: ImpactStyle.Light });
-  }
-});
-
-watch(() => gameStore.isRefactorUnlocked, (isUnlocked, wasUnlocked) => {
-  if (isUnlocked && !wasUnlocked) {
-    Haptics.impact({ style: ImpactStyle.Medium });
-  }
-});
-
-watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
-  if (isUnlocked && !wasUnlocked) {
-    Haptics.impact({ style: ImpactStyle.Medium });
-  }
-});
-</script>

@@ -57,6 +57,10 @@ export interface GameState {
   // Narrative
   unlockedNarratives: string[]
   narrativeQueue: NarrativeMilestone[]
+
+  // Ad Boosts
+  adBoostExpiry: number | null
+  adBoostCooldownExpiry: number | null
 }
 
 // #endregion
@@ -96,7 +100,10 @@ export const useGameStore = defineStore('game', {
     pendingOfflineGains: null,
 
     unlockedNarratives: [],
-    narrativeQueue: []
+    narrativeQueue: [],
+
+    adBoostExpiry: null,
+    adBoostCooldownExpiry: null
   }),
   // #endregion
 
@@ -364,12 +371,19 @@ export const useGameStore = defineStore('game', {
     },
     
     cps(): Decimal {
-      let finalCps = this.generatorProduction(1)
+      let finalCps = this.generatorProduction(1).times(this.adBoostMultiplier)
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
         finalCps = finalCps.times(penalty)
       }
       return finalCps
+    },
+
+    adBoostMultiplier(state) {
+      if (state.adBoostExpiry && state.adBoostExpiry > Date.now()) {
+        return 2
+      }
+      return 1
     },
 
     // --- Prestige Gain Calculation ---
@@ -431,7 +445,8 @@ export const useGameStore = defineStore('game', {
       // Copy over all other primitive properties
       const primitiveKeys: (keyof GameState)[] = [
         'saveVersion', 'lastUpdateTime', 'buyMultiplier', 'refactorCount', 'version',
-        'challengeCompletions', 'activeChallenge', 'automatorStates', 'unlockedNarratives'
+        'challengeCompletions', 'activeChallenge', 'automatorStates', 'unlockedNarratives',
+        'adBoostExpiry', 'adBoostCooldownExpiry'
       ];
       
       for (const key of primitiveKeys) {
@@ -832,6 +847,19 @@ export const useGameStore = defineStore('game', {
       this.currency = this.currency.plus(this.pendingOfflineGains.cp)
       this.lastUpdateTime = Date.now() // Rer-calculate from now
       this.pendingOfflineGains = null
+    },
+
+    doubleOfflineGains() {
+      if (this.pendingOfflineGains) {
+        this.pendingOfflineGains.cp = this.pendingOfflineGains.cp.times(2);
+      }
+    },
+
+    activateAdBoost() {
+      // Set boost for 1 hour from now
+      this.adBoostExpiry = Date.now() + 60 * 60 * 1000;
+      // Set cooldown for 4 hours from now
+      this.adBoostCooldownExpiry = Date.now() + 4 * 60 * 60 * 1000;
     },
 
     // --- Narrative Actions ---
