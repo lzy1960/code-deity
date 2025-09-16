@@ -117,7 +117,15 @@ export const useGameStore = defineStore('game', {
       return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES
     },
     isCompileUnlocked: state => state.refactorPoints.gte(prestigeThresholds.COMPILE_UNLOCK_RP) || state.version > 0,
-    isAutomationUnlocked: state => state.version > 0,
+    isAutomationUnlocked() {
+      if (this.paradigms.api_interface) {
+        return this.refactorCount >= 5
+      }
+      if (this.paradigms.dependency_injection) {
+        return true
+      }
+      return this.version > 0
+    },
     isChallengesUnlocked: state => state.version >= 2,
     isMultiplierUnlocked: state => {
       const moduleGenerator = state.generators.find(g => g.id === 4)
@@ -142,6 +150,12 @@ export const useGameStore = defineStore('game', {
         const originalConfig = this.generatorConfig(id)
         // Must be a new object to avoid mutation
         const effectiveConfig = { ...originalConfig }
+
+        // --- Apply Paradigm Bonuses ---
+        if (this.paradigms.memory_management) {
+          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.8)
+          effectiveConfig.costMultiplier = effectiveConfig.costMultiplier.plus(0.01)
+        }
 
         // Apply permanent rewards first
         if (this.challengeCompletions.challenge4) {
@@ -234,13 +248,20 @@ export const useGameStore = defineStore('game', {
         
         // Base bonus
         let bonusPerLevel = this.challengeCompletions.challenge1 ? 2.2 : 2
-        // Paradigm bonus
-        if (this.paradigms.oop) {
-          bonusPerLevel *= 1.1
-        }
-
+        
         const bonusLevels = this.getBuyBonus(generator.bought)
-        return Decimal.pow(bonusPerLevel, bonusLevels)
+        let bonus = Decimal.pow(bonusPerLevel, bonusLevels)
+
+        // ## Abstraction School: Polymorphism ##
+        if (this.paradigms.polymorphism && id > 1) {
+          const prevGenerator = this.generators.find(g => g.id === id - 1)!
+          const prevBonusLevels = this.getBuyBonus(prevGenerator.bought)
+          const prevBonus = Decimal.pow(bonusPerLevel, prevBonusLevels)
+          // Apply 20% of the previous generator's bonus
+          bonus = bonus.times(prevBonus.minus(1).times(0.2).plus(1))
+        }
+        
+        return bonus
       }
     },
 
@@ -264,15 +285,28 @@ export const useGameStore = defineStore('game', {
     rpBonus(): Decimal {
       if (this.activeChallenge === 'challenge2') return new Decimal(1)
 
-      const baseBonus = this.refactorPoints.times(0.1)
-      const versionBonus = new Decimal(1).plus(this.version * 0.2)
+      let versionMultiplier = this.paradigms.enterprise_architecture ? 1.5 : 1
+      const versionBonus = new Decimal(1).plus(this.version * 0.2 * versionMultiplier)
       
-      let multiplier = new Decimal(1)
-      if (this.paradigms.functional) {
-        multiplier = multiplier.times(1.2)
+      let baseBonus = this.refactorPoints.times(0.1)
+
+      // ## Agility School: JIT Compilation ##
+      if (this.paradigms.jit_compilation) {
+        baseBonus = baseBonus.times(1.25)
       }
 
-      return new Decimal(1).plus(baseBonus.times(versionBonus).times(multiplier))
+      let finalBonus = new Decimal(1).plus(baseBonus.times(versionBonus))
+
+      // ## Efficiency School: Compiler Optimization ##
+      if (this.paradigms.compiler_optimization) {
+        let totalBuyBonusLevels = 0
+        for (const gen of this.generators) {
+          totalBuyBonusLevels += this.getBuyBonus(gen.bought)
+        }
+        finalBonus = finalBonus.times(1 + totalBuyBonusLevels * 0.01)
+      }
+
+      return finalBonus
     },
 
     globalMultiplier(): Decimal {
@@ -299,19 +333,30 @@ export const useGameStore = defineStore('game', {
 
         let production = config.baseProduction
           .times(generator.amount)
-          .times(this.buy10Bonus(id)) // This now contains the challenge logic
+          .times(this.buy10Bonus(id))
           .times(this.rpBonus)
           .times(this.globalMultiplier)
 
         // --- Apply Paradigm Bonuses ---
-        if (this.paradigms.procedural) {
+        // ## General School ##
+        if (this.paradigms.system_kernel) {
+          production = production.times(1.25)
+        }
+        if (this.paradigms.open_source_community) {
+          const schoolStarters = ['efficiency_starter', 'abstraction_starter', 'agility_starter']
+          const learnedStarters = schoolStarters.filter(s => this.paradigms[s]).length
+          production = production.times(1 + 0.15 * learnedStarters)
+        }
+
+        // ## Efficiency School ##
+        if (this.paradigms.pointer_arithmetic && (id === 1 || id === 2)) {
+          production = production.times(10)
+        }
+        if (this.paradigms.bit_manipulation) {
           production = production.times(1.5)
         }
-        if (this.paradigms.structured && (id === 2 || id === 3)) { // Function & Class
-          production = production.times(2)
-        }
-        if (this.paradigms.declarative && (id === 6 || id === 7)) { // Framework & Compiler
-          production = production.times(2)
+        if (this.paradigms.assembly_instruction) {
+          production = production.times(Math.max(1, this.refactorCount * this.refactorCount))
         }
 
         return production
@@ -330,9 +375,18 @@ export const useGameStore = defineStore('game', {
     // --- Prestige Gain Calculation ---
     refactorGain(): Decimal {
       if (this.currency.log10() < 20) return new Decimal(0)
-      const gain = Decimal.floor(
+      let gain = Decimal.floor(
         Decimal.pow(this.currency.log10() / 20, 1.5)
       ).times(this.challenge2Bonus)
+
+      // ## Agility School ##
+      if (this.paradigms.refactoring_tools) {
+        gain = gain.plus(1)
+      }
+      if (this.paradigms.metaprogramming) {
+        gain = gain.times(1.2)
+      }
+
       return gain
     },
 
@@ -349,9 +403,9 @@ export const useGameStore = defineStore('game', {
 
     singularityGain(): Decimal {
       if (!this.canSingularity) return new Decimal(0)
-      // Formula: SP = floor(log10(CP) - 308) ^ 1.5
+      // New Formula: SP = floor(sqrt(log10(CP) - 308) * 1.5)
       const gain = Decimal.floor(
-        Decimal.pow(this.currency.log10() - 308, 1.5)
+        Decimal.sqrt(this.currency.log10() - 308).times(1.5)
       )
       return gain.max(0)
     }
@@ -439,15 +493,44 @@ export const useGameStore = defineStore('game', {
       }
       this.currency = this.currency.plus(cpGain.times(diff));
 
+      // ## Abstraction School: Supply Chain Optimization ##
+      if (this.paradigms.supply_chain_optimization) {
+        const functionProduction = this.generatorProduction(2)
+        this.generators[2]!.amount = this.generators[2]!.amount.plus(functionProduction.times(0.01).times(diff))
+      }
+
       // Handle automators
       if (this.isAutomationUnlocked) {
-        for (let i = 8; i >= 1; i--) {
-          if (this.automatorStates[i]) {
-            // Temporarily set to 'max' for auto-buy, then restore
-            const originalMultiplier = this.buyMultiplier
-            this.setBuyMultiplier('max')
-            this.buyGenerator(i)
-            this.setBuyMultiplier(originalMultiplier)
+        // ## Abstraction School: Continuous Integration ##
+        if (this.paradigms.continuous_integration) {
+          // Intelligent automator: find the cheapest generator that gives a buy 10 bonus
+          let bestTarget: { id: number, cost: Decimal } | null = null
+          for (let i = 8; i >= 1; i--) {
+            if (this.automatorStates[i]) {
+              const generator = this.generators.find(g => g.id === i)!
+              const progressInfo = this.getProgressInfo(i)
+              if (progressInfo.nextBonus > 0) {
+                const cost = this.costForAmount(i, new Decimal(progressInfo.nextBonus))
+                if (this.currency.gte(cost)) {
+                  if (!bestTarget || cost.lt(bestTarget.cost)) {
+                    bestTarget = { id: i, cost }
+                  }
+                }
+              }
+            }
+          }
+          if (bestTarget) {
+            this.buyGenerator(bestTarget.id)
+          }
+        } else {
+          // Default automator
+          for (let i = 8; i >= 1; i--) {
+            if (this.automatorStates[i]) {
+              const originalMultiplier = this.buyMultiplier
+              this.setBuyMultiplier('max')
+              this.buyGenerator(i)
+              this.setBuyMultiplier(originalMultiplier)
+            }
           }
         }
       }
@@ -471,6 +554,12 @@ export const useGameStore = defineStore('game', {
         const generator = this.generators.find(g => g.id === id)!
         generator.amount = generator.amount.plus(amountToBuy)
         generator.bought += amountToBuy.toNumber()
+
+        // ## Agility School: Dynamic Typing ##
+        if (this.paradigms.dynamic_typing && id > 1) {
+          const prevGenerator = this.generators.find(g => g.id === id - 1)!
+          prevGenerator.amount = prevGenerator.amount.plus(amountToBuy)
+        }
       }
       this.checkNarrativeMilestones()
     },
@@ -495,6 +584,16 @@ export const useGameStore = defineStore('game', {
 
     refactor() {
       if (!this.canRefactor) return
+
+      // ## Agility School: Code Generation ##
+      if (this.paradigms.code_generation) {
+        this.generators.forEach(g => g.amount = g.amount.times(2))
+        // This is a temporary buff, so we don't save it.
+        // We can show a UI timer for this.
+        setTimeout(() => {
+          this.generators.forEach(g => g.amount = g.amount.div(2))
+        }, 10000)
+      }
 
       const gain = this.refactorGain
 
@@ -593,6 +692,24 @@ export const useGameStore = defineStore('game', {
       if (config.requires) {
         for (const reqId of config.requires) {
           if (!this.paradigms[reqId]) return // Dependency not met
+        }
+      }
+
+      // 4. Check for mutually exclusive forks
+      const forks: Record<string, string[]> = {
+        'pointer_arithmetic': ['memory_management', 'bit_manipulation'],
+        'design_patterns': ['polymorphism', 'dependency_injection'],
+        'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
+      }
+
+      for (const parent in forks) {
+        const children = forks[parent]
+        if (children.includes(paradigmId)) {
+          const otherChild = children.find(c => c !== paradigmId)!
+          if (this.paradigms[otherChild]) {
+            console.warn(`Cannot purchase ${paradigmId}, it is mutually exclusive with ${otherChild}`)
+            return // Mutually exclusive branch already purchased
+          }
         }
       }
 

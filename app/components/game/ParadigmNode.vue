@@ -23,25 +23,40 @@
 </template>
 
 <script setup lang="ts">
-import type { Paradigm } from '~~/game/paradigms.configs'
+import { useGameStore } from '~/store/game';
+import type { Paradigm } from '~/types/paradigms'
+import { paradigmConfigs } from '~~/game/paradigms.configs'
+
+const gameStore = useGameStore()
 
 const props = defineProps<{
   paradigm: Paradigm
   isPurchased: boolean
   isPurchasable: boolean
+  lockReason: 'sp' | 'dependency' | null
 }>()
+
+const statusText = computed(() => {
+  if (props.isPurchased) return '已解锁'
+  if (props.isPurchasable) return '可解锁'
+  
+  if (props.lockReason === 'dependency') {
+    const missingDeps = props.paradigm.requires
+      ?.filter(reqId => !gameStore.paradigms[reqId])
+      .map(reqId => `"${paradigmConfigs.find(p => p.id === reqId)?.name}"`)
+      .join(', ')
+    return `需要: ${missingDeps}`
+  }
+  // If locked but not because of dependency, it must be SP.
+  // We don't show "SP不足" here as per the new design.
+  return '已锁定'
+})
 
 const iconName = computed(() => {
   if (props.paradigm.id.includes('oop')) return 'mdi:object-group'
   if (props.paradigm.id.includes('procedural')) return 'mdi:arrow-decision-outline'
   if (props.paradigm.id.includes('functional')) return 'mdi:function-variant'
   return 'mdi:code-braces'
-})
-
-const statusText = computed(() => {
-  if (props.isPurchased) return '已解锁'
-  if (props.isPurchasable) return '可解锁'
-  return '已锁定'
 })
 
 const nodeClass = computed(() => {
@@ -57,6 +72,7 @@ const nodeClass = computed(() => {
 const statusTextColor = computed(() => {
   if (props.isPurchased) return 'text-green-400'
   if (props.isPurchasable) return 'text-purple-400'
+  if (props.lockReason === 'dependency') return 'text-red-400'
   return 'text-gray-500'
 })
 
