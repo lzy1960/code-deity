@@ -65,12 +65,14 @@ export interface GameState {
   quantumComputingExpiry: number | null
   supplyChainOptimizationExpiry: number | null
   isAlgorithmBreakthroughActive: boolean
+  neuralBoostExpiry: number | null
   lastAdResetDate: string | null
   adViewsToday: {
     quantumComputing: number
     supplyChainOptimization: number
     algorithmBreakthrough: number
     codeInjection: number
+    neuralBoost: number
   }
 
   // Technical Debt
@@ -127,12 +129,14 @@ export const useGameStore = defineStore('game', {
     quantumComputingExpiry: null,
     supplyChainOptimizationExpiry: null,
     isAlgorithmBreakthroughActive: false,
+    neuralBoostExpiry: null,
     lastAdResetDate: null,
     adViewsToday: {
       quantumComputing: 0,
       supplyChainOptimization: 0,
       algorithmBreakthrough: 0,
       codeInjection: 0,
+      neuralBoost: 0,
     },
 
     activeRefactoring: null
@@ -517,6 +521,7 @@ export const useGameStore = defineStore('game', {
       this.quantumComputingExpiry = stateToLoad.quantumComputingExpiry ?? null
       this.supplyChainOptimizationExpiry = stateToLoad.supplyChainOptimizationExpiry ?? null
       this.isAlgorithmBreakthroughActive = stateToLoad.isAlgorithmBreakthroughActive ?? false
+      this.neuralBoostExpiry = stateToLoad.neuralBoostExpiry ?? null
       this.lastAdResetDate = stateToLoad.lastAdResetDate ?? null
       if (stateToLoad.adViewsToday) {
         // Ensure forward compatibility by merging with defaults
@@ -525,6 +530,7 @@ export const useGameStore = defineStore('game', {
           supplyChainOptimization: 0,
           algorithmBreakthrough: 0,
           codeInjection: 0,
+          neuralBoost: 0,
           ...stateToLoad.adViewsToday,
         };
       }
@@ -626,7 +632,11 @@ export const useGameStore = defineStore('game', {
     },
 
     manualClick() {
-      const clickPower = this.cps.times(0.05).plus(1);
+      let clickMultiplier = 0.05;
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
+        clickMultiplier = 0.5; // 10x boost
+      }
+      const clickPower = this.cps.times(clickMultiplier).plus(1);
       this.currency = this.currency.plus(clickPower)
       this.checkNarrativeMilestones()
     },
@@ -943,6 +953,7 @@ export const useGameStore = defineStore('game', {
           supplyChainOptimization: 0,
           algorithmBreakthrough: 0,
           codeInjection: 0,
+          neuralBoost: 0,
         };
         this.lastAdResetDate = today;
         console.log('Ad views have been reset for the day.');
@@ -965,6 +976,12 @@ export const useGameStore = defineStore('game', {
       if (this.adViewsToday.algorithmBreakthrough >= 5) return;
       this.isAlgorithmBreakthroughActive = true;
       this.adViewsToday.algorithmBreakthrough++;
+    },
+
+    activateNeuralBoost() {
+      if (this.adViewsToday.neuralBoost >= 5) return;
+      this.neuralBoostExpiry = Date.now() + 2 * 60 * 1000; // 2 minutes
+      this.adViewsToday.neuralBoost++;
     },
 
     applyCodeInjection() {
@@ -1123,6 +1140,7 @@ export const useGameStore = defineStore('game', {
         supplyChainOptimization: 0,
         algorithmBreakthrough: 0,
         codeInjection: 0,
+        neuralBoost: 0,
       };
       console.log('Developer action: Ad views have been reset.');
     },

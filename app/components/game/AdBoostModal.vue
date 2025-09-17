@@ -3,8 +3,11 @@
     <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
       <div class="relative w-full max-w-lg m-4 rounded-2xl bg-transparent p-0 shadow-2xl shadow-cyan-500/20 overflow-hidden border border-cyan-500/20">
         <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] h-full overflow-hidden">
+        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] overflow-hidden h-[80vh]">
           <div class="p-6 h-full flex flex-col">
+            <button @click="modal.hide()" class="absolute top-3 right-3 text-gray-500 hover:text-white transition-colors z-20">
+              <Icon name="mdi:close-circle-outline" class="text-3xl" />
+            </button>
             <h2 class="mb-4 text-center text-2xl font-bold text-cyan-300 shrink-0">
               <Icon name="mdi:rocket-launch" class="mr-2" />
               广告增益中心
@@ -20,6 +23,17 @@
                 :is-active="isQuantumComputingActive"
                 :active-text="`剩余: ${quantumComputingTimeLeft}`"
                 @trigger="activateBoost('quantumComputing')"
+              />
+
+              <!-- Neural Boost -->
+              <AdBoostOption
+                title="神经超频"
+                description="手动超频效果提升10倍 (5% -> 50%)，持续 2 分钟。"
+                icon="mdi:brain"
+                :views-left="5 - gameStore.adViewsToday.neuralBoost"
+                :is-active="isNeuralBoostActive"
+                :active-text="`剩余: ${neuralBoostTimeLeft}`"
+                @trigger="activateBoost('neuralBoost')"
               />
 
               <!-- Supply Chain Optimization -->
@@ -53,15 +67,6 @@
                 @trigger="activateBoost('codeInjection')"
               />
             </div>
-
-            <div class="mt-6 text-center shrink-0">
-              <button
-                class="rounded-lg bg-cyan-600 px-8 py-3 font-bold text-white shadow-lg shadow-cyan-600/30 transition-colors hover:bg-cyan-700"
-                @click="modal.hide()"
-              >
-                关闭
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -83,10 +88,11 @@ const gameStore = useGameStore();
 const toast = useToast();
 const now = useNow({ interval: 1000 });
 
-type BoostType = 'quantumComputing' | 'supplyChainOptimization' | 'algorithmBreakthrough' | 'codeInjection';
+type BoostType = 'quantumComputing' | 'supplyChainOptimization' | 'algorithmBreakthrough' | 'codeInjection' | 'neuralBoost';
 
 const isQuantumComputingActive = computed(() => gameStore.quantumComputingExpiry && gameStore.quantumComputingExpiry > now.value.getTime());
 const isSupplyChainActive = computed(() => gameStore.supplyChainOptimizationExpiry && gameStore.supplyChainOptimizationExpiry > now.value.getTime());
+const isNeuralBoostActive = computed(() => gameStore.neuralBoostExpiry && gameStore.neuralBoostExpiry > now.value.getTime());
 
 const formatTime = (expiry: number | null) => {
   if (!expiry) return '00:00';
@@ -99,6 +105,7 @@ const formatTime = (expiry: number | null) => {
 
 const quantumComputingTimeLeft = computed(() => formatTime(gameStore.quantumComputingExpiry));
 const supplyChainTimeLeft = computed(() => formatTime(gameStore.supplyChainOptimizationExpiry));
+const neuralBoostTimeLeft = computed(() => formatTime(gameStore.neuralBoostExpiry));
 
 async function activateBoost(type: BoostType) {
   if (gameStore.adViewsToday[type] >= 5) {
@@ -126,6 +133,10 @@ async function activateBoost(type: BoostType) {
         break;
       case 'codeInjection':
         gameStore.applyCodeInjection();
+        break;
+      case 'neuralBoost':
+        gameStore.activateNeuralBoost();
+        toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
         break;
     }
   }
