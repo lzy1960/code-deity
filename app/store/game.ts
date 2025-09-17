@@ -1098,6 +1098,15 @@ export const useGameStore = defineStore('game', {
         console.error('Invalid Decimal format for RP', e)
       }
     },
+    _dev_resetAdViews() {
+      this.adViewsToday = {
+        quantumComputing: 0,
+        supplyChainOptimization: 0,
+        inspirationBurst: 0,
+        codeInjection: 0,
+      };
+      console.log('Developer action: Ad views have been reset.');
+    },
   }
   // #endregion
 })
