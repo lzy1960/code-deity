@@ -54,14 +54,14 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 5,
     name: '库 (Library)',
-    baseCost: new Decimal(1e14),     // Massively increased from 5e11
+    baseCost: new Decimal(5e12),     // Rebalanced from 1e14
     costMultiplier: new Decimal(1.40),
     baseProduction: new Decimal(1)
   },
   {
     id: 6,
     name: '框架 (Framework)',
-    baseCost: new Decimal(1e22),     // Massively increased from 1e18
+    baseCost: new Decimal(5e20),     // Rebalanced from 1e22
     costMultiplier: new Decimal(1.45),
     baseProduction: new Decimal(1)
   },
@@ -69,7 +69,7 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 7,
     name: '编译器 (Compiler)',
-    baseCost: new Decimal(1e32),     // Massively increased from 1e25
+    baseCost: new Decimal(1e31),     // Rebalanced from 1e32
     costMultiplier: new Decimal(1.50),
     baseProduction: new Decimal(1),
     globalMultiplierBonus: 0.001
@@ -77,7 +77,7 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 8,
     name: 'AI 核心 (A.I. Core)',
-    baseCost: new Decimal(1e44),     // Massively increased from 1e34
+    baseCost: new Decimal(1e42),     // Rebalanced from 1e44
     costMultiplier: new Decimal(1.55),
     baseProduction: new Decimal(1),
     globalMultiplierBonus: 0.002

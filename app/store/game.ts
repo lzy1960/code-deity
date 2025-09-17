@@ -59,8 +59,18 @@ export interface GameState {
   narrativeQueue: NarrativeMilestone[]
 
   // Ad Boosts
-  adBoostExpiry: number | null
-  adBoostCooldownExpiry: number | null
+  adBoostExpiry: number | null // DEPRECATED: To be removed in a future version
+  adBoostCooldownExpiry: number | null // DEPRECATED
+
+  quantumComputingExpiry: number | null
+  supplyChainOptimizationExpiry: number | null
+  lastAdResetDate: string | null
+  adViewsToday: {
+    quantumComputing: number
+    supplyChainOptimization: number
+    inspirationBurst: number
+    codeInjection: number
+  }
 
   // Technical Debt
   activeRefactoring: {
@@ -112,6 +122,16 @@ export const useGameStore = defineStore('game', {
 
     adBoostExpiry: null,
     adBoostCooldownExpiry: null,
+
+    quantumComputingExpiry: null,
+    supplyChainOptimizationExpiry: null,
+    lastAdResetDate: null,
+    adViewsToday: {
+      quantumComputing: 0,
+      supplyChainOptimization: 0,
+      inspirationBurst: 0,
+      codeInjection: 0,
+    },
 
     activeRefactoring: null
   }),
@@ -167,6 +187,11 @@ export const useGameStore = defineStore('game', {
         const originalConfig = this.generatorConfig(id)
         // Must be a new object to avoid mutation
         const effectiveConfig = { ...originalConfig }
+
+        // --- Apply Ad Boosts ---
+        if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > Date.now()) {
+          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.75) // 25% cost reduction
+        }
 
         // --- Apply Paradigm Bonuses ---
         if (this.paradigms.memory_management) {
@@ -264,7 +289,7 @@ export const useGameStore = defineStore('game', {
         const generator = this.generators.find(g => g.id === id)!
         
         // Base bonus
-        let bonusPerLevel = this.challengeCompletions.challenge1 ? 1.65 : 1.5
+        let bonusPerLevel = this.challengeCompletions.challenge1 ? 1.8 : 1.65
         
         const bonusLevels = this.getBuyBonus(generator.bought)
         let bonus = Decimal.pow(bonusPerLevel, bonusLevels)
@@ -394,10 +419,16 @@ export const useGameStore = defineStore('game', {
     },
 
     adBoostMultiplier(state) {
+      let multiplier = 1
+      // Legacy boost
       if (state.adBoostExpiry && state.adBoostExpiry > Date.now()) {
-        return 2
+        multiplier = multiplier * 2
       }
-      return 1
+      // Quantum Computing boost
+      if (state.quantumComputingExpiry && state.quantumComputingExpiry > Date.now()) {
+        multiplier = multiplier * 5
+      }
+      return multiplier
     },
 
     // --- Prestige Gain Calculation ---
@@ -474,6 +505,17 @@ export const useGameStore = defineStore('game', {
       this.unlockedSingularity = stateToLoad.unlockedSingularity ?? false
       this.paradigms = stateToLoad.paradigms ?? {}
       this.singularityCount = stateToLoad.singularityCount ?? 0
+
+      // Hydrate new ad system state
+      this.quantumComputingExpiry = stateToLoad.quantumComputingExpiry ?? null
+      this.supplyChainOptimizationExpiry = stateToLoad.supplyChainOptimizationExpiry ?? null
+      this.lastAdResetDate = stateToLoad.lastAdResetDate ?? null
+      if (stateToLoad.adViewsToday) {
+        this.adViewsToday = stateToLoad.adViewsToday
+      }
+
+      // After hydrating, check if ad views need to be reset
+      this.resetAdViewsIfNeeded()
     },
 
     /**
@@ -569,7 +611,8 @@ export const useGameStore = defineStore('game', {
     },
 
     manualClick() {
-      this.currency = this.currency.plus(1)
+      const clickPower = this.cps.times(0.05).plus(1);
+      this.currency = this.currency.plus(clickPower)
       this.checkNarrativeMilestones()
     },
 
@@ -867,6 +910,50 @@ export const useGameStore = defineStore('game', {
       if (this.pendingOfflineGains) {
         this.pendingOfflineGains.cp = this.pendingOfflineGains.cp.times(2);
       }
+    },
+
+    // --- New Ad System Actions ---
+    resetAdViewsIfNeeded() {
+      const today = new Date().toISOString().slice(0, 10); // Get YYYY-MM-DD
+      if (this.lastAdResetDate !== today) {
+        this.adViewsToday = {
+          quantumComputing: 0,
+          supplyChainOptimization: 0,
+          inspirationBurst: 0,
+          codeInjection: 0,
+        };
+        this.lastAdResetDate = today;
+        console.log('Ad views have been reset for the day.');
+      }
+    },
+
+    activateQuantumComputing() {
+      if (this.adViewsToday.quantumComputing >= 5) return;
+      this.quantumComputingExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+      this.adViewsToday.quantumComputing++;
+    },
+
+    activateSupplyChainOptimization() {
+      if (this.adViewsToday.supplyChainOptimization >= 5) return;
+      this.supplyChainOptimizationExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+      this.adViewsToday.supplyChainOptimization++;
+    },
+
+    applyInspirationBurst() {
+      if (this.adViewsToday.inspirationBurst >= 5) return;
+      const rpGain = this.refactorGain.times(0.25);
+      if (rpGain.gt(0)) {
+        this.refactorPoints = this.refactorPoints.plus(rpGain);
+      }
+      this.adViewsToday.inspirationBurst++;
+    },
+
+    applyCodeInjection() {
+      if (this.adViewsToday.codeInjection >= 5) return;
+      const offlineCps = this.cps; // Use current CPS as a baseline
+      const cpGain = offlineCps.times(3600); // 1 hour of production
+      this.currency = this.currency.plus(cpGain);
+      this.adViewsToday.codeInjection++;
     },
 
     activateAdBoost() {

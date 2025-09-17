@@ -11,6 +11,7 @@ import SingularityConfirmationModal from '~/components/game/SingularityConfirmat
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
+import AdBoostModal from '~/components/game/AdBoostModal.vue'
 import { useEventListener } from '@vueuse/core'
 
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
@@ -127,6 +128,7 @@ onMounted(async () => {
     <TechDebtPanel />
     <HelpModal />
     <ToastManager />
+    <AdBoostModal />
 
     <!-- 
       The modal component is now a generic frame.

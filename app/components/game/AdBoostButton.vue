@@ -2,13 +2,14 @@
   <div v-if="isAdMobInitialized" class="fixed bottom-24 right-4 z-50">
     <button
       @click="handleClick"
-      :disabled="isDisabled"
-      class="flex items-center justify-center w-16 h-16 rounded-full text-white shadow-lg transition-all transform hover:scale-110 active:scale-100 disabled:cursor-not-allowed disabled:opacity-60"
+      class="flex items-center justify-center w-16 h-16 rounded-full text-white shadow-lg transition-all transform hover:scale-110 active:scale-100"
       :class="buttonClass"
     >
-      <div v-if="isBoostActive" class="text-center">
-        <p class="text-xs font-bold">x2</p>
-        <p class="text-sm font-mono">{{ formattedTime }}</p>
+      <div v-if="isAnyBoostActive" class="text-center">
+        <p class="text-xs font-bold">
+          <Icon name="mdi:flash" />
+        </p>
+        <p class="text-sm font-mono">Active</p>
       </div>
       <Icon v-else name="mdi:rocket-launch" class="text-3xl" />
     </button>
@@ -18,52 +19,34 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useGameStore } from '~/store/game';
-import { showRewardVideoAd, isAdMobInitialized } from '~/services/admob';
-import { useNow, useIntervalFn } from '@vueuse/core';
+import { isAdMobInitialized } from '~/services/admob';
+import { useNow } from '@vueuse/core';
+import { useAdBoostModal } from '~/composables/useAdBoostModal';
 
 const gameStore = useGameStore();
+const adBoostModal = useAdBoostModal();
 const now = useNow({ interval: 1000 });
 
-const isBoostActive = computed(() => {
-  return gameStore.adBoostExpiry !== null && gameStore.adBoostExpiry > now.value.getTime();
+const isQuantumComputingActive = computed(() => {
+  return gameStore.quantumComputingExpiry !== null && gameStore.quantumComputingExpiry > now.value.getTime();
 });
 
-const isCooldownActive = computed(() => {
-  return gameStore.adBoostCooldownExpiry !== null && gameStore.adBoostCooldownExpiry > now.value.getTime();
+const isSupplyChainActive = computed(() => {
+  return gameStore.supplyChainOptimizationExpiry !== null && gameStore.supplyChainOptimizationExpiry > now.value.getTime();
 });
 
-const isDisabled = computed(() => {
-  return isBoostActive.value || isCooldownActive.value;
-});
-
-const remainingTime = computed(() => {
-  if (!isBoostActive.value) return 0;
-  return Math.max(0, gameStore.adBoostExpiry! - now.value.getTime());
-});
-
-const formattedTime = computed(() => {
-  const totalSeconds = Math.floor(remainingTime.value / 1000);
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-  return `${minutes}:${seconds}`;
+const isAnyBoostActive = computed(() => {
+  return isQuantumComputingActive.value || isSupplyChainActive.value;
 });
 
 const buttonClass = computed(() => {
-  if (isBoostActive.value) {
+  if (isAnyBoostActive.value) {
     return 'bg-gradient-to-br from-green-400 to-cyan-500';
-  }
-  if (isCooldownActive.value) {
-    return 'bg-gray-600';
   }
   return 'bg-gradient-to-br from-purple-600 to-blue-500 animate-pulse';
 });
 
-async function handleClick() {
-  if (isDisabled.value) return;
-
-  const success = await showRewardVideoAd();
-  if (success) {
-    gameStore.activateAdBoost();
-  }
+function handleClick() {
+  adBoostModal.show();
 }
 </script>
