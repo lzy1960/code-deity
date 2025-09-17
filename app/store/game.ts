@@ -64,11 +64,12 @@ export interface GameState {
 
   quantumComputingExpiry: number | null
   supplyChainOptimizationExpiry: number | null
+  isAlgorithmBreakthroughActive: boolean
   lastAdResetDate: string | null
   adViewsToday: {
     quantumComputing: number
     supplyChainOptimization: number
-    inspirationBurst: number
+    algorithmBreakthrough: number
     codeInjection: number
   }
 
@@ -125,11 +126,12 @@ export const useGameStore = defineStore('game', {
 
     quantumComputingExpiry: null,
     supplyChainOptimizationExpiry: null,
+    isAlgorithmBreakthroughActive: false,
     lastAdResetDate: null,
     adViewsToday: {
       quantumComputing: 0,
       supplyChainOptimization: 0,
-      inspirationBurst: 0,
+      algorithmBreakthrough: 0,
       codeInjection: 0,
     },
 
@@ -225,12 +227,17 @@ export const useGameStore = defineStore('game', {
         const r = config.costMultiplier
         const k = generator.bought
         const B = config.baseCost
-        const C = this.currency
+        
+        // FIX: Use a temporary, boosted currency value for calculation if the breakthrough is active.
+        let effectiveCurrency = this.currency;
+        if (this.isAlgorithmBreakthroughActive) {
+          effectiveCurrency = this.currency.times(10); // Mathematically equivalent to a 90% cost reduction
+        }
 
-        if (C.lt(B.times(r.pow(k)))) return new Decimal(0)
+        if (effectiveCurrency.lt(B.times(r.pow(k)))) return new Decimal(0)
 
         // n <= log_r(C * (r - 1) / (B * r^k) + 1)
-        const num = C.times(r.minus(1)).div(B.times(r.pow(k))).plus(1)
+        const num = effectiveCurrency.times(r.minus(1)).div(B.times(r.pow(k))).plus(1)
         const n = Decimal.floor(num.log(r.toNumber()))
         return n.max(0)
       }
@@ -509,9 +516,17 @@ export const useGameStore = defineStore('game', {
       // Hydrate new ad system state
       this.quantumComputingExpiry = stateToLoad.quantumComputingExpiry ?? null
       this.supplyChainOptimizationExpiry = stateToLoad.supplyChainOptimizationExpiry ?? null
+      this.isAlgorithmBreakthroughActive = stateToLoad.isAlgorithmBreakthroughActive ?? false
       this.lastAdResetDate = stateToLoad.lastAdResetDate ?? null
       if (stateToLoad.adViewsToday) {
-        this.adViewsToday = stateToLoad.adViewsToday
+        // Ensure forward compatibility by merging with defaults
+        this.adViewsToday = {
+          quantumComputing: 0,
+          supplyChainOptimization: 0,
+          algorithmBreakthrough: 0,
+          codeInjection: 0,
+          ...stateToLoad.adViewsToday,
+        };
       }
 
       // After hydrating, check if ad views need to be reset
@@ -562,7 +577,7 @@ export const useGameStore = defineStore('game', {
       if (penalty < 1) {
         cpGain = cpGain.times(penalty)
       }
-      this.currency = this.currency.plus(cpGain.times(diff));
+      this.currency = this.currency.plus(cpGain.times(this.adBoostMultiplier).times(diff));
 
       // ## Abstraction School: Supply Chain Optimization ##
       if (this.paradigms.supply_chain_optimization) {
@@ -620,7 +635,14 @@ export const useGameStore = defineStore('game', {
       const amountToBuy = this.buyAmount(id)
       if (amountToBuy.eq(0)) return
 
-      const cost = this.costForAmount(id, amountToBuy)
+      let cost = this.costForAmount(id, amountToBuy)
+
+      // Apply Algorithm Breakthrough discount
+      if (this.isAlgorithmBreakthroughActive) {
+        cost = cost.times(0.1); // 90% discount
+        this.isAlgorithmBreakthroughActive = false; // Consume the buff
+      }
+
       if (this.currency.gte(cost)) {
         this.currency = this.currency.minus(cost)
         const generator = this.generators.find(g => g.id === id)!
@@ -919,7 +941,7 @@ export const useGameStore = defineStore('game', {
         this.adViewsToday = {
           quantumComputing: 0,
           supplyChainOptimization: 0,
-          inspirationBurst: 0,
+          algorithmBreakthrough: 0,
           codeInjection: 0,
         };
         this.lastAdResetDate = today;
@@ -939,13 +961,10 @@ export const useGameStore = defineStore('game', {
       this.adViewsToday.supplyChainOptimization++;
     },
 
-    applyInspirationBurst() {
-      if (this.adViewsToday.inspirationBurst >= 5) return;
-      const rpGain = this.refactorGain.times(0.25);
-      if (rpGain.gt(0)) {
-        this.refactorPoints = this.refactorPoints.plus(rpGain);
-      }
-      this.adViewsToday.inspirationBurst++;
+    activateAlgorithmBreakthrough() {
+      if (this.adViewsToday.algorithmBreakthrough >= 5) return;
+      this.isAlgorithmBreakthroughActive = true;
+      this.adViewsToday.algorithmBreakthrough++;
     },
 
     applyCodeInjection() {
@@ -1102,7 +1121,7 @@ export const useGameStore = defineStore('game', {
       this.adViewsToday = {
         quantumComputing: 0,
         supplyChainOptimization: 0,
-        inspirationBurst: 0,
+        algorithmBreakthrough: 0,
         codeInjection: 0,
       };
       console.log('Developer action: Ad views have been reset.');

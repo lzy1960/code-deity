@@ -140,6 +140,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
                 v-for="generator in unlockedGenerators"
                 :key="generator.id"
                 :generator-id="generator.id"
+                :discounted-cost="gameStore.isAlgorithmBreakthroughActive ? gameStore.costForAmount(generator.id, gameStore.buyAmount(generator.id)).times(0.1) : undefined"
                 @buy="buyGenerator(generator.id)"
               />
             </div>
@@ -162,11 +163,13 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
                     'border-b-2 border-b-[#3899fa] text-white': upgradesSubTab === 'deploy',
                     'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors': upgradesSubTab !== 'deploy'
                   }"
-                  :title="!gameStore.isCompileUnlocked ? `Requires ${prestigeThresholds.COMPILE_UNLOCK_RP} RP to unlock` : ''"
                 >
                   <p class="text-base font-bold flex items-center">
                     Deploy
                     <Icon v-if="!gameStore.isCompileUnlocked" name="mdi:lock" class="ml-1 text-gray-500" />
+                  </p>
+                  <p v-if="!gameStore.isCompileUnlocked" class="text-xs text-gray-500 mt-1">
+                    (需要 {{ prestigeThresholds.COMPILE_UNLOCK_RP }} RP)
                   </p>
                 </a>
               </div>

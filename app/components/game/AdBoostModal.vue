@@ -33,13 +33,15 @@
                 @trigger="activateBoost('supplyChainOptimization')"
               />
 
-              <!-- Inspiration Burst -->
+              <!-- Algorithm Breakthrough -->
               <AdBoostOption
-                title="灵感迸发"
-                description="立即获得当前重构可产生 25% 的 RP。"
-                icon="mdi:lightbulb-on"
-                :views-left="5 - gameStore.adViewsToday.inspirationBurst"
-                @trigger="activateBoost('inspirationBurst')"
+                title="算法突破"
+                description="你的下一次购买任意生成器的行为，成本降低 90%。(一次性)"
+                icon="mdi:lightbulb-on-outline"
+                :views-left="5 - gameStore.adViewsToday.algorithmBreakthrough"
+                :is-active="gameStore.isAlgorithmBreakthroughActive"
+                active-text="已激活"
+                @trigger="activateBoost('algorithmBreakthrough')"
               />
 
               <!-- Code Injection -->
@@ -73,13 +75,15 @@ import { useAdBoostModal } from '~/composables/useAdBoostModal';
 import { useGameStore } from '~/store/game';
 import { showRewardVideoAd } from '~/services/admob';
 import { useNow } from '@vueuse/core';
-import AdBoostOption from './AdBoostOption.vue'; // We will create this sub-component next
+import { useToast } from '~/composables/useToast';
+import AdBoostOption from './AdBoostOption.vue';
 
 const modal = useAdBoostModal();
 const gameStore = useGameStore();
+const toast = useToast();
 const now = useNow({ interval: 1000 });
 
-type BoostType = 'quantumComputing' | 'supplyChainOptimization' | 'inspirationBurst' | 'codeInjection';
+type BoostType = 'quantumComputing' | 'supplyChainOptimization' | 'algorithmBreakthrough' | 'codeInjection';
 
 const isQuantumComputingActive = computed(() => gameStore.quantumComputingExpiry && gameStore.quantumComputingExpiry > now.value.getTime());
 const isSupplyChainActive = computed(() => gameStore.supplyChainOptimizationExpiry && gameStore.supplyChainOptimizationExpiry > now.value.getTime());
@@ -98,7 +102,12 @@ const supplyChainTimeLeft = computed(() => formatTime(gameStore.supplyChainOptim
 
 async function activateBoost(type: BoostType) {
   if (gameStore.adViewsToday[type] >= 5) {
-    // Optional: show a toast message
+    toast.addToast('今日观看次数已用完', 'warning');
+    return;
+  }
+  
+  if (type === 'algorithmBreakthrough' && gameStore.isAlgorithmBreakthroughActive) {
+    toast.addToast('已有一个“算法突破”正在等待使用', 'info');
     return;
   }
 
@@ -111,8 +120,9 @@ async function activateBoost(type: BoostType) {
       case 'supplyChainOptimization':
         gameStore.activateSupplyChainOptimization();
         break;
-      case 'inspirationBurst':
-        gameStore.applyInspirationBurst();
+      case 'algorithmBreakthrough':
+        gameStore.activateAlgorithmBreakthrough();
+        toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
         break;
       case 'codeInjection':
         gameStore.applyCodeInjection();

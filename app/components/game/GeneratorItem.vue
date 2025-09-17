@@ -25,7 +25,11 @@
           <Icon name="mdi:cart" class="text-xl" />
         </div>
         <p class="text-xs font-medium text-gray-300">Cost:</p>
-        <p class="text-lg font-bold">{{ formattedCost }}</p>
+        <div v-if="discountedCost">
+          <p class="text-sm font-bold text-gray-500 line-through">{{ formattedCost }}</p>
+          <p class="text-lg font-bold text-green-400">{{ formatNumber(discountedCost) }}</p>
+        </div>
+        <p v-else class="text-lg font-bold">{{ formattedCost }}</p>
       </button>
     </div>
   </div>
@@ -39,6 +43,7 @@ import { formatNumber } from '~/utils/format';
 
 const props = defineProps<{
   generatorId: number;
+  discountedCost?: Decimal;
 }>();
 
 const emit = defineEmits(['buy']);
@@ -49,7 +54,10 @@ const generator = computed(() => gameStore.generators.find(g => g.id === props.g
 const config = computed(() => gameStore.generatorConfig(props.generatorId));
 const buyAmount = computed(() => gameStore.buyAmount(props.generatorId));
 const cost = computed(() => gameStore.costForAmount(props.generatorId, buyAmount.value));
-const canBuy = computed(() => gameStore.currency.gte(cost.value) && buyAmount.value.gt(0));
+const canBuy = computed(() => {
+  const finalCost = props.discountedCost ?? cost.value;
+  return gameStore.currency.gte(finalCost) && buyAmount.value.gt(0)
+});
 
 const formattedAmount = computed(() => {
   return generator.value ? formatNumber(generator.value.amount) : '0';
