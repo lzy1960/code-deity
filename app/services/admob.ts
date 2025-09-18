@@ -1,10 +1,11 @@
 import { AdMob, AdmobConsentStatus, RewardAdPluginEvents, type AdLoadInfo, type AdMobRewardItem, type RewardAdOptions } from '@capacitor-community/admob';
+import { useAdState, type BoostType } from '~/composables/useAdState';
 
 const _isInitialized = ref(false);
 export const isAdMobInitialized = readonly(_isInitialized);
 
 /**
- * Initializes the AdMob plugin.
+ * Initializes the AdMob plugin and sets up persistent event listeners.
  * This should be called once when the app starts.
  */
 export async function initializeAdMob() {
@@ -16,17 +17,6 @@ export async function initializeAdMob() {
   ]);
 
   if (trackingInfo.status === 'notDetermined') {
-    /**
-     * If you want to explain TrackingAuthorization before showing the iOS dialog,
-     * you can show the modal here.
-     * ex)
-     * const modal = await this.modalCtrl.create({
-     *   component: RequestTrackingPage,
-     * });
-     * await modal.present();
-     * await modal.onDidDismiss();  // Wait for close modal
-     **/
-
     await AdMob.requestTrackingAuthorization();
   }
 
@@ -39,40 +29,46 @@ export async function initializeAdMob() {
     await AdMob.showConsentForm();
   }
   _isInitialized.value = true;
+
+  // Add the persistent reward listener as the single source of truth for rewards
+  const adState = useAdState();
+  AdMob.addListener(RewardAdPluginEvents.Rewarded, (rewardItem: AdMobRewardItem) => {
+    if (rewardItem && rewardItem.amount > 0) {
+      adState.rewardGranted.value = true;
+    }
+  });
 }
 
 /**
- * Shows a rewarded video ad.
- * @returns A promise that resolves to true if the user earned the reward, and false otherwise.
+ * Shows a rewarded video ad. This function now only triggers the ad 
+ * and sets the context for the reward. The actual reward is handled by the global listener.
+ * @param boostType The type of boost being requested, to be checked by the central watcher.
  */
-export async function showRewardVideoAd(): Promise<boolean> {
+export async function showRewardVideoAd(boostType: BoostType): Promise<void> {
+  const adState = useAdState();
+
   if (!_isInitialized.value) {
     console.warn('AdMob is not initialized. Cannot show ad.');
-    return false;
+    return;
   }
-  AdMob.addListener(RewardAdPluginEvents.Loaded, (info: AdLoadInfo) => {
-    // Subscribe prepared rewardVideo
-  });
-
-  AdMob.addListener(
-    RewardAdPluginEvents.Rewarded,
-    (rewardItem: AdMobRewardItem) => {
-      // Subscribe user rewarded
-      console.log(rewardItem);
-    },
-  );
 
   const options: RewardAdOptions = {
     adId: 'ca-app-pub-3940256099942544/5224354917',
     // isTesting: true
-    // npa: true
-    // ssv: {
-    //   userId: "A user ID to send to your SSV"
-    //   customData: JSON.stringify({ ...MyCustomData })
-    //}
   };
-  await AdMob.prepareRewardVideoAd(options);
-  const rewardItem = await AdMob.showRewardVideoAd();
-  console.log('rewardItem', rewardItem);
-  return true;
+
+  try {
+    // Set the intent and timestamp before showing the ad
+    adState.requestedBoostType.value = boostType;
+    adState.adShownTimestamp.value = Date.now();
+    await AdMob.prepareRewardVideoAd(options);
+    await AdMob.showRewardVideoAd();
+  } catch (error) {
+    console.error('Error showing reward ad:', error);
+    // Reset intent if ad fails to show
+    adState.requestedBoostType.value = null;
+  } finally {
+    // This is for the offline modal fix, to know when the ad UI is closed.
+    adState.adClosedTimestamp.value = Date.now();
+  }
 }

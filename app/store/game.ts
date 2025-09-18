@@ -562,34 +562,7 @@ export const useGameStore = defineStore('game', {
     gameLoop() {
       const now = Date.now()
       const diff = new Decimal(now - this.lastUpdateTime).div(1000) // diff in seconds
-      if (diff.lt(0)) {
-        this.lastUpdateTime = now
-        return
-      }
-
-      // Use a two-step loop to prevent cascading calculations within the same tick
-      const productions: Decimal[] = [];
-      for (let i = 8; i >= 1; i--) {
-          productions[i-1] = this.generatorProduction(i);
-      }
-
-      for (let i = 8; i > 1; i--) {
-          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1].times(diff));
-      }
-      
-      // Apply Architectural Overhead penalty to final CP gain
-      let cpGain = productions[0]
-      const penalty = this.architecturalOverheadPenalty
-      if (penalty < 1) {
-        cpGain = cpGain.times(penalty)
-      }
-      this.currency = this.currency.plus(cpGain.times(this.adBoostMultiplier).times(diff));
-
-      // ## Abstraction School: Supply Chain Optimization ##
-      if (this.paradigms.supply_chain_optimization) {
-        const functionProduction = this.generatorProduction(2)
-        this.generators[2]!.amount = this.generators[2]!.amount.plus(functionProduction.times(0.01).times(diff))
-      }
+      this.simulateProgress(diff.toNumber() * 1000);
 
       // Handle automators
       if (this.isAutomationUnlocked) {
@@ -629,6 +602,37 @@ export const useGameStore = defineStore('game', {
 
       this.lastUpdateTime = now
       this.checkNarrativeMilestones()
+    },
+
+    simulateProgress(durationInMs: number) {
+      const diff = new Decimal(durationInMs).div(1000); // diff in seconds
+      if (diff.lte(0)) {
+        return;
+      }
+
+      // Use a two-step loop to prevent cascading calculations within the same tick
+      const productions: Decimal[] = [];
+      for (let i = 8; i >= 1; i--) {
+          productions[i-1] = this.generatorProduction(i);
+      }
+
+      for (let i = 8; i > 1; i--) {
+          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1].times(diff));
+      }
+      
+      // Apply Architectural Overhead penalty to final CP gain
+      let cpGain = productions[0]
+      const penalty = this.architecturalOverheadPenalty
+      if (penalty < 1) {
+        cpGain = cpGain.times(penalty)
+      }
+      this.currency = this.currency.plus(cpGain.times(this.adBoostMultiplier).times(diff));
+
+      // ## Abstraction School: Supply Chain Optimization ##
+      if (this.paradigms.supply_chain_optimization) {
+        const functionProduction = this.generatorProduction(2)
+        this.generators[2]!.amount = this.generators[2]!.amount.plus(functionProduction.times(0.01).times(diff))
+      }
     },
 
     manualClick() {

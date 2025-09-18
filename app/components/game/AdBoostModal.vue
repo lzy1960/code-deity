@@ -129,28 +129,9 @@ async function activateBoost(type: BoostType) {
 
   try {
     loadingBoost.value = type;
-    const success = await showRewardVideoAd();
-    if (success) {
-      switch (type) {
-        case 'quantumComputing':
-          gameStore.activateQuantumComputing();
-          break;
-        case 'supplyChainOptimization':
-          gameStore.activateSupplyChainOptimization();
-          break;
-        case 'algorithmBreakthrough':
-          gameStore.activateAlgorithmBreakthrough();
-          toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
-          break;
-        case 'codeInjection':
-          gameStore.applyCodeInjection();
-          break;
-        case 'neuralBoost':
-          gameStore.activateNeuralBoost();
-          toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
-          break;
-      }
-    }
+    // Fire-and-forget the reward logic. The global watcher will handle applying the reward.
+    // We still await here so the loading spinner stops when the ad is closed.
+    await showRewardVideoAd(type as BoostType);
   } catch (error) {
     console.error('Error showing reward video ad:', error);
     toast.addToast('广告加载失败，请稍后再试', 'error');

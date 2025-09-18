@@ -15,6 +15,7 @@ import AdBoostModal from '~/components/game/AdBoostModal.vue'
 import { useEventListener } from '@vueuse/core'
 import { useIsNative } from '~/utils/platform'
 import { useToast } from '~/composables/useToast'
+import { useAdState } from '~/composables/useAdState'
 
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
 import { App } from '@capacitor/app';
@@ -27,6 +28,7 @@ const exitConfirmationModal = useExitConfirmationModal()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const adState = useAdState()
 
 // Get user state from the module's composable
 const user = useSupabaseUser()
@@ -66,11 +68,8 @@ async function watchAdForBonus() {
 
   try {
     isOfflineAdLoading.value = true;
-    const success = await showRewardVideoAd();
-    if (success) {
-      gameStore.doubleOfflineGains();
-      adWatched.value = true; // Disable the ad button after watching
-    }
+    // Fire and forget. The global watcher will handle the reward.
+    await showRewardVideoAd('offlineBonus');
   } catch (error) {
     console.error('Error showing offline reward video ad:', error);
     toast.addToast('广告加载失败，请稍后再试', 'error');
@@ -80,8 +79,48 @@ async function watchAdForBonus() {
 }
 
 onMounted(async () => {
-  // Initialize AdMob, but do not wait for it to finish.
+  // Initialize AdMob and its global listeners
   initializeAdMob();
+
+  // Set up the central watcher for ad rewards
+  watch(() => adState.rewardGranted.value, (isGranted) => {
+    if (isGranted) {
+      const boostType = adState.requestedBoostType.value;
+      console.log(`Reward granted! Applying boost: ${boostType}`);
+
+      switch (boostType) {
+        case 'quantumComputing':
+          gameStore.activateQuantumComputing();
+          toast.addToast('量子计算已激活！CPS x5，持续10分钟', 'success', 5000);
+          break;
+        case 'supplyChainOptimization':
+          gameStore.activateSupplyChainOptimization();
+          toast.addToast('供应链已优化！成本降低25%，持续15分钟', 'success', 5000);
+          break;
+        case 'algorithmBreakthrough':
+          gameStore.activateAlgorithmBreakthrough();
+          toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
+          break;
+        case 'codeInjection':
+          gameStore.applyCodeInjection();
+          toast.addToast('代码注入成功！获得1小时算力', 'success', 5000);
+          break;
+        case 'neuralBoost':
+          gameStore.activateNeuralBoost();
+          toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
+          break;
+        case 'offlineBonus':
+          gameStore.doubleOfflineGains();
+          adWatched.value = true; // Disable the button in the offline modal
+          toast.addToast('超线程已启动！离线收益翻倍', 'success', 5000);
+          break;
+      }
+
+      // Reset the state after applying the reward
+      adState.rewardGranted.value = false;
+      adState.requestedBoostType.value = null;
+    }
+  });
 
   // 3. Load game data
   await $loadGame()
@@ -118,14 +157,27 @@ onMounted(async () => {
   // 8. Listen for app state changes (background/foreground)
   App.addListener('appStateChange', async (state) => {
     if (state.isActive) {
-      // App came to foreground, check for offline progress
+      const now = Date.now();
+      const timeSinceAdClosed = now - adState.adClosedTimestamp.value;
+
+      if (timeSinceAdClosed < 2500) {
+        const adWatchDuration = adState.adClosedTimestamp.value - adState.adShownTimestamp.value;
+        
+        if (adWatchDuration > 0) {
+          gameStore.simulateProgress(adWatchDuration);
+        }
+
+        gameStore.lastUpdateTime = now;
+        await $saveGameLocal();
+        return;
+      }
+
       await $loadGame();
       gameStore.calculateOfflineProgress();
       if (gameStore.hasPendingOfflineGains) {
         reveal();
       }
     } else {
-      // App went to background, ensure game is saved
       $saveGameLocal();
     }
   });
