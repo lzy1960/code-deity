@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAdMobInitialized" class="fixed bottom-24 right-4 z-50">
+  <div v-if="isNative" class="fixed bottom-24 right-4 z-50">
     <button
       @click="handleClick"
       class="flex items-center justify-center w-16 h-16 rounded-full text-white shadow-lg transition-all transform hover:scale-110 active:scale-100"
@@ -19,13 +19,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useGameStore } from '~/store/game';
-import { isAdMobInitialized } from '~/services/admob';
 import { useNow } from '@vueuse/core';
 import { useAdBoostModal } from '~/composables/useAdBoostModal';
+import { useIsNative } from '~/utils/platform';
 
 const gameStore = useGameStore();
 const adBoostModal = useAdBoostModal();
 const now = useNow({ interval: 1000 });
+
+const isNative = useIsNative();
 
 const isQuantumComputingActive = computed(() => {
   return gameStore.quantumComputingExpiry !== null && gameStore.quantumComputingExpiry > now.value.getTime();

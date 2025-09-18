@@ -13,10 +13,12 @@ import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
 import AdBoostModal from '~/components/game/AdBoostModal.vue'
 import { useEventListener } from '@vueuse/core'
+import { useIsNative } from '~/utils/platform'
+import { useToast } from '~/composables/useToast'
 
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
 import { App } from '@capacitor/app';
-import { initializeAdMob, isAdMobInitialized, showRewardVideoAd } from '~/services/admob';
+import { initializeAdMob, showRewardVideoAd } from '~/services/admob';
 
 const gameStore = useGameStore()
 const authStore = useAuthStore()
@@ -24,6 +26,7 @@ const { $loadGame, $saveGameLocal } = useNuxtApp() as any
 const exitConfirmationModal = useExitConfirmationModal()
 const router = useRouter()
 const route = useRoute()
+const toast = useToast()
 
 // Get user state from the module's composable
 const user = useSupabaseUser()
@@ -36,6 +39,8 @@ watch(user, (newUser) => {
 
 const isDev = computed(() => process.env.NODE_ENV === 'development')
 const adWatched = ref(false)
+const isNative = useIsNative()
+const isOfflineAdLoading = ref(false)
 
 // 1. Use the composable to get modal controls
 const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
@@ -57,10 +62,20 @@ useEventListener(window, 'pagehide', () => {
 })
 
 async function watchAdForBonus() {
-  const success = await showRewardVideoAd();
-  if (success) {
-    gameStore.doubleOfflineGains();
-    adWatched.value = true; // Disable the ad button after watching
+  if (isOfflineAdLoading.value) return;
+
+  try {
+    isOfflineAdLoading.value = true;
+    const success = await showRewardVideoAd();
+    if (success) {
+      gameStore.doubleOfflineGains();
+      adWatched.value = true; // Disable the ad button after watching
+    }
+  } catch (error) {
+    console.error('Error showing offline reward video ad:', error);
+    toast.addToast('广告加载失败，请稍后再试', 'error');
+  } finally {
+    isOfflineAdLoading.value = false;
   }
 }
 
@@ -149,13 +164,19 @@ onMounted(async () => {
 
       <div class="flex flex-col gap-3">
         <button 
-          v-if="isAdMobInitialized"
+          v-if="isNative"
           @click="watchAdForBonus"
-          :disabled="adWatched"
-          class="w-full rounded-lg bg-yellow-500 text-black font-bold py-4 px-6 hover:bg-opacity-90 transition-all text-xl shadow-lg shadow-yellow-500/30 transform hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+          :disabled="adWatched || isOfflineAdLoading"
+          class="w-full rounded-lg bg-yellow-500 text-black font-bold py-4 px-6 hover:bg-opacity-90 transition-all text-xl shadow-lg shadow-yellow-500/30 transform hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
         >
-          <Icon name="mdi:movie-play" />
-          <span>启动超线程 (x2 收益)</span>
+          <template v-if="isOfflineAdLoading">
+            <Icon name="mdi:loading" class="animate-spin" />
+            <span>加载中...</span>
+          </template>
+          <template v-else>
+            <Icon name="mdi:movie-play" />
+            <span>启动超线程 (x2 收益)</span>
+          </template>
         </button>
         <button 
           @click="confirm"

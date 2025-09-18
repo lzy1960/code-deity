@@ -22,6 +22,7 @@
                 :views-left="5 - gameStore.adViewsToday.quantumComputing"
                 :is-active="isQuantumComputingActive"
                 :active-text="`剩余: ${quantumComputingTimeLeft}`"
+                :is-loading="loadingBoost === 'quantumComputing'"
                 @trigger="activateBoost('quantumComputing')"
               />
 
@@ -33,6 +34,7 @@
                 :views-left="5 - gameStore.adViewsToday.neuralBoost"
                 :is-active="isNeuralBoostActive"
                 :active-text="`剩余: ${neuralBoostTimeLeft}`"
+                :is-loading="loadingBoost === 'neuralBoost'"
                 @trigger="activateBoost('neuralBoost')"
               />
 
@@ -44,6 +46,7 @@
                 :views-left="5 - gameStore.adViewsToday.supplyChainOptimization"
                 :is-active="isSupplyChainActive"
                 :active-text="`剩余: ${supplyChainTimeLeft}`"
+                :is-loading="loadingBoost === 'supplyChainOptimization'"
                 @trigger="activateBoost('supplyChainOptimization')"
               />
 
@@ -55,6 +58,7 @@
                 :views-left="5 - gameStore.adViewsToday.algorithmBreakthrough"
                 :is-active="gameStore.isAlgorithmBreakthroughActive"
                 active-text="已激活"
+                :is-loading="loadingBoost === 'algorithmBreakthrough'"
                 @trigger="activateBoost('algorithmBreakthrough')"
               />
 
@@ -64,6 +68,7 @@
                 description="立即获得相当于 1 小时产出的 CP。"
                 icon="mdi:syringe"
                 :views-left="5 - gameStore.adViewsToday.codeInjection"
+                :is-loading="loadingBoost === 'codeInjection'"
                 @trigger="activateBoost('codeInjection')"
               />
             </div>
@@ -75,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAdBoostModal } from '~/composables/useAdBoostModal';
 import { useGameStore } from '~/store/game';
 import { showRewardVideoAd } from '~/services/admob';
@@ -90,9 +95,11 @@ const now = useNow({ interval: 1000 });
 
 type BoostType = 'quantumComputing' | 'supplyChainOptimization' | 'algorithmBreakthrough' | 'codeInjection' | 'neuralBoost';
 
-const isQuantumComputingActive = computed(() => gameStore.quantumComputingExpiry && gameStore.quantumComputingExpiry > now.value.getTime());
-const isSupplyChainActive = computed(() => gameStore.supplyChainOptimizationExpiry && gameStore.supplyChainOptimizationExpiry > now.value.getTime());
-const isNeuralBoostActive = computed(() => gameStore.neuralBoostExpiry && gameStore.neuralBoostExpiry > now.value.getTime());
+const loadingBoost = ref<BoostType | null>(null);
+
+const isQuantumComputingActive = computed(() => !!gameStore.quantumComputingExpiry && gameStore.quantumComputingExpiry > now.value.getTime());
+const isSupplyChainActive = computed(() => !!gameStore.supplyChainOptimizationExpiry && gameStore.supplyChainOptimizationExpiry > now.value.getTime());
+const isNeuralBoostActive = computed(() => !!gameStore.neuralBoostExpiry && gameStore.neuralBoostExpiry > now.value.getTime());
 
 const formatTime = (expiry: number | null) => {
   if (!expiry) return '00:00';
@@ -108,6 +115,8 @@ const supplyChainTimeLeft = computed(() => formatTime(gameStore.supplyChainOptim
 const neuralBoostTimeLeft = computed(() => formatTime(gameStore.neuralBoostExpiry));
 
 async function activateBoost(type: BoostType) {
+  if (loadingBoost.value) return;
+
   if (gameStore.adViewsToday[type] >= 5) {
     toast.addToast('今日观看次数已用完', 'warning');
     return;
@@ -118,27 +127,35 @@ async function activateBoost(type: BoostType) {
     return;
   }
 
-  const success = await showRewardVideoAd();
-  if (success) {
-    switch (type) {
-      case 'quantumComputing':
-        gameStore.activateQuantumComputing();
-        break;
-      case 'supplyChainOptimization':
-        gameStore.activateSupplyChainOptimization();
-        break;
-      case 'algorithmBreakthrough':
-        gameStore.activateAlgorithmBreakthrough();
-        toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
-        break;
-      case 'codeInjection':
-        gameStore.applyCodeInjection();
-        break;
-      case 'neuralBoost':
-        gameStore.activateNeuralBoost();
-        toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
-        break;
+  try {
+    loadingBoost.value = type;
+    const success = await showRewardVideoAd();
+    if (success) {
+      switch (type) {
+        case 'quantumComputing':
+          gameStore.activateQuantumComputing();
+          break;
+        case 'supplyChainOptimization':
+          gameStore.activateSupplyChainOptimization();
+          break;
+        case 'algorithmBreakthrough':
+          gameStore.activateAlgorithmBreakthrough();
+          toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
+          break;
+        case 'codeInjection':
+          gameStore.applyCodeInjection();
+          break;
+        case 'neuralBoost':
+          gameStore.activateNeuralBoost();
+          toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
+          break;
+      }
     }
+  } catch (error) {
+    console.error('Error showing reward video ad:', error);
+    toast.addToast('广告加载失败，请稍后再试', 'error');
+  } finally {
+    loadingBoost.value = null;
   }
 }
 </script>

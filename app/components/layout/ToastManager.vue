@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-5 right-5 z-[9999] w-full max-w-xs">
+  <div class="fixed top-5 right-5 z-[9999] w-full max-w-xs" style="padding-top: env(safe-area-inset-top);">
     <TransitionGroup name="toast-list" tag="div" class="relative space-y-3">
       <div
         v-for="toast in toastStore.toasts.value"
