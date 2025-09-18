@@ -16,6 +16,7 @@ import AdBoostButton from '~/components/game/AdBoostButton.vue';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useSingularityModal } from '~/composables/useSingularityModal';
 import { useToast } from '~/composables/useToast';
+import { formatNumber } from '~/utils/format';
 
 const gameStore = useGameStore();
 const singularityModal = useSingularityModal();
@@ -25,6 +26,27 @@ const activeTab = ref('generators');
 const upgradesSubTab = ref('refactor');
 const hasShownRefactorMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
+
+// Floating numbers state
+const floatingNumbers = ref<{ id: number, amount: string, left: string }[]>([]);
+let floatingNumberId = 0;
+
+const handleManualClick = () => {
+  const clickPower = gameStore.manualClickPower;
+  gameStore.manualClick();
+
+  const newId = floatingNumberId++;
+  floatingNumbers.value.push({
+    id: newId,
+    amount: `+${formatNumber(clickPower)}`,
+    left: `${Math.random() * 10}%` // Position above the left-aligned CP display
+  });
+
+  // Remove the number after the animation completes
+  setTimeout(() => {
+    floatingNumbers.value = floatingNumbers.value.filter(n => n.id !== newId);
+  }, 1500); // Corresponds to animation duration
+};
 
 const handleSingularityReset = () => {
   singularityModal.show(() => {
@@ -110,17 +132,29 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 <template>
   <div class="relative flex size-full h-screen flex-col overflow-hidden bg-[#101a23] text-white dark group/design-root" style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'>
-    <AppHeader :title="headerTitle" :can-singularity="gameStore.canSingularity" @singularity-click="handleSingularityReset">
-      <template #actions>
-        <BuyMultiplierSelector v-if="activeTab === 'generators' && gameStore.isMultiplierUnlocked" />
-      </template>
-    </AppHeader>
+    <div class="relative"> 
+      <AppHeader :title="headerTitle" :can-singularity="gameStore.canSingularity" @singularity-click="handleSingularityReset">
+        <template #actions>
+          <BuyMultiplierSelector v-if="activeTab === 'generators' && gameStore.isMultiplierUnlocked" />
+        </template>
+      </AppHeader>
+      <div class="floating-numbers-container">
+        <span
+          v-for="num in floatingNumbers"
+          :key="num.id"
+          class="floating-number"
+          :style="{ left: num.left }"
+        >
+          {{ num.amount }}
+        </span>
+      </div>
+    </div>
 
     <main class="flex-1 overflow-y-auto">
       <div class="p-4 space-y-4 pb-24">
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
-          <button @click.prevent="gameStore.manualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
+          <button @click.prevent="handleManualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
             手动编写代码
           </button>
         </div>
@@ -130,7 +164,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
           <!-- Generators Section -->
           <div v-show="activeTab === 'generators'" class="space-y-4">
             <!-- Manual Overclock Button -->
-            <button @click.prevent="gameStore.manualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-lg">
+            <button @click.prevent="handleManualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-lg">
               <Icon name="mdi:flash" />
               <span>手动超频 (+5% CPS)</span>
             </button>
@@ -228,3 +262,36 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
     <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" context="game" />
   </div>
 </template>
+
+<style scoped>
+.floating-numbers-container {
+  position: absolute;
+  top: 70px; /* Adjust to be just above the CP display */
+  left: 0;
+  width: 100%;
+  height: 100px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.floating-number {
+  position: absolute;
+  font-size: 16px;
+  font-weight: bold;
+  color: #4ade80; /* green-400 */
+  text-shadow: 0 0 5px rgba(74, 222, 128, 0.7);
+  animation: float-up 1.5s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes float-up {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-80px) scale(0.8);
+    opacity: 0;
+  }
+}
+</style>

@@ -82,11 +82,10 @@ onMounted(async () => {
   // Initialize AdMob and its global listeners
   initializeAdMob();
 
-  // Set up the central watcher for ad rewards
+  // Central watcher for when a reward is successfully granted
   watch(() => adState.rewardGranted.value, (isGranted) => {
     if (isGranted) {
       const boostType = adState.requestedBoostType.value;
-      console.log(`Reward granted! Applying boost: ${boostType}`);
 
       switch (boostType) {
         case 'quantumComputing':
@@ -122,10 +121,30 @@ onMounted(async () => {
     }
   });
 
-  // 3. Load game data
+  // Central watcher for when an ad is dismissed (closed)
+  watch(() => adState.adDismissed.value, async (wasDismissed) => {
+    if (wasDismissed) {
+      const adWatchDuration = Date.now() - adState.adShownTimestamp.value;
+      
+      if (adWatchDuration > 0) {
+        // Pause resource generation by shifting the clock forward
+        gameStore.adjustLastUpdateTime(adWatchDuration);
+        // Pause active boost timers by extending their expiry
+        gameStore.extendBoosts(adWatchDuration);
+      }
+
+      // Immediately save the new state with the corrected timestamps
+      await $saveGameLocal();
+
+      // Reset the dismiss flag
+      adState.adDismissed.value = false;
+    }
+  });
+
+  // Load game data
   await $loadGame()
 
-  // 4. Check for offline progress and reveal the modal if needed BEFORE starting the loop
+  // Check for offline progress and reveal the modal if needed
   if (gameStore.hasPendingOfflineGains) {
     reveal()
   } else {
@@ -135,50 +154,34 @@ onMounted(async () => {
     }
   }
 
-  // 5. Start the game loop immediately after handling offline gains
+  // Start the game loop
   gameStore.startGameLoop()
 
-  // 6. Set up auto-save (local only)
+  // Set up auto-save (local only)
   setInterval(() => {
     $saveGameLocal()
   }, 15000)
 
-  // 7. Listen for the hardware back button on Android
+  // Listen for the hardware back button on Android
   App.addListener('backButton', () => {
     if (route.path !== '/') {
-      // If we are not on the main page, navigate back.
       router.back();
     } else {
-      // If we are on the main page, show the exit confirmation.
       exitConfirmationModal.show();
     }
   });
 
-  // 8. Listen for app state changes (background/foreground)
+  // Listen for app state changes (background/foreground) - now simplified
   App.addListener('appStateChange', async (state) => {
     if (state.isActive) {
-      const now = Date.now();
-      const timeSinceAdClosed = now - adState.adClosedTimestamp.value;
-
-      if (timeSinceAdClosed < 2500) {
-        const adWatchDuration = adState.adClosedTimestamp.value - adState.adShownTimestamp.value;
-        
-        if (adWatchDuration > 0) {
-          gameStore.simulateProgress(adWatchDuration);
-          gameStore.pauseActiveBoosts(adWatchDuration);
-        }
-
-        gameStore.lastUpdateTime = now;
-        await $saveGameLocal();
-        return;
-      }
-
+      // App came to foreground, check for offline progress
       await $loadGame();
       gameStore.calculateOfflineProgress();
       if (gameStore.hasPendingOfflineGains) {
         reveal();
       }
     } else {
+      // App went to background, ensure game is saved
       $saveGameLocal();
     }
   });

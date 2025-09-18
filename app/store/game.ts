@@ -429,6 +429,14 @@ export const useGameStore = defineStore('game', {
       return finalCps
     },
 
+    manualClickPower(): Decimal {
+      let clickMultiplier = 0.05;
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
+        clickMultiplier = 0.5; // 10x boost
+      }
+      return this.cps.times(clickMultiplier).plus(1);
+    },
+
     adBoostMultiplier(state) {
       let multiplier = 1
       // Legacy boost
@@ -636,11 +644,7 @@ export const useGameStore = defineStore('game', {
     },
 
     manualClick() {
-      let clickMultiplier = 0.05;
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
-        clickMultiplier = 0.5; // 10x boost
-      }
-      const clickPower = this.cps.times(clickMultiplier).plus(1);
+      const clickPower = this.manualClickPower;
       this.currency = this.currency.plus(clickPower)
       this.checkNarrativeMilestones()
     },
@@ -996,18 +1000,33 @@ export const useGameStore = defineStore('game', {
       this.adViewsToday.codeInjection++;
     },
 
-    pauseActiveBoosts(durationInMs: number) {
+    simulateProgressAndPauseBoosts(durationInMs: number) {
       if (durationInMs <= 0) return;
-      const now = Date.now();
 
-      if (this.quantumComputingExpiry && this.quantumComputingExpiry > now) {
-        this.quantumComputingExpiry += durationInMs;
+      // 1. Store original expiries and temporarily disable boosts
+      const now = Date.now();
+      const tempExpiries = {
+        quantum: this.quantumComputingExpiry,
+        supply: this.supplyChainOptimizationExpiry,
+        neural: this.neuralBoostExpiry,
+      };
+
+      if (tempExpiries.quantum && tempExpiries.quantum > now) this.quantumComputingExpiry = null;
+      if (tempExpiries.supply && tempExpiries.supply > now) this.supplyChainOptimizationExpiry = null;
+      if (tempExpiries.neural && tempExpiries.neural > now) this.neuralBoostExpiry = null;
+
+      // 2. Simulate progress with boosts disabled (un-boosted CPS)
+      this.simulateProgress(durationInMs);
+
+      // 3. Restore expiries and add the duration to truly "pause" them
+      if (tempExpiries.quantum && tempExpiries.quantum > now) {
+        this.quantumComputingExpiry = tempExpiries.quantum + durationInMs;
       }
-      if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > now) {
-        this.supplyChainOptimizationExpiry += durationInMs;
+      if (tempExpiries.supply && tempExpiries.supply > now) {
+        this.supplyChainOptimizationExpiry = tempExpiries.supply + durationInMs;
       }
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > now) {
-        this.neuralBoostExpiry += durationInMs;
+      if (tempExpiries.neural && tempExpiries.neural > now) {
+        this.neuralBoostExpiry = tempExpiries.neural + durationInMs;
       }
     },
 
@@ -1162,6 +1181,27 @@ export const useGameStore = defineStore('game', {
         neuralBoost: 0,
       };
       console.log('Developer action: Ad views have been reset.');
+    },
+
+    adjustLastUpdateTime(durationInMs: number) {
+      if (durationInMs > 0) {
+        this.lastUpdateTime += durationInMs;
+      }
+    },
+
+    extendBoosts(durationInMs: number) {
+      if (durationInMs <= 0) return;
+      const now = Date.now();
+
+      if (this.quantumComputingExpiry && this.quantumComputingExpiry > now) {
+        this.quantumComputingExpiry += durationInMs;
+      }
+      if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > now) {
+        this.supplyChainOptimizationExpiry += durationInMs;
+      }
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > now) {
+        this.neuralBoostExpiry += durationInMs;
+      }
     },
   }
   // #endregion

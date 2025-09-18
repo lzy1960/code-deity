@@ -30,12 +30,17 @@ export async function initializeAdMob() {
   }
   _isInitialized.value = true;
 
-  // Add the persistent reward listener as the single source of truth for rewards
   const adState = useAdState();
+  // Listener for when a reward is successfully earned
   AdMob.addListener(RewardAdPluginEvents.Rewarded, (rewardItem: AdMobRewardItem) => {
     if (rewardItem && rewardItem.amount > 0) {
       adState.rewardGranted.value = true;
     }
+  });
+
+  // Listener for when the ad UI is closed (for any reason)
+  AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
+    adState.adDismissed.value = true;
   });
 }
 
@@ -67,8 +72,5 @@ export async function showRewardVideoAd(boostType: BoostType): Promise<void> {
     console.error('Error showing reward ad:', error);
     // Reset intent if ad fails to show
     adState.requestedBoostType.value = null;
-  } finally {
-    // This is for the offline modal fix, to know when the ad UI is closed.
-    adState.adClosedTimestamp.value = Date.now();
   }
 }
