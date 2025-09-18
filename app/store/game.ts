@@ -996,6 +996,21 @@ export const useGameStore = defineStore('game', {
       this.adViewsToday.codeInjection++;
     },
 
+    pauseActiveBoosts(durationInMs: number) {
+      if (durationInMs <= 0) return;
+      const now = Date.now();
+
+      if (this.quantumComputingExpiry && this.quantumComputingExpiry > now) {
+        this.quantumComputingExpiry += durationInMs;
+      }
+      if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > now) {
+        this.supplyChainOptimizationExpiry += durationInMs;
+      }
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > now) {
+        this.neuralBoostExpiry += durationInMs;
+      }
+    },
+
     activateAdBoost() {
       // Set boost for 1 hour from now
       this.adBoostExpiry = Date.now() + 60 * 60 * 1000;

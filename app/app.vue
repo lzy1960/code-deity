@@ -165,6 +165,7 @@ onMounted(async () => {
         
         if (adWatchDuration > 0) {
           gameStore.simulateProgress(adWatchDuration);
+          gameStore.pauseActiveBoosts(adWatchDuration);
         }
 
         gameStore.lastUpdateTime = now;
