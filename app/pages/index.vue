@@ -164,7 +164,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
           <!-- Generators Section -->
           <div v-show="activeTab === 'generators'" class="space-y-4">
             <!-- Manual Overclock Button -->
-            <button @click.prevent="handleManualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-lg">
+            <button @click.prevent="handleManualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-sm">
               <Icon name="mdi:flash" />
               <span>手动超频 (+5% CPS)</span>
             </button>

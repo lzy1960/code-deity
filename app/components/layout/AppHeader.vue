@@ -17,23 +17,23 @@
         </NuxtLink>
       </div>
     </div>
-    <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-3 border-b border-[#21364a]">
-      <div class="flex justify-between items-start">
-        <div>
-          <div class="flex items-end gap-4">
-            <div>
-              <p class="text-white text-2xl font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-lg">CP</span></p>
-            </div>
-            <div v-if="gameStore.refactorCount > 0 || gameStore.refactorPoints.gt(0)" class="pb-0.5">
-              <p class="font-bold leading-tight tracking-tighter text-green-400 text-xl">{{ formatNumber(gameStore.refactorPoints) }} <span class="text-base text-green-400/80">RP</span></p>
-            </div>
+    <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-2 border-b border-[#21364a]">
+      <!-- Row 1: Main Currencies -->
+      <div class="flex justify-between items-center">
+        <div class="flex items-baseline gap-4">
+          <p class="text-white text-lg font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-sm">CP</span></p>
+          <div v-if="gameStore.refactorCount > 0 || gameStore.refactorPoints.gt(0)">
+            <p class="font-bold leading-tight tracking-tighter text-green-400 text-base">{{ formatNumber(gameStore.refactorPoints) }} <span class="text-xs text-green-400/80">RP</span></p>
           </div>
-          <div class="flex items-center gap-2 mt-1">
-            <p class="text-green-400 text-sm font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
-            <div v-if="gameStore.architecturalOverheadPenalty < 1" class="flex items-center gap-1 text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold pulse-animation-slow" title="架构过载：拥有超过10个AI核心导致了效率惩罚">
-              <Icon name="mdi:alert-circle-outline" />
-              <span>效率: {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</span>
-            </div>
+        </div>
+      </div>
+      <!-- Row 2: Production Info & Actions -->
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <p class="text-green-400 text-xs font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
+          <div v-if="gameStore.architecturalOverheadPenalty < 1" class="flex items-center gap-1 text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold pulse-animation-slow" title="架构过载：拥有超过10个AI核心导致了效率惩罚">
+            <Icon name="mdi:alert-circle-outline" />
+            <span>效率: {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</span>
           </div>
         </div>
         <!-- The BuyMultiplierSelector will be placed here via a slot -->

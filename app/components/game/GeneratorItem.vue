@@ -1,36 +1,43 @@
 <template>
   <div v-if="generator" class="bg-[#182635] rounded-lg overflow-hidden">
     <div class="flex items-stretch">
-      <div class="flex-[2_2_0px] p-4 flex flex-col justify-between">
+      <div class="flex-[2_2_0px] p-3 flex flex-col justify-between">
         <div>
-          <h3 class="text-white text-lg font-bold leading-tight">{{ config.name }}</h3>
-          <p class="text-[#8eadcc] text-sm font-normal leading-normal">Quantity: {{ formattedAmount }} <span v-if="buyAmount.gt(0)" class="text-cyan-400">(+{{ formatNumber(buyAmount) }})</span></p>
+          <h3 class="text-white text-sm font-bold leading-tight">{{ config.name }}</h3>
+          <p class="text-[#8eadcc] text-xs font-normal leading-normal">
+            Quantity: {{ formattedAmount }} 
+            <span v-if="buyAmount.gt(0)" class="text-cyan-400">(+{{ formatNumber(buyAmount) }})</span>
+          </p>
         </div>
         <div class="mt-2">
-          <p class="text-white text-sm font-medium leading-normal">Multiplier: x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
+          <p class="text-white text-xs font-medium leading-normal">Multiplier: x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
           <div class="rounded-full bg-[#2f4d6a] mt-1 h-2 w-full" :title="`Buy ${progressInfo.nextBonus} more to get next bonus`">
             <div class="h-2 rounded-full bg-[#3899fa]" :style="{ width: `${progressInfo.progress}%` }"></div>
           </div>
         </div>
       </div>
-      <button 
-        class="flex-1 bg-[#21364a] transition-colors text-white flex flex-col items-center justify-center p-4 gap-1"
-        :class="canBuy ? 'hover:bg-[#2a4058] cursor-pointer' : 'bg-gray-600/50 cursor-not-allowed'"
-        :disabled="!canBuy"
-        @click="buy"
-      >
-        <div class="relative">
-          <span v-if="gameStore.buyMultiplier !== 'max'" class="text-xs font-bold rounded-full bg-[#3899fa] text-white px-2 py-0.5 absolute -top-4 -right-4 border-2 border-[#21364a]">{{ gameStore.buyMultiplier }}</span>
-          <span v-else class="text-xs font-bold rounded-full bg-[#3899fa] text-white px-2 py-0.5 absolute -top-4 -right-6 border-2 border-[#21364a]">Max ({{ formatNumber(buyAmount) }})</span>
-          <Icon name="mdi:cart" class="text-xl" />
-        </div>
-        <p class="text-xs font-medium text-gray-300">Cost:</p>
-        <div v-if="discountedCost">
-          <p class="text-sm font-bold text-gray-500 line-through">{{ formattedCost }}</p>
-          <p class="text-lg font-bold text-green-400">{{ formatNumber(discountedCost) }}</p>
-        </div>
-        <p v-else class="text-lg font-bold">{{ formattedCost }}</p>
-      </button>
+      <div class="relative flex-1">
+        <button 
+          class="w-full h-full bg-[#21364a] transition-colors text-white flex flex-col items-center justify-center p-3 gap-1"
+          :class="{
+            'hover:bg-blue-500 cursor-pointer bg-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]': canBuy,
+            'bg-gray-700/50 cursor-not-allowed': !canBuy
+          }"
+          :disabled="!canBuy"
+          @click="buy"
+        >
+          <span class="absolute top-1.5 right-1.5 text-xs font-bold rounded-full bg-black/30 text-white px-2 py-0.5">
+            {{ gameStore.buyMultiplier === 'max' ? 'Max' : gameStore.buyMultiplier }}
+          </span>
+          <Icon name="mdi:cart" class="text-lg" />
+          <p class="text-xs font-medium text-gray-300 mt-1">Cost:</p>
+          <div v-if="discountedCost">
+            <p class="text-xs font-bold text-gray-500 line-through">{{ formattedCost }}</p>
+            <p class="text-sm font-bold text-green-400">{{ formatNumber(discountedCost) }}</p>
+          </div>
+          <p v-else class="text-sm font-bold">{{ formattedCost }}</p>
+        </button>
+      </div>
     </div>
   </div>
 </template>

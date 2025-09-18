@@ -8,6 +8,7 @@ import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
 import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
 import SingularityConfirmationModal from '~/components/game/SingularityConfirmationModal.vue'
+import RefactorConfirmationModal from '~/components/game/RefactorConfirmationModal.vue'
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
@@ -113,6 +114,11 @@ onMounted(async () => {
           adWatched.value = true; // Disable the button in the offline modal
           toast.addToast('超线程已启动！离线收益翻倍', 'success', 5000);
           break;
+        case 'refactorBonus':
+          gameStore.doubleNextRefactorGain();
+          gameStore.refactor();
+          toast.addToast('超级编译完成！本次重构收益翻倍', 'success', 5000);
+          break;
       }
 
       // Reset the state after applying the reward
@@ -196,6 +202,7 @@ onMounted(async () => {
     <ExitConfirmationModal />
     <ParadigmPurchaseModal />
     <SingularityConfirmationModal />
+    <RefactorConfirmationModal />
     <TechDebtPanel />
     <HelpModal />
     <ToastManager />

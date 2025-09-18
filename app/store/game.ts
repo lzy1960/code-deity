@@ -82,6 +82,9 @@ export interface GameState {
     frozenSP: Decimal;
     cpCost: Decimal;
   } | null
+
+  // Ad-hoc flags
+  doubleNextRefactor: boolean
 }
 
 // #endregion
@@ -139,7 +142,8 @@ export const useGameStore = defineStore('game', {
       neuralBoost: 0,
     },
 
-    activeRefactoring: null
+    activeRefactoring: null,
+    doubleNextRefactor: false
   }),
   // #endregion
 
@@ -173,6 +177,10 @@ export const useGameStore = defineStore('game', {
     isMultiplierUnlocked: state => {
       const moduleGenerator = state.generators.find(g => g.id === 4)
       return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
+    },
+    isAdBoostUnlocked: state => {
+      const classGenerator = state.generators.find(g => g.id === 3);
+      return (classGenerator?.bought ?? 0) > 0 || state.refactorCount > 0;
     },
 
     // --- Soft Cap: Architectural Overhead ---
@@ -697,17 +705,11 @@ export const useGameStore = defineStore('game', {
     refactor() {
       if (!this.canRefactor) return
 
-      // ## Agility School: Code Generation ##
-      if (this.paradigms.code_generation) {
-        this.generators.forEach(g => g.amount = g.amount.times(2))
-        // This is a temporary buff, so we don't save it.
-        // We can show a UI timer for this.
-        setTimeout(() => {
-          this.generators.forEach(g => g.amount = g.amount.div(2))
-        }, 10000)
+      let gain = this.refactorGain
+      if (this.doubleNextRefactor) {
+        gain = gain.times(2);
+        this.doubleNextRefactor = false; // Reset the flag
       }
-
-      const gain = this.refactorGain
 
       // --- Challenge Completion Check ---
       if (this.activeChallenge === 'challenge1') {
@@ -731,6 +733,10 @@ export const useGameStore = defineStore('game', {
 
       this._resetForPrestige()
       this.checkNarrativeMilestones()
+    },
+
+    doubleNextRefactorGain() {
+      this.doubleNextRefactor = true;
     },
 
     compileAndRelease() {
