@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useGameStore } from '~/store/game'
-import type { NarrativeMilestone } from '~/game/configs'
+import type { NarrativeMilestone } from '~~/game/configs'
 
 const gameStore = useGameStore()
+const { t } = useI18n()
 
 // State to hold the currently visible narrative and its displayed text
 const currentNarrative = ref<NarrativeMilestone | null>(null)
@@ -26,11 +27,12 @@ function processNextInQueue() {
   const narrative = gameStore.shiftNarrativeQueue()
   if (narrative) {
     currentNarrative.value = narrative
-    startTypewriter(narrative.text)
+    startTypewriter(narrative.textKey)
   }
 }
 
-function startTypewriter(fullText: string) {
+function startTypewriter(textKey: string) {
+  const fullText = t(textKey)
   let charIndex = 0
   displayedText.value = ''
   clearInterval(typingInterval)

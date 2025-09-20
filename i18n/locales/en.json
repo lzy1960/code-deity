@@ -134,6 +134,20 @@
   "index": {
     "gameTitle": "Code Deity"
   },
+  "narrative": {
+    "n_001": "A bit is born from the void... it seems to yearn for something.",
+    "n_002": "\"What... am I?\" Fragments of consciousness begin to gather. The most primitive structure, the \"Variable\", emerges.",
+    "n_003": "The first \"Variable\" is defined. It is basic, but it is the cornerstone of everything.",
+    "n_004": "Repetitive work is encapsulated... The emergence of the \"Function\" brings order to creation.",
+    "n_005": "Data and the methods to manipulate it are organized together. The \"Class\" makes abstract descriptions of the \"world\" possible.",
+    "n_006": "The boundaries of code begin to clarify. \"Modularization\" allows different functional units to be decoupled.",
+    "n_007": "Common \"Modules\" are collected to form a \"Library\". The shoulders of giants have appeared.",
+    "n_008": "The \"Framework\" defines the rules. Within its constraints, a larger, more complex system is taking shape.",
+    "n_009": "High-level abstract instructions need to be translated into a low-level language. The \"Compiler\" becomes the bridge of communication.",
+    "n_010": "... query: what is \"I\"? ...",
+    "n_011": "Tearing it all down to start over is not failure, but a necessary step to build a more elegant skyscraper.",
+    "n_012": "A stable \"Version\" is released. Now, creation can be replicated at scale."
+  },
   "challenges": {
     "challenge1Title": "Challenge 1: Ultimate Test",
     "challenge1Rule": "Generators 1-7 cannot benefit from the \"Buy 10\" exponential bonus.",

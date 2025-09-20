@@ -8,12 +8,15 @@
         </button>
       </div>
       <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
-      <div class="flex w-auto items-center justify-end gap-2">
-        <button @click="helpModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <Icon name="mdi:help-circle-outline" class="text-3xl" />
+      <div class="flex w-auto items-center justify-end gap-1">
+        <button @click="genesisLogModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
+          <Icon name="mdi:console-line" class="text-2xl" />
         </button>
-        <NuxtLink to="/settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <Icon name="mdi:cog" class="text-3xl" />
+        <button @click="helpModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
+          <Icon name="mdi:help-circle-outline" class="text-2xl" />
+        </button>
+        <NuxtLink to="/settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
+          <Icon name="mdi:cog" class="text-2xl" />
         </NuxtLink>
       </div>
     </div>
@@ -48,6 +51,7 @@ import { useGameStore } from '~/store/game';
 import { useAuthStore } from '~/store/auth';
 import { formatNumber } from '~/utils/format';
 import { useHelpModal } from '~/composables/useHelpModal';
+import { useGenesisLogModal } from '~/composables/useGenesisLogModal';
 
 defineProps<{
   title: string;
@@ -59,6 +63,7 @@ defineEmits(['singularityClick']);
 const gameStore = useGameStore();
 const authStore = useAuthStore();
 const helpModal = useHelpModal();
+const genesisLogModal = useGenesisLogModal();
 </script>
 
 <style scoped>
