@@ -15,7 +15,7 @@
     </div>
 
     <!-- School Limit Banner -->
-    <div v-if="lockedSchool" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-red-900/80 backdrop-blur-sm border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm shadow-lg flex items-center gap-2">
+    <div v-if="lockedSchool" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-red-900/80 backdrop-blur-sm border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm shadow-lg flex items-center gap-2 w-[80vw] max-w-4xl">
       <Icon name="ph:scales-bold" />
       <span>{{ $t('common.youHaveChosenToDevelop') }} <b>{{ purchasedSchools.join(` ${$t('common.and')} `) }}</b> {{ $t('common.school') }}，<b>{{ lockedSchool }}</b> {{ $t('common.schoolSkillsLockedHint') }}</span>
     </div>
