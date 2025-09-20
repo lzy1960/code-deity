@@ -165,9 +165,6 @@ export const useGameStore = defineStore('game', {
     },
     isCompileUnlocked: state => state.refactorPoints.gte(prestigeThresholds.COMPILE_UNLOCK_RP) || state.version > 0,
     isAutomationUnlocked() {
-      if (this.paradigms.api_interface) {
-        return this.refactorCount >= 5
-      }
       if (this.paradigms.dependency_injection) {
         return true
       }
@@ -187,8 +184,14 @@ export const useGameStore = defineStore('game', {
     architecturalOverheadPenalty() {
       const aiCores = this.generators.find(g => g.id === 8)!.bought
       if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
-      // Penalty = 1 / (1 + 0.1 * log10(AI_Cores_Owned - 24))
-      return 1 / (1 + 0.1 * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
+
+      let penaltyFactor = 0.1
+      if (this.paradigms.api_interface) {
+        penaltyFactor *= 0.5 // Penalty effect is reduced by 50%
+      }
+
+      // Penalty = 1 / (1 + penaltyFactor * log10(AI_Cores_Owned - 24))
+      return 1 / (1 + penaltyFactor * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
     },
 
     // --- Core Production Calculation ---
@@ -494,6 +497,50 @@ export const useGameStore = defineStore('game', {
         Decimal.sqrt(this.currency.log10() - 308).times(1.5)
       )
       return gain.max(0)
+    },
+
+    paradigmPurchaseAnalysis() {
+      return (paradigmId: string) => {
+        const config = paradigmConfigs.find(p => p.id === paradigmId)!
+        const starterIds = ['efficiency_starter', 'abstraction_starter', 'agility_starter']
+        const purchasedStarters = starterIds.filter(id => this.paradigms[id])
+
+        // Rule: Max two schools
+        if (purchasedStarters.length >= 2 && starterIds.includes(paradigmId) && !this.paradigms[paradigmId]) {
+          return { purchasable: false, reason: 'school_limit', conflictingParadigm: null }
+        }
+
+        // Rule: Dependencies
+        if (config.requires) {
+          for (const reqId of config.requires) {
+            if (!this.paradigms[reqId]) {
+              return { purchasable: false, reason: 'dependency', conflictingParadigm: null }
+            }
+          }
+        }
+
+        // Rule: Cost
+        if (this.singularityPower.lt(config.cost)) {
+          return { purchasable: false, reason: 'sp', conflictingParadigm: null }
+        }
+
+        // Rule: Mutual Exclusion
+        const forks: Record<string, string[]> = {
+          'design_patterns': ['polymorphism', 'dependency_injection'],
+          'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
+        }
+        for (const parent in forks) {
+          const children = forks[parent]
+          if (children.includes(paradigmId)) {
+            const otherChild = children.find(c => c !== paradigmId)!
+            if (this.paradigms[otherChild]) {
+              return { purchasable: false, reason: 'exclusive', conflictingParadigm: otherChild }
+            }
+          }
+        }
+
+        return { purchasable: true, reason: null, conflictingParadigm: null }
+      }
     }
   },
   // #endregion
@@ -646,8 +693,9 @@ export const useGameStore = defineStore('game', {
 
       // ## Abstraction School: Supply Chain Optimization ##
       if (this.paradigms.supply_chain_optimization) {
-        const functionProduction = this.generatorProduction(2)
-        this.generators[2]!.amount = this.generators[2]!.amount.plus(functionProduction.times(0.01).times(diff))
+        // productions[3] is the production rate of Module (id=4)
+        const bonusForClass = productions[3].times(0.05).times(diff);
+        this.generators[2]!.amount = this.generators[2]!.amount.plus(bonusForClass);
       }
     },
 
@@ -746,13 +794,12 @@ export const useGameStore = defineStore('game', {
 
       this.refactorPoints = this.refactorPoints.minus(cost)
       this.version += 1
-      
-      // This also triggers a refactor, but we keep automator unlocks
-      const states = { ...this.automatorStates }
-      
-      this.refactor()
 
-      this.automatorStates = states
+      // A "Compile & Release" is a type of refactor, so we increment the count.
+      this.refactorCount += 1
+      // Then, we perform the reset, but without generating new RP.
+      this._resetForPrestige()
+
       this.checkNarrativeMilestones()
     },
 
@@ -803,32 +850,10 @@ export const useGameStore = defineStore('game', {
       // 1. Check if already purchased
       if (this.paradigms[paradigmId]) return
 
-      // 2. Check for cost
-      if (this.singularityPower.lt(config.cost)) return
-
-      // 3. Check for dependencies
-      if (config.requires) {
-        for (const reqId of config.requires) {
-          if (!this.paradigms[reqId]) return // Dependency not met
-        }
-      }
-
-      // 4. Check for mutually exclusive forks
-      const forks: Record<string, string[]> = {
-        'pointer_arithmetic': ['memory_management', 'bit_manipulation'],
-        'design_patterns': ['polymorphism', 'dependency_injection'],
-        'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
-      }
-
-      for (const parent in forks) {
-        const children = forks[parent]
-        if (children.includes(paradigmId)) {
-          const otherChild = children.find(c => c !== paradigmId)!
-          if (this.paradigms[otherChild]) {
-            console.warn(`Cannot purchase ${paradigmId}, it is mutually exclusive with ${otherChild}`)
-            return // Mutually exclusive branch already purchased
-          }
-        }
+      const analysis = this.paradigmPurchaseAnalysis(paradigmId)
+      if (!analysis.purchasable) {
+        console.warn(`Cannot purchase ${paradigmId}. Reason: ${analysis.reason}`)
+        return
       }
 
       // All checks passed, purchase the paradigm
@@ -1176,6 +1201,13 @@ export const useGameStore = defineStore('game', {
         this.refactorPoints = new Decimal(amount)
       } catch (e) {
         console.error('Invalid Decimal format for RP', e)
+      }
+    },
+    _dev_setSingularityPower(amount: string) {
+      try {
+        this.singularityPower = new Decimal(amount)
+      } catch (e) {
+        console.error('Invalid Decimal format for SP', e)
       }
     },
     _dev_resetAdViews() {

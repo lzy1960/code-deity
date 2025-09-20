@@ -11,7 +11,8 @@
         <p class="text-gray-300 text-sm mt-1">{{ paradigm.description }}</p>
       </div>
       <div class="flex-shrink-0 text-3xl text-white/50">
-        <Icon :name="iconName" />
+        <Icon v-if="lockReason === 'school_limit' || lockReason === 'exclusive'" name="ph:lock-bold" />
+        <Icon v-else :name="iconName" />
       </div>
     </div>
 
@@ -40,7 +41,7 @@ const props = defineProps<{
   paradigm: Paradigm
   isPurchased: boolean
   isPurchasable: boolean
-  lockReason: 'sp' | 'dependency' | 'exclusive' | null
+  lockReason: 'sp' | 'dependency' | 'exclusive' | 'school_limit' | null
 }>()
 
 defineEmits(['requestRefactor'])
@@ -59,6 +60,10 @@ const statusText = computed(() => {
 
   if (props.lockReason === 'exclusive') {
     return '互斥选择'
+  }
+
+  if (props.lockReason === 'school_limit') {
+    return '学派数量已达上限'
   }
 
   if (props.lockReason === 'sp') {

@@ -20,7 +20,7 @@ export const paradigmConfigs: Paradigm[] = [
   {
     id: 'api_interface',
     name: 'API 接口',
-    description: '自动化购买器的解锁条件从“版本号达到 1”变为“代码重构 5 次”。',
+    description: '一个定义良好的API是系统能够扩展的关键。“架构过载”(Architectural Overhead)的惩罚效果降低 50%。',
     cost: 8,
     school: 'general',
     requires: ['open_source_community'],
@@ -56,7 +56,7 @@ export const paradigmConfigs: Paradigm[] = [
   {
     id: 'supply_chain_optimization',
     name: '供应链优化',
-    description: '资源分支：允许“函数”直接产出“类”（产出效率为正常值的 1%）。',
+    description: '你优化了整个软件供应链，使得上游的生产更为高效。\'模块\'（四阶生成器）产量的 5% 会直接转化为\'类\'（三阶生成器）。',
     cost: 10,
     school: 'efficiency',
     requires: ['memory_management'],

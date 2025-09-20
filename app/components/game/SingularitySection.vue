@@ -14,6 +14,12 @@
       </div>
     </div>
 
+    <!-- School Limit Banner -->
+    <div v-if="lockedSchool" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-red-900/80 backdrop-blur-sm border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm shadow-lg flex items-center gap-2">
+      <Icon name="ph:scales-bold" />
+      <span>您已选择发展 <b>{{ purchasedSchools.join(' 和 ') }}</b> 学派，<b>{{ lockedSchool }}</b> 学派的技能将无法解锁。</span>
+    </div>
+
     <div class="relative w-full h-[70vh]">
       <VueFlow
         v-model:nodes="nodes"
@@ -62,6 +68,24 @@ const gameStore = useGameStore()
 const purchaseModal = useParadigmPurchaseModal()
 const { onNodeClick, fitView } = useVueFlow()
 
+const schoolStarters: Record<string, string> = {
+  '效率': 'efficiency_starter',
+  '抽象': 'abstraction_starter',
+  '敏捷': 'agility_starter',
+}
+
+const purchasedSchools = computed(() => {
+  return Object.entries(schoolStarters)
+    .filter(([, id]) => gameStore.paradigms[id])
+    .map(([name]) => name)
+})
+
+const lockedSchool = computed(() => {
+  if (purchasedSchools.value.length < 2) return null
+  return Object.entries(schoolStarters)
+    .find(([, id]) => !gameStore.paradigms[id])?.[0] || null
+})
+
 // --- Dagre Layout State ---
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
@@ -69,45 +93,26 @@ let hasLayoutBeenRun = false
 
 // --- Computed properties for dynamic state ---
 const isPurchased = (id: string): boolean => !!gameStore.paradigms[id]
-const areDependenciesMet = (p: Paradigm): boolean => !p.requires || p.requires.every(reqId => isPurchased(reqId))
-const canAfford = (p: Paradigm): boolean => gameStore.singularityPower.gte(p.cost)
-const isPurchasable = (p: Paradigm): boolean => !isPurchased(p.id) && canAfford(p) && areDependenciesMet(p)
 
-const forks: Record<string, string[]> = {
-  'pointer_arithmetic': ['memory_management', 'bit_manipulation'],
-  'design_patterns': ['polymorphism', 'dependency_injection'],
-  'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
-}
-
-const getLockReason = (p: Paradigm): 'sp' | 'dependency' | 'exclusive' | null => {
-  if (isPurchasable(p) || isPurchased(p.id)) return null
-  
-  // Check for mutual exclusion first, as it's a hard lock
-  for (const parent in forks) {
-    const children = forks[parent]
-    if (children.includes(p.id)) {
-      const otherChild = children.find(c => c !== p.id)!
-      if (isPurchased(otherChild)) {
-        return 'exclusive'
-      }
-    }
-  }
-
-  if (!areDependenciesMet(p)) return 'dependency'
-  if (!canAfford(p)) return 'sp'
-  return null
-}
+const getAnalysis = (paradigmId: string) => gameStore.paradigmPurchaseAnalysis(paradigmId)
 
 // --- Action ---
 const handlePurchaseClick = (paradigm: Paradigm) => {
-  if (isPurchasable(paradigm)) {
+  const analysis = getAnalysis(paradigm.id)
+  if (analysis.purchasable) {
     purchaseModal.show(paradigm, () => gameStore.purchaseParadigm(paradigm.id))
   }
 }
 
 onNodeClick((event) => {
   const paradigm = event.node.data.paradigm as Paradigm | undefined
-  if (paradigm) handlePurchaseClick(paradigm)
+  if (paradigm) {
+    // Add a check to prevent clicking on school-limited nodes
+    const analysis = getAnalysis(paradigm.id)
+    if (analysis.reason !== 'school_limit') {
+      handlePurchaseClick(paradigm)
+    }
+  }
 })
 
 // --- Dagre Auto-Layout Logic ---
@@ -151,23 +156,27 @@ const runLayout = () => {
 // --- Watch for game state changes to update the flow ---
 watch(() => [gameStore.paradigms, gameStore.singularityPower], () => {
   // Just update data for reactivity, don't re-run layout
-  nodes.value = nodes.value.map(node => ({
-    ...node,
-    data: {
-      ...node.data,
-      isPurchased: isPurchased(node.data.paradigm.id),
-      isPurchasable: isPurchasable(node.data.paradigm),
-      lockReason: getLockReason(node.data.paradigm),
-    },
-  }))
+  nodes.value = nodes.value.map(node => {
+    const analysis = getAnalysis(node.data.paradigm.id)
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        isPurchased: isPurchased(node.data.paradigm.id),
+        isPurchasable: analysis.purchasable,
+        lockReason: analysis.reason,
+      },
+    }
+  })
   edges.value = edges.value.map(edge => {
     const isSourcePurchased = isPurchased(edge.source)
     const isTargetPurchased = isPurchased(edge.target)
-    const targetParadigm = paradigmConfigs.find(p => p.id === edge.target)
+    const targetParadigm = paradigmConfigs.find(p => p.id === edge.target)!
+    const canAfford = gameStore.singularityPower.gte(targetParadigm.cost)
     
     return {
       ...edge,
-      animated: isSourcePurchased && !isTargetPurchased && canAfford(targetParadigm!),
+      animated: isSourcePurchased && !isTargetPurchased && canAfford,
       style: { stroke: isSourcePurchased ? '#a78bfa' : '#6b7280', strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: isSourcePurchased ? '#a78bfa' : '#6b7280' },
     }
@@ -175,19 +184,22 @@ watch(() => [gameStore.paradigms, gameStore.singularityPower], () => {
 }, { deep: true })
 
 // Initial setup
-const initialNodes: Node[] = paradigmConfigs.map(p => ({
-  id: p.id,
-  type: 'custom',
-  position: { x: 0, y: 0 },
-  sourcePosition: 'right',
-  targetPosition: 'left',
-  data: {
-    paradigm: p,
-    isPurchased: isPurchased(p.id),
-    isPurchasable: isPurchasable(p),
-    lockReason: getLockReason(p),
-  },
-}))
+const initialNodes: Node[] = paradigmConfigs.map(p => {
+  const analysis = getAnalysis(p.id)
+  return {
+    id: p.id,
+    type: 'custom',
+    position: { x: 0, y: 0 },
+    sourcePosition: 'right',
+    targetPosition: 'left',
+    data: {
+      paradigm: p,
+      isPurchased: isPurchased(p.id),
+      isPurchasable: analysis.purchasable,
+      lockReason: analysis.reason,
+    },
+  }
+})
 
 const initialEdges: Edge[] = []
 paradigmConfigs.forEach(p => {

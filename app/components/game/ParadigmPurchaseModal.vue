@@ -15,13 +15,19 @@
           <div v-if="modal.paradigmToPurchase.value" class="my-5 p-4 bg-gray-900 rounded-lg">
             <p class="text-xl font-semibold text-white">{{ modal.paradigmToPurchase.value.name }}</p>
             <p class="text-sm text-gray-400 mt-1">{{ modal.paradigmToPurchase.value.description }}</p>
-            <div class="mt-4 inline-block px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full font-bold">
+            <div class="mt-4 inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full font-bold">
               花费: {{ modal.paradigmToPurchase.value.cost }} SP
             </div>
           </div>
 
-          <p class="text-gray-400 mb-6">
-            这将消耗您的奇点算力 (SP)。此操作不可撤销。
+          <!-- Analysis Section -->
+          <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="mb-6 p-3 rounded-lg text-sm text-left space-y-2" :class="analysisClass">
+            <p class="font-bold text-base flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
+            <p>{{ analysisText }}</p>
+          </div>
+
+          <p v-else class="text-gray-400 mb-6">
+            这将消耗您的奇点算力 (SP)。此操作在重构前不可撤销。
           </p>
 
           <div class="flex justify-center gap-4">
@@ -33,9 +39,10 @@
             </button>
             <button
               @click="modal.confirm()"
-              class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold hover:bg-purple-500 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30"
+              :disabled="analysis && !analysis.purchasable"
+              class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
             >
-              确认解锁
+              {{ (analysis && !analysis.purchasable) ? '无法解锁' : '确认解锁' }}
             </button>
           </div>
         </div>
@@ -45,9 +52,58 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useParadigmPurchaseModal } from '~/composables/useParadigmPurchaseModal'
+import { useGameStore } from '~/store/game'
+import { paradigmConfigs } from '~~/game/paradigms.configs'
 
 const modal = useParadigmPurchaseModal()
+const gameStore = useGameStore()
+
+const analysis = computed(() => {
+  if (!modal.paradigmToPurchase.value) return null
+  return gameStore.paradigmPurchaseAnalysis(modal.paradigmToPurchase.value.id)
+})
+
+const analysisTitle = computed(() => {
+  if (!analysis.value) return ''
+  switch (analysis.value.reason) {
+    case 'school_limit': return '规则限制'
+    case 'exclusive': return '互斥选择警告'
+    default: return ''
+  }
+})
+
+const analysisText = computed(() => {
+  if (!analysis.value) return ''
+  switch (analysis.value.reason) {
+    case 'school_limit':
+      return '您最多只能选择两个主要学派（效率、抽象、敏捷）进行发展。'
+    case 'exclusive':
+      const conflictingParadigmName = paradigmConfigs.find(p => p.id === analysis.value.conflictingParadigm)?.name
+      return `此技能与【${conflictingParadigmName}】技能互斥。解锁此技能后，另一分支将无法选择。`
+    default:
+      return ''
+  }
+})
+
+const analysisClass = computed(() => {
+  if (!analysis.value) return ''
+  switch (analysis.value.reason) {
+    case 'school_limit': return 'bg-red-500/10 text-red-300'
+    case 'exclusive': return 'bg-yellow-500/10 text-yellow-300'
+    default: return ''
+  }
+})
+
+const analysisIcon = computed(() => {
+  if (!analysis.value) return ''
+  switch (analysis.value.reason) {
+    case 'school_limit': return 'ph:scales-bold'
+    case 'exclusive': return 'ph:warning-octagon-bold'
+    default: return ''
+  }
+})
 </script>
 
 <style scoped>

@@ -20,6 +20,7 @@ const { style } = useDraggable(el, {
 // Input values - initialize them once
 const cpInput = ref('1e500')
 const rpInput = ref('10000')
+const spInput = ref('1000')
 
 function setCurrency() {
   gameStore._dev_setCurrency(cpInput.value)
@@ -29,10 +30,15 @@ function setRefactorPoints() {
   gameStore._dev_setRefactorPoints(rpInput.value)
 }
 
+function setSingularityPower() {
+  gameStore._dev_setSingularityPower(spInput.value)
+}
+
 // Manually refresh values from store
 function refreshValues() {
   cpInput.value = gameStore.currency.toExponential(2)
   rpInput.value = gameStore.refactorPoints.toExponential(2)
+  spInput.value = gameStore.singularityPower.toExponential(2)
 }
 </script>
 
@@ -69,6 +75,15 @@ function refreshValues() {
           <div class="flex gap-2">
             <input id="rp-input" v-model="rpInput" type="text" class="w-full bg-gray-900 rounded px-2 py-1 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500">
             <button @click="setRefactorPoints" class="px-3 rounded bg-cyan-600 hover:bg-cyan-500 text-xs font-bold">Set</button>
+          </div>
+        </div>
+
+        <!-- SP Input -->
+        <div class="space-y-1">
+          <label for="sp-input" class="text-xs text-gray-400">SP (Singularity Power)</label>
+          <div class="flex gap-2">
+            <input id="sp-input" v-model="spInput" type="text" class="w-full bg-gray-900 rounded px-2 py-1 border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <button @click="setSingularityPower" class="px-3 rounded bg-purple-600 hover:bg-purple-500 text-xs font-bold">Set</button>
           </div>
         </div>
 
