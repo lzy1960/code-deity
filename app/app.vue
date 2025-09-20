@@ -13,6 +13,7 @@ import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
 import AdBoostModal from '~/components/game/AdBoostModal.vue'
+import LanguageModal from '~/components/layout/LanguageModal.vue'
 import { useEventListener } from '@vueuse/core'
 import { useIsNative } from '~/utils/platform'
 import { useToast } from '~/composables/useToast'
@@ -212,6 +213,7 @@ onMounted(async () => {
     <HelpModal />
     <ToastManager />
     <AdBoostModal />
+    <LanguageModal />
 
     <!-- 
       The modal component is now a generic frame.

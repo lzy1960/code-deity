@@ -1,0 +1,9 @@
+{
+  "singularity": {
+    "confirmTitle": "确认进入技术奇点？",
+    "description": "这将是你当前纪元的终点。你将重置所有算力(CP)和生成器，但会{keep}所有重构点(RP)、版本号和挑战进度，以换取强大的{sp}，开启一个全新的纪元。",
+    "keepText": "保留",
+    "spText": "奇点算力 (SP)",
+    "irreversible": "此操作不可逆转。"
+  }
+}

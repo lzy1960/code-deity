@@ -1,0 +1,9 @@
+{
+  "singularity": {
+    "confirmTitle": "Confirm Entering Singularity?",
+    "description": "This will be the end of your current era. You will reset all Computing Power (CP) and generators, but will {keep} all Refactor Points (RP), Version numbers, and challenge progress, in exchange for powerful {sp} to start a new era.",
+    "keepText": "keep",
+    "spText": "Singularity Power (SP)",
+    "irreversible": "This action cannot be reversed."
+  }
+}

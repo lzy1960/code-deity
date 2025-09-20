@@ -57,6 +57,19 @@
           </a>
         </div>
 
+        <!-- Language Settings -->
+        <div class="bg-[#1C2836] rounded-lg p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-lg">Language</p>
+              <p class="text-sm text-gray-400">Current: {{ currentLocaleName }}</p>
+            </div>
+            <button @click="languageModal.show()" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+              Switch
+            </button>
+          </div>
+        </div>
+
         <!-- Danger Zone -->
         <div class="border-t-2 border-red-500/30 pt-6">
           <h3 class="text-xl font-bold text-red-400">Danger Zone</h3>
@@ -82,12 +95,20 @@
 import { useAuthStore } from '~/store/auth';
 import { useGameStore } from '~/store/game';
 import { useTimeAgo } from '@vueuse/core';
+import { useLanguageModal } from '~/composables/useLanguageModal';
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const supabase = useSupabaseClient();
 const router = useRouter();
 const { $saveGameCloud, $loadGame, $wipeData } = useNuxtApp() as any
+const languageModal = useLanguageModal();
+const { locales, locale } = useI18n();
+
+const currentLocaleName = computed(() => {
+  const current = locales.value.find(l => l.code === locale.value);
+  return current ? current.name : locale.value;
+});
 
 const lastSyncTimeAgo = useTimeAgo(computed(() => gameStore.lastCloudSync ?? 0))
 

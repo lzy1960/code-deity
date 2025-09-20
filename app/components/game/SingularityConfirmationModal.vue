@@ -6,13 +6,16 @@
         <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-6">
           <h2 class="mb-3 text-center text-2xl font-bold text-purple-300">
             <Icon name="mdi:creation" class="mr-2" />
-            确认进入技术奇点？
+            {{ $t('singularity.confirmTitle') }}
           </h2>
           <p class="mb-6 text-center text-base text-gray-300">
-            这将是你当前纪元的终点。你将重置所有算力(CP)和生成器，但会<b class="text-green-400">保留</b>所有重构点(RP)、版本号和挑战进度，以换取强大的 <span class="font-bold text-green-400">奇点算力 (SP)</span>，开启一个全新的纪元。
+            <i18n-t keypath="singularity.description" tag="span">
+              <template #keep><b class="text-green-400">{{ $t('singularity.keepText') }}</b></template>
+              <template #sp><span class="font-bold text-green-400">{{ $t('singularity.spText') }}</span></template>
+            </i18n-t>
           </p>
           <p class="mb-6 text-center font-bold text-yellow-400">
-            此操作不可逆转。
+            {{ $t('singularity.irreversible') }}
           </p>
           <div class="flex flex-col gap-3">
             <button
