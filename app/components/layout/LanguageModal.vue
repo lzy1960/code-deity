@@ -3,7 +3,7 @@
     <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
       <div class="relative m-4 w-full max-w-sm rounded-2xl bg-gray-900 p-6 shadow-xl">
         <h2 class="mb-6 text-center text-2xl font-bold text-white">
-          选择语言
+          {{ $t('common.selectLanguage') }}
         </h2>
         <div class="space-y-3">
           <button

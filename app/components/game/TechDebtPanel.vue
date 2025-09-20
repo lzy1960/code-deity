@@ -6,34 +6,34 @@
         <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-5">
           <h3 class="text-xl font-bold text-red-300 text-center mb-3">
             <Icon name="mdi:alert-octagon" />
-            技术债务偿还
+            {{ $t('common.technicalDebtRepayment') }}
           </h3>
           
           <div class="bg-black/30 p-4 rounded-lg text-center">
             <p class="text-sm text-gray-300">
-              正在重构 <span class="font-bold text-white">{{ paradigmName }}</span>
+              {{ $t('common.refactoringInProgress') }} <span class="font-bold text-white">{{ paradigmName }}</span>
             </p>
             <p class="mt-2 text-sm text-gray-400">
-              将返还 <span class="font-bold text-green-400">{{ formatNumber(gameStore.activeRefactoring.frozenSP) }}</span> SP
+              {{ $t('common.willRefund') }} <span class="font-bold text-green-400">{{ formatNumber(gameStore.activeRefactoring.frozenSP) }}</span> SP
             </p>
             <p class="mt-1 text-sm text-gray-400">
-              需要偿还 <span class="font-bold text-red-400">{{ formatNumber(gameStore.activeRefactoring.cpCost) }}</span> CP
+              {{ $t('common.needsRepayment') }} <span class="font-bold text-red-400">{{ formatNumber(gameStore.activeRefactoring.cpCost) }}</span> CP
             </p>
             <div class="mt-1 text-xs text-yellow-400/80">
-              (全局 CP 产出 -10%)
+              {{ $t('common.globalCpPenalty') }}
             </div>
           </div>
 
           <div class="mt-4 grid grid-cols-2 gap-4">
             <button @click="gameStore.cancelParadigmRefactor" class="px-4 py-2 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500 transition-colors">
-              取消
+              {{ $t('common.cancel') }}
             </button>
             <button 
               @click="gameStore.confirmParadigmRefactor" 
               :disabled="!canConfirm"
               class="px-4 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-500 transition-colors disabled:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              确认偿还
+              {{ $t('common.confirmRepayment') }}
             </button>
           </div>
         </div>
@@ -52,7 +52,7 @@ const gameStore = useGameStore();
 
 const paradigmName = computed(() => {
   if (!gameStore.activeRefactoring) return '';
-  return paradigmConfigs.find(p => p.id === gameStore.activeRefactoring!.paradigmId)?.name || '未知技能';
+  return $t('paradigms.' + gameStore.activeRefactoring!.paradigmId + '.name') || $t('common.unknownSkill');
 });
 
 const canConfirm = computed(() => {

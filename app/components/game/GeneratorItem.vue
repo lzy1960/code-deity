@@ -3,15 +3,15 @@
     <div class="flex items-stretch">
       <div class="flex-[2_2_0px] p-3 flex flex-col justify-between">
         <div>
-          <h3 class="text-white text-sm font-bold leading-tight">{{ config.name }}</h3>
+          <h3 class="text-white text-sm font-bold leading-tight">{{ localizedName }}</h3>
           <p class="text-[#8eadcc] text-xs font-normal leading-normal">
-            Quantity: {{ formattedAmount }} 
+            {{ $t('common.quantity') }}: {{ formattedAmount }} 
             <span v-if="buyAmount.gt(0)" class="text-cyan-400">(+{{ formatNumber(buyAmount) }})</span>
           </p>
         </div>
         <div class="mt-2">
-          <p class="text-white text-xs font-medium leading-normal">Multiplier: x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
-          <div class="rounded-full bg-[#2f4d6a] mt-1 h-2 w-full" :title="`Buy ${progressInfo.nextBonus} more to get next bonus`">
+          <p class="text-white text-xs font-medium leading-normal">{{ $t('common.multiplier') }}: x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
+          <div class="rounded-full bg-[#2f4d6a] mt-1 h-2 w-full" :title="$t('generatorItem.nextBonusHint', { nextBonus: progressInfo.nextBonus })">
             <div class="h-2 rounded-full bg-[#3899fa]" :style="{ width: `${progressInfo.progress}%` }"></div>
           </div>
         </div>
@@ -27,10 +27,10 @@
           @click="buy"
         >
           <span class="absolute top-1.5 right-1.5 text-xs font-bold rounded-full bg-black/30 text-white px-2 py-0.5">
-            {{ gameStore.buyMultiplier === 'max' ? 'Max' : gameStore.buyMultiplier }}
+            {{ gameStore.buyMultiplier === 'max' ? $t('common.max') : gameStore.buyMultiplier }}
           </span>
           <Icon name="mdi:cart" class="text-lg" />
-          <p class="text-xs font-medium text-gray-300 mt-1">Cost:</p>
+          <p class="text-xs font-medium text-gray-300 mt-1">{{ $t('common.cost') }}:</p>
           <div v-if="discountedCost">
             <p class="text-xs font-bold text-gray-500 line-through">{{ formattedCost }}</p>
             <p class="text-sm font-bold text-green-400">{{ formatNumber(discountedCost) }}</p>
@@ -46,7 +46,7 @@
 import Decimal from 'break_infinity.js';
 import { computed } from 'vue';
 import { useGameStore } from '~/store/game';
-import { formatNumber } from '~/utils/format';
+import { formatNumber, getLocalizedGameName } from '~/utils/format';
 
 const props = defineProps<{
   generatorId: number;
@@ -56,6 +56,7 @@ const props = defineProps<{
 const emit = defineEmits(['buy']);
 
 const gameStore = useGameStore();
+const { locale } = useI18n();
 
 const generator = computed(() => gameStore.generators.find(g => g.id === props.generatorId));
 const config = computed(() => gameStore.generatorConfig(props.generatorId));
@@ -85,6 +86,8 @@ const progressInfo = computed(() => {
   if (!generator.value) return { progress: 0, nextBonus: 0 };
   return gameStore.getProgressInfo(props.generatorId);
 });
+
+const localizedName = computed(() => getLocalizedGameName(config.value.name, locale.value));
 
 const buy = () => {
   if (canBuy.value) {

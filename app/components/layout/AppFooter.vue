@@ -42,12 +42,12 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { id: 'generators', name: 'Generators', icon: 'dns', isUnlocked: () => true },
-  { id: 'upgrades', name: 'Refactor', icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
-  { id: 'automation', name: 'Automation', icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
-  { id: 'challenges', name: 'Challenges', icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
-  { id: 'singularity', name: 'Singularity', icon: 'creation', isUnlocked: () => gameStore.unlockedSingularity },
-  { id: 'stats', name: 'Stats', icon: 'chart-bar', isUnlocked: () => true },
+  { id: 'generators', name: $t('common.generators'), icon: 'dns', isUnlocked: () => true },
+  { id: 'upgrades', name: $t('common.refactor'), icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
+  { id: 'automation', name: $t('common.automation'), icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
+  { id: 'challenges', name: $t('common.challenges'), icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
+  { id: 'singularity', name: $t('common.singularity'), icon: 'creation', isUnlocked: () => gameStore.unlockedSingularity },
+  { id: 'stats', name: $t('common.stats'), icon: 'chart-bar', isUnlocked: () => true },
 ];
 
 const isActive = (tabId: string) => props.activeTab === tabId;
@@ -77,10 +77,10 @@ const getTabClass = (tab: Tab) => {
 const getTabTitle = (tab: Tab): string => {
   if (tab.isUnlocked()) return '';
   switch (tab.id) {
-    case 'upgrades': return 'Unlock by purchasing 10 AI Cores.';
-    case 'automation': return 'Unlock by performing your first Compile & Release.';
-    case 'challenges': return 'Unlock after your 2nd Compile & Release.';
-    default: return 'Locked';
+    case 'upgrades': return $t('common.unlockRefactorHint');
+    case 'automation': return $t('common.unlockAutomationHint');
+    case 'challenges': return $t('common.unlockChallengesHint');
+    default: return $t('common.locked');
   }
 };
 </script>

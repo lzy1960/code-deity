@@ -4,7 +4,7 @@
       <div class="w-auto">
         <button v-if="canSingularity" @click="$emit('singularityClick')" class="px-3 h-10 rounded-lg bg-purple-600 text-white font-bold text-sm animate-pulse shadow-lg shadow-purple-500/50 flex items-center justify-center gap-2">
           <Icon name="mdi:creation" class="text-xl" />
-          <span>技术奇点</span>
+          <span>{{ $t('common.singularity') }}</span>
         </button>
       </div>
       <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
@@ -21,19 +21,19 @@
       <!-- Row 1: Main Currencies -->
       <div class="flex justify-between items-center">
         <div class="flex items-baseline gap-4">
-          <p class="text-white text-lg font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-sm">CP</span></p>
+          <p class="text-white text-lg font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-sm">{{ $t('common.computingPowerShort') }}</span></p>
           <div v-if="gameStore.refactorCount > 0 || gameStore.refactorPoints.gt(0)">
-            <p class="font-bold leading-tight tracking-tighter text-green-400 text-base">{{ formatNumber(gameStore.refactorPoints) }} <span class="text-xs text-green-400/80">RP</span></p>
+            <p class="font-bold leading-tight tracking-tighter text-green-400 text-base">{{ formatNumber(gameStore.refactorPoints) }} <span class="text-xs text-green-400/80">{{ $t('common.refactorPointsShort') }}</span></p>
           </div>
         </div>
       </div>
       <!-- Row 2: Production Info & Actions -->
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2">
-          <p class="text-green-400 text-xs font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} CP/s</p>
-          <div v-if="gameStore.architecturalOverheadPenalty < 1" class="flex items-center gap-1 text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold pulse-animation-slow" title="架构过载：拥有超过10个AI核心导致了效率惩罚">
+          <p class="text-green-400 text-xs font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} {{ $t('common.cpsShort') }}</p>
+          <div v-if="gameStore.architecturalOverheadPenalty < 1" class="flex items-center gap-1 text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold pulse-animation-slow" :title="$t('common.architecturalOverheadHint')">
             <Icon name="mdi:alert-circle-outline" />
-            <span>效率: {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</span>
+            <span>{{ $t('common.efficiency') }} {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</span>
           </div>
         </div>
         <!-- The BuyMultiplierSelector will be placed here via a slot -->

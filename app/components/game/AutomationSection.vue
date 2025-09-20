@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-3">
-    <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">Automation</h2>
-    <p class="text-gray-400">Toggle automators to automatically buy generators. Unlocks after your first Compile & Release.</p>
+    <h2 class="text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3">{{ $t('common.automation') }}</h2>
+    <p class="text-gray-400">{{ $t('common.automationHint') }}</p>
     <div v-for="generator in unlockedGenerators" :key="generator.id" class="flex items-center justify-between rounded-lg bg-[#191933] p-3">
       <div>
-        <p class="text-base font-medium">Auto-buy {{ generatorConfig(generator.id).name }}</p>
+        <p class="text-base font-medium">{{ $t('common.autoBuy') }} {{ getLocalizedGameName(generatorConfig(generator.id).name, $i18n.locale.value) }}</p>
       </div>
       
       <label class="relative inline-flex items-center cursor-pointer">

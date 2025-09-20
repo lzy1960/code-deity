@@ -7,8 +7,8 @@
     <div class="flex justify-between items-start">
       <div>
         <p class="text-sm font-medium" :class="statusTextColor">{{ statusText }}</p>
-        <h3 class="text-white text-lg font-bold">{{ paradigm.name }}</h3>
-        <p class="text-gray-300 text-sm mt-1">{{ paradigm.description }}</p>
+        <h3 class="text-white text-lg font-bold">{{ $t('paradigms.' + paradigm.id + '.name') }}</h3>
+        <p class="text-gray-300 text-sm mt-1">{{ $t('paradigms.' + paradigm.id + '.description') }}</p>
       </div>
       <div class="flex-shrink-0 text-3xl text-white/50">
         <Icon v-if="lockReason === 'school_limit' || lockReason === 'exclusive'" name="ph:lock-bold" />
@@ -24,7 +24,7 @@
     <!-- Refactor Button -->
     <div v-if="isPurchased && !gameStore.activeRefactoring" class="mt-2">
       <button @click.stop="$emit('requestRefactor', paradigm.id)" class="w-full text-xs text-center text-gray-400 hover:text-red-400 hover:underline">
-        申请重构
+        {{ $t('common.requestRefactor') }}
       </button>
     </div>
   </div>
@@ -34,8 +34,10 @@
 import { useGameStore } from '~/store/game';
 import type { Paradigm } from '~/types/paradigms'
 import { paradigmConfigs } from '~~/game/paradigms.configs'
+import { getLocalizedGameName } from '~/utils/format';
 
 const gameStore = useGameStore()
+const { t } = useI18n()
 
 const props = defineProps<{
   paradigm: Paradigm
@@ -47,30 +49,30 @@ const props = defineProps<{
 defineEmits(['requestRefactor'])
 
 const statusText = computed(() => {
-  if (props.isPurchased) return '已解锁'
-  if (props.isPurchasable) return '可解锁'
+  if (props.isPurchased) return t('common.unlocked')
+  if (props.isPurchasable) return t('common.purchasable')
   
   if (props.lockReason === 'dependency') {
     const missingDeps = props.paradigm.requires
       ?.filter(reqId => !gameStore.paradigms[reqId])
-      .map(reqId => `"${paradigmConfigs.find(p => p.id === reqId)?.name}"`)
+      .map(reqId => `\"${t('paradigms.' + reqId + '.name')}\"`)
       .join(', ')
-    return `需要: ${missingDeps}`
+    return `${t('common.requires')}: ${missingDeps}`
   }
 
   if (props.lockReason === 'exclusive') {
-    return '互斥选择'
+    return t('common.mutuallyExclusive')
   }
 
   if (props.lockReason === 'school_limit') {
-    return '学派数量已达上限'
+    return t('common.schoolLimitReached')
   }
 
   if (props.lockReason === 'sp') {
-    return 'SP 不足'
+    return t('common.insufficientSp')
   }
 
-  return '已锁定'
+  return t('common.locked')
 })
 
 const iconName = computed(() => {

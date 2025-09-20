@@ -92,38 +92,38 @@ onMounted(async () => {
       switch (boostType) {
         case 'quantumComputing':
           gameStore.activateQuantumComputing();
-          toast.addToast('量子计算已激活！CPS x5，持续10分钟', 'success', 5000);
+          toast.addToast($t('toast.quantumComputingActive'), 'success', 5000);
           break;
         case 'supplyChainOptimization':
           gameStore.activateSupplyChainOptimization();
-          toast.addToast('供应链已优化！成本降低25%，持续15分钟', 'success', 5000);
+          toast.addToast($t('toast.supplyChainOptimized'), 'success', 5000);
           break;
         case 'algorithmBreakthrough':
           gameStore.activateAlgorithmBreakthrough();
-          toast.addToast('算法突破已激活！下次购买生成器成本降低90%', 'success', 5000);
+          toast.addToast($t('toast.algorithmBreakthroughActive'), 'success', 5000);
           break;
         case 'codeInjection':
           gameStore.applyCodeInjection();
-          toast.addToast('代码注入成功！获得1小时算力', 'success', 5000);
+          toast.addToast($t('toast.codeInjectionSuccess'), 'success', 5000);
           break;
         case 'neuralBoost':
           gameStore.activateNeuralBoost();
-          toast.addToast('神经超频已激活！手动点击效果提升10倍', 'success', 5000);
+          toast.addToast($t('toast.neuralBoostActive'), 'success', 5000);
           break;
         case 'offlineBonus':
           gameStore.doubleOfflineGains();
           adWatched.value = true; // Disable the button in the offline modal
-          toast.addToast('超线程已启动！离线收益翻倍', 'success', 5000);
+          toast.addToast($t('toast.hyperthreadingActive'), 'success', 5000);
           break;
         case 'refactorBonus':
           gameStore.doubleNextRefactorGain();
           gameStore.refactor();
-          toast.addToast('超级编译完成！本次重构收益翻倍', 'success', 5000);
+          toast.addToast($t('toast.superCompileComplete'), 'success', 5000);
           break;
         case 'singularityBonus':
           gameStore.doubleNextSingularityGain();
           gameStore.performSingularityReset();
-          toast.addToast('奇点跃迁完成！本次SP收益翻倍', 'success', 5000);
+          toast.addToast($t('toast.singularityJumpComplete'), 'success', 5000);
           break;
       }
 
@@ -223,13 +223,13 @@ onMounted(async () => {
     <OfflineProgressModal :is-revealed="isRevealed">
       <h2 class="text-3xl font-bold text-[#3899fa] flex items-center justify-center gap-3">
         <Icon name="mdi:timer-sand" />
-        <span>欢迎回来！</span>
+        <span>{{ $t('common.welcomeBack') }}</span>
       </h2>
-      <p class="mt-4 text-lg text-gray-300">在您离线的这段时间里，您的代码产生了新的算力：</p>
+      <p class="mt-4 text-lg text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
       
       <div class="my-6 bg-[#101a23] rounded-lg p-4">
         <p class="text-4xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
-        <p class="mt-1 text-sm text-gray-400">算力 (CP)</p>
+        <p class="mt-1 text-sm text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
       </div>
 
       <div class="flex flex-col gap-3">
@@ -241,18 +241,18 @@ onMounted(async () => {
         >
           <template v-if="isOfflineAdLoading">
             <Icon name="mdi:loading" class="animate-spin" />
-            <span>加载中...</span>
+            <span>{{ $t('common.loading') }}</span>
           </template>
           <template v-else>
             <Icon name="mdi:movie-play" />
-            <span>启动超线程 (x2 收益)</span>
+            <span>{{ $t('common.activateHyperthreading') }}</span>
           </template>
         </button>
         <button 
           @click="confirm"
           class="w-full rounded-lg bg-[#3899fa] text-white font-bold py-4 px-6 hover:bg-opacity-90 transition-colors text-xl shadow-lg shadow-[#3899fa]/30 transform hover:scale-105 active:scale-100"
         >
-          确认收益
+          {{ $t('common.confirmGains') }}
         </button>
       </div>
     </OfflineProgressModal>

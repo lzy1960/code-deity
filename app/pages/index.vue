@@ -65,7 +65,7 @@ const unlockedGenerators = computed(() => {
 
 const headerTitle = computed(() => {
   if (!isGeneratorSectionUnlocked.value) {
-    return '代码神祇 (Code Deity)';
+    return $t('index.gameTitle');
   }
   // Capitalize first letter
   return activeTab.value.charAt(0).toUpperCase() + activeTab.value.slice(1);
@@ -78,7 +78,7 @@ const buyGenerator = (id: number) => {
 watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   if (isUnlocked && !hasShownRefactorMessage.value) {
     toast.addToast(
-      '代码结构已达瓶颈，建议进行重构',
+      $t('toast.refactorSuggestion'),
       'warning',
       5000
     );
@@ -90,7 +90,7 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
 watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
   if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
     toast.addToast(
-      `架构过载：AI核心数量过多导致效率衰减`,
+      $t('toast.architecturalOverload'),
       'error',
       8000
     );
@@ -155,7 +155,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
         <!-- Manual Code Button -->
         <div v-if="!isGeneratorSectionUnlocked" class="flex justify-center items-center h-64">
           <button @click.prevent="handleManualClick" class="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
-            手动编写代码
+            {{ $t('common.manualCode') }}
           </button>
         </div>
 
@@ -166,7 +166,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
             <!-- Manual Overclock Button -->
             <button @click.prevent="handleManualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-sm">
               <Icon name="mdi:flash" />
-              <span>手动超频 (+5% CPS)</span>
+              <span>{{ $t('common.manualOverclock') }} ({{ $t('common.cpsBonus') }})</span>
             </button>
             
             <div class="space-y-3">
@@ -185,7 +185,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
             <div class="border-b border-gray-700 px-4 mb-4">
               <div class="flex justify-around">
                 <a @click="upgradesSubTab = 'refactor'" class="flex flex-col items-center justify-center py-3 px-4 w-1/2 text-center cursor-pointer" :class="upgradesSubTab === 'refactor' ? 'border-b-2 border-b-[#3899fa] text-white' : 'border-b-2 border-b-transparent text-gray-500 hover:text-white transition-colors'">
-                  <p class="text-base font-bold">Refactor</p>
+                  <p class="text-base font-bold">{{ $t('common.refactor') }}</p>
                 </a>
                 <a 
                   v-if="gameStore.isRefactorUnlocked" 
@@ -199,11 +199,11 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
                   }"
                 >
                   <p class="text-base font-bold flex items-center">
-                    Deploy
+                    {{ $t('common.deploy') }}
                     <Icon v-if="!gameStore.isCompileUnlocked" name="mdi:lock" class="ml-1 text-gray-500" />
                   </p>
                   <p v-if="!gameStore.isCompileUnlocked" class="text-xs text-gray-500 mt-1">
-                    (需要 {{ prestigeThresholds.COMPILE_UNLOCK_RP }} RP)
+                    ({{ $t('common.requires') }} {{ prestigeThresholds.COMPILE_UNLOCK_RP }} {{ $t('common.refactorPoints') }})
                   </p>
                 </a>
               </div>
@@ -229,8 +229,8 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
               />
               <div v-else class="text-center text-gray-400 p-8">
                 <Icon name="mdi:lock-outline" class="text-5xl mb-4" />
-                <h3 class="text-xl font-bold">Unlock Condition</h3>
-                <p class="text-lg">You need to have <span class="font-bold text-green-400">{{ prestigeThresholds.COMPILE_UNLOCK_RP }}</span> Refactor Points (RP) to unlock this feature.</p>
+                <h3 class="text-xl font-bold">{{ $t('common.unlockCondition') }}</h3>
+                <p class="text-lg">{{ $t('common.youNeedToHave') }} <span class="font-bold text-green-400">{{ prestigeThresholds.COMPILE_UNLOCK_RP }}</span> {{ $t('common.refactorPoints') }} {{ $t('common.unlockThisFeature') }}.</p>
               </div>
             </div>
           </div>

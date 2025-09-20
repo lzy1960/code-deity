@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="flex flex-wrap justify-between items-center gap-4 mb-4 px-4">
-      <h2 class="text-2xl font-bold text-purple-300" style="text-shadow: 0 0 5px rgba(192, 132, 252, 0.5);">编程范式</h2>
+      <h2 class="text-2xl font-bold text-purple-300" style="text-shadow: 0 0 5px rgba(192, 132, 252, 0.5);">{{ $t('common.programmingParadigms') }}</h2>
       <div class="flex items-center gap-3 text-sm">
         <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
-          <span class="text-gray-400">SP: </span>
+          <span class="text-gray-400">{{ $t('common.singularityPowerShort') }}: </span>
           <span class="font-bold text-green-400">{{ formatNumber(gameStore.singularityPower) }}</span>
         </div>
         <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
-          <span class="text-gray-400">奇点: </span>
+          <span class="text-gray-400">{{ $t('common.singularity') }}: </span>
           <span class="font-bold text-purple-400">{{ formatNumber(gameStore.singularityCount) }}</span>
         </div>
       </div>
@@ -17,7 +17,7 @@
     <!-- School Limit Banner -->
     <div v-if="lockedSchool" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-red-900/80 backdrop-blur-sm border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm shadow-lg flex items-center gap-2">
       <Icon name="ph:scales-bold" />
-      <span>您已选择发展 <b>{{ purchasedSchools.join(' 和 ') }}</b> 学派，<b>{{ lockedSchool }}</b> 学派的技能将无法解锁。</span>
+      <span>{{ $t('common.youHaveChosenToDevelop') }} <b>{{ purchasedSchools.join(` ${$t('common.and')} `) }}</b> {{ $t('common.school') }}，<b>{{ lockedSchool }}</b> {{ $t('common.schoolSkillsLockedHint') }}</span>
     </div>
 
     <div class="relative w-full h-[70vh]">
@@ -56,7 +56,7 @@
 import { watch, ref, nextTick } from 'vue'
 import { useGameStore } from '~/store/game'
 import { paradigmConfigs } from '~~/game/paradigms.configs'
-import type { Paradigm } from '~/types/paradigms'
+import type { Paradigm } from '~/types/paradigims'
 import { formatNumber } from '~/utils/format'
 import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
@@ -67,23 +67,24 @@ import dagre from 'dagre'
 const gameStore = useGameStore()
 const purchaseModal = useParadigmPurchaseModal()
 const { onNodeClick, fitView } = useVueFlow()
+const { t } = useI18n()
 
-const schoolStarters: Record<string, string> = {
-  '效率': 'efficiency_starter',
-  '抽象': 'abstraction_starter',
-  '敏捷': 'agility_starter',
-}
+const schoolStarterIds = [
+  'efficiency_starter',
+  'abstraction_starter',
+  'agility_starter',
+]
 
 const purchasedSchools = computed(() => {
-  return Object.entries(schoolStarters)
-    .filter(([, id]) => gameStore.paradigms[id])
-    .map(([name]) => name)
+  return schoolStarterIds
+    .filter(id => gameStore.paradigms[id])
+    .map(id => t(`paradigms.${id}.name`))
 })
 
 const lockedSchool = computed(() => {
   if (purchasedSchools.value.length < 2) return null
-  return Object.entries(schoolStarters)
-    .find(([, id]) => !gameStore.paradigms[id])?.[0] || null
+  const lockedStarterId = schoolStarterIds.find(id => !gameStore.paradigms[id])
+  return lockedStarterId ? t(`paradigms.${lockedStarterId}.name`) : null
 })
 
 // --- Dagre Layout State ---

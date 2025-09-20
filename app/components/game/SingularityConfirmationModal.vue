@@ -26,11 +26,11 @@
             >
               <template v-if="isLoading">
                 <Icon name="mdi:loading" class="animate-spin" />
-                <span>加载中...</span>
+                <span>{{ $t('common.loading') }}</span>
               </template>
               <template v-else>
                 <Icon name="mdi:movie-play" class="transition-transform duration-200 group-hover:scale-110" />
-                <span>奇点跃迁 (x2 SP)</span>
+                <span>{{ $t('common.singularityJump') }}</span>
               </template>
             </button>
             <div class="flex justify-between gap-3">
@@ -39,14 +39,14 @@
                 @click="modal.hide()"
                 :disabled="isLoading"
               >
-                取消
+                {{ $t('common.cancel') }}
               </button>
               <button
                 class="flex-1 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700 disabled:opacity-50"
                 @click="modal.confirm()"
                 :disabled="isLoading"
               >
-                确认
+                {{ $t('common.confirm') }}
               </button>
             </div>
           </div>
@@ -66,6 +66,7 @@ import { useToast } from '~/composables/useToast';
 const modal = useSingularityModal()
 const isNative = useIsNative();
 const toast = useToast();
+const { t } = useI18n();
 const isLoading = ref(false);
 
 const handleAdSingularity = async () => {
@@ -78,7 +79,7 @@ const handleAdSingularity = async () => {
     modal.hide();
   } catch (error) {
     console.error('Error showing singularity reward ad:', error);
-    toast.addToast('广告加载失败，请稍后再试', 'error');
+    toast.addToast(t('toast.adLoadFailed'), 'error');
   } finally {
     isLoading.value = false;
   }

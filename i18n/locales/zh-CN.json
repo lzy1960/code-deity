@@ -1,9 +1,283 @@
 {
+  "common": {
+    "manualCode": "手动编写代码",
+    "manualOverclock": "手动超频",
+    "cpsBonus": "+5% CPS",
+    "refactor": "重构",
+    "deploy": "部署",
+    "requires": "需要",
+    "unlockCondition": "解锁条件",
+    "youNeedToHave": "你需要在",
+    "refactorPoints": "重构点 (RP)",
+    "unlockThisFeature": "解锁此功能",
+    "confirm": "确认",
+    "cancel": "取消",
+    "settings": "设置",
+    "computingPower": "算力",
+    "computingPowerShort": "CP",
+    "refactorPointsShort": "RP",
+    "singularityPower": "奇点算力",
+    "singularityPowerShort": "SP",
+    "version": "版本号",
+    "unlocked": "已解锁",
+    "purchasable": "可解锁",
+    "locked": "已锁定",
+    "insufficientSp": "SP 不足",
+    "mutuallyExclusive": "互斥选择",
+    "schoolLimitReached": "学派数量已达上限",
+    "and": "和",
+    "school": "学派",
+    "schoolSkillsLockedHint": "一旦您选择了两个学派，其他学派的技能将被锁定。",
+    "loading": "加载中...",
+    "gotIt": "知道了",
+    "welcomeBack": "欢迎回来！",
+    "confirmGains": "确认收益",
+    "activateHyperthreading": "启动超线程 (x2 收益)",
+    "codeOptimization": "代码优化 (x2 RP)",
+    "singularityJump": "奇点跃迁 (x2 SP)",
+    "quantity": "数量",
+    "multiplier": "乘数",
+    "cost": "花费",
+    "max": "最大",
+    "buy": "购买",
+    "gainFromRefactor": "本次重构你将获得：",
+    "currentBonus": "当前加成：",
+    "toAllProduction": "到所有产出",
+    "confirmRefactor": "确认重构",
+    "refactorUnlockHint": "你需要至少 {unlockRequirement} 个 AI 核心才能重构。",
+    "compileReleaseNewVersion": "编译并发布新版本：",
+    "currentVersion": "当前版本：",
+    "compileRelease": "编译并发布",
+    "firstCompileHint": "你需要至少 25 点重构点才能首次编译。",
+    "statistics": "统计数据",
+    "totalRefactors": "总重构次数",
+    "totalRefactorPoints": "总重构点 (RP)",
+    "cps": "每秒算力 (CPS)",
+    "rpVersionBonus": "RP & 版本加成",
+    "architectureEfficiency": "架构效率",
+    "singularity": "技术奇点",
+    "cpsShort": "CP/s",
+    "efficiency": "效率:",
+    "architecturalOverheadHint": "架构过载：拥有超过10个AI核心导致了效率惩罚",
+    "generators": "生成器",
+    "automation": "自动化",
+    "challenges": "挑战",
+    "stats": "统计",
+    "unlockRefactorHint": "购买 10 个 AI 核心后解锁。",
+    "unlockAutomationHint": "首次编译发布后解锁。",
+    "unlockChallengesHint": "第二次编译发布后解锁。",
+    "loggedInAs": "登录为：",
+    "logOut": "登出",
+    "logInWithGoogle": "使用 Google 账号登录",
+    "cloudSync": "云同步",
+    "lastSync": "上次同步：",
+    "never": "从不",
+    "syncNow": "立即同步",
+    "exportSave": "导出存档",
+    "importSave": "导入存档",
+    "language": "语言",
+    "current": "当前：",
+    "switch": "切换",
+    "dangerZone": "危险区域",
+    "wipeAllData": "清除所有数据",
+    "wipeDataHint": "永久删除所有本地和云端存档数据。",
+    "wipeData": "清除数据",
+    "selectLanguage": "选择语言",
+    "helpDocs": "帮助文档",
+    "coreResources": "核心资源",
+    "cpDescription": "游戏中最基础的资源，通过手动点击或生成器自动产生。",
+    "rpDescription": "通过“代码重构”获得的第一层级重置资源，用于提升“代码优雅度”。",
+    "versionDescription": "通过“编译发布”获得的第二层级重置资源，用于增强 RP 的获取效率或效果。",
+    "spDescription": "通过“技术奇点”获得的、用于第二纪元“编程范式”技能树的新货币。",
+    "genesisShards": "创世碎片 (GS)",
+    "coreMechanicsEvents": "核心机制与事件",
+    "generatorsDescription": "游戏中自动化生产资源的核心单位，共分 8 阶。",
+    "refactorEventDescription": "第一层级的重置事件，消耗 CP 和生成器，以换取 RP。",
+    "compileReleaseEventDescription": "第二层级的重置事件，消耗 RP，以换取“版本号”。",
+    "architecturalOverhead": "架构过载",
+    "architecturalOverheadDescription": "当拥有过多“AI 核心”时触发的软上限，会对总算力产出施加惩罚。",
+    "singularityEventDescription": "第一纪元的终极重置事件，重置进度以换取 SP，并开启第二纪元。",
+    "becomeGenesis": "化身创世 (Become Genesis)",
+    "technicalDebt": "技术债务",
+    "technicalDebtDescription": "用于撤销已学习技能点的系统，需要付出一定代价（CP）来“偿还”。",
+    "gameSystems": "游戏系统",
+    "challengesDescription": "在带有特殊限制的重置中完成目标，以获得一次性的强大永久奖励。",
+    "automationDescription": "解锁后，允许设置自动购买生成器。",
+    "programmingParadigms": "编程范式",
+    "programmingParadigmsDescription": "第二纪元的核心系统，一个用 SP 购买永久性升级的技能树。",
+    "systemPatches": "系统补丁 (System Patches)",
+    "close": "关闭",
+    "notUnlocked": "未解锁",
+    "confirmExit": "确认退出",
+    "confirmCloseApp": "确定要关闭 Code Deity 吗？",
+    "exit": "退出",
+    "technicalDebtRepayment": "技术债务偿还",
+    "refactoringInProgress": "正在重构",
+    "willRefund": "将返还",
+    "needsRepayment": "需要偿还",
+    "globalCpPenalty": "(全局 CP 产出 -10%)",
+    "confirmRepayment": "确认偿还",
+    "unknownSkill": "未知技能",
+    "requestRefactor": "申请重构",
+    "youHaveChosenToDevelop": "您已选择发展",
+    "automationHint": "切换自动化器以自动购买生成器。首次编译发布后解锁。",
+    "autoBuy": "自动购买",
+    "rule": "规则",
+    "goal": "目标",
+    "reward": "奖励",
+    "completed": "已完成",
+    "inProgress": "进行中",
+    "startChallenge": "开始挑战",
+    "exitChallenge": "退出挑战",
+    "moreChallengesComingSoon": "更多挑战即将到来..."
+  },
+  "index": {
+    "gameTitle": "代码神祇 (Code Deity)"
+  },
+  "challenges": {
+    "challenge1Title": "挑战 1：终极考验",
+    "challenge1Rule": "1-7 阶生成器无法享受“购买10个”的指数加成。",
+    "challengeGoal": "在此规则下，达成一次“重构”。",
+    "challenge1Reward": "所有生成器的“购买 10 个”奖励效果从 x2 永久提升至 x2.2。",
+    "challenge2Title": "挑战 2：白手起家",
+    "challenge2Rule": "所有来自“重构”的加成（代码优雅度、全局乘数）全部失效。",
+    "challenge2Reward": "“重构点 (RP)”的获取量永久提升 50%。",
+    "challenge3Title": "挑战 3：线性世纪",
+    "challenge3Rule": "所有生成器都无法享受“购买10个”的指数加成。",
+    "challenge3Reward": "“购买10个”奖励的第一档上限从100个永久提升至120个。",
+    "challenge4Title": "挑战 4：逆水行舟",
+    "challenge4Rule": "所有生成器的成本增长率 costMultiplier 小幅提升 0.02。",
+    "challenge4Reward": "永久降低所有生成器的基础成本 5%。"
+  },  "toast": {
+    "refactorSuggestion": "代码结构已达瓶颈，建议进行重构",
+    "architecturalOverload": "架构过载：AI核心数量过多导致效率衰减",
+    "adViewsUsedUp": "今日观看次数已用完",
+    "adLoadFailed": "广告加载失败，请稍后再试",
+    "syncingCloud": "正在同步到云端...",
+    "syncComplete": "同步完成！",
+    "errorLoggingIn": "登录错误：",
+    "errorLoggingOut": "登出错误：",
+    "exportSaveNotImplemented": "导出存档 - 尚未实现。",
+    "importSaveNotImplemented": "导入存档 - 尚未实现。",
+    "wipeDataConfirm": "您确定要清除所有数据吗？此操作无法撤销。",
+    "dataWiped": "所有数据已清除。",
+    "quantumComputingActive": "量子计算已激活！CPS x5，持续10分钟",
+    "supplyChainOptimized": "供应链已优化！成本降低25%，持续15分钟",
+    "algorithmBreakthroughActive": "算法突破已激活！下次购买生成器成本降低90%",
+    "codeInjectionSuccess": "代码注入成功！获得1小时算力",
+    "neuralBoostActive": "神经超频已激活！手动点击效果提升10倍",
+    "hyperthreadingActive": "超线程已启动！离线收益翻倍",
+    "superCompileComplete": "超级编译完成！本次重构收益翻倍",
+    "singularityJumpComplete": "奇点跃迁完成！本次SP收益翻倍"
+  },
+  "generatorItem": {
+    "nextBonusHint": "购买 {nextBonus} 更多以获得下一个奖励"
+  },
+  "paradigms": {
+    "system_kernel": {
+      "name": "系统内核",
+      "description": "所有生成器的产出提升 25%。"
+    },
+    "open_source_community": {
+      "name": "开源社区",
+      "description": "根据你已学习的不同学派入门技能的数量 (N)，提供一个全局性的 x(1 + 0.15 * N) 乘法加成。"
+    },
+    "api_interface": {
+      "name": "API 接口",
+      "description": "一个定义良好的API是系统能够扩展的关键。“架构过载”(Architectural Overhead)的惩罚效果降低 50%。"
+    },
+    "efficiency_starter": {
+      "name": "效率学派入门",
+      "description": "解锁效率学派。该学派专注于前期爆发和后期潜力转化。"
+    },
+    "pointer_arithmetic": {
+      "name": "指针算术",
+      "description": "“变量”和“函数”的产出获得 x10 的直接乘法加成。"
+    },
+    "memory_management": {
+      "name": "内存管理",
+      "description": "资源分支：所有生成器的基础成本降低 20%，但成本增长率增加 0.01。"
+    },
+    "supply_chain_optimization": {
+      "name": "供应链优化",
+      "description": "你优化了整个软件供应链，使得上游的生产更为高效。'模块'（四阶生成器）产量的 5% 会直接转化为'类'（三阶生成器）。"
+    },
+    "bit_manipulation": {
+      "name": "位操作",
+      "description": "算力分支：提供一个 x1.5 的全局 CP 产出乘数。"
+    },
+    "assembly_instruction": {
+      "name": "汇编指令",
+      "description": "算力分支终极技能：总 CP 产出获得一个永久加成，数值等于你“代码重构”次数的平方。"
+    },
+    "compiler_optimization": {
+      "name": "编译器优化",
+      "description": "跨界协同：RP 加成效果会受到“买十奖励”等级的二次加成。"
+    },
+    "abstraction_starter": {
+      "name": "抽象学派入门",
+      "description": "解锁抽象学派。该学派专注于后期成长和强大的协同效应。"
+    },
+    "design_patterns": {
+      "name": "设计模式",
+      "description": "“类”、“模块”和“库”的产出，会根据其下一阶生成器的数量获得额外乘法加成。"
+    },
+    "polymorphism": {
+      "name": "多态",
+      "description": "级联分支：每种生成器的“买十奖励”效果，会额外对其上一阶生成器生效 20%。"
+    },
+    "enterprise_architecture": {
+      "name": "企业级架构",
+      "description": "级联分支终极技能：“编译发布”获得的“版本号”效果提升 50%。"
+    },
+    "dependency_injection": {
+      "name": "依赖注入",
+      "description": "自动化分支：解锁所有生成器的自动化购买器，无论“版本号”是否达到要求。"
+    },
+    "continuous_integration": {
+      "name": "持续集成",
+      "description": "自动化分支终极技能：你的“自动化购买器”现在会优先购买能触发“买十奖励”的生成器。"
+    },
+    "agility_starter": {
+      "name": "敏捷学派入门",
+      "description": "解锁敏捷学派。该学派专注于加速游戏循环和提升重置效率。"
+    },
+    "dynamic_typing": {
+      "name": "动态类型",
+      "description": "每当你购买一个生成器时，你立即免费获得一个低一阶的生成器。"
+    },
+    "jit_compilation": {
+      "name": "即时编译",
+      "description": "价值分支：“代码优雅度”(RP) 的基础加成效果提升 25%。"
+    },
+    "code_generation": {
+      "name": "代码生成",
+      "description": "价值分支跨界协同：手动“代码重构”时，所有生成器数量临时翻倍，持续 10 秒。"
+    },
+    "refactoring_tools": {
+      "name": "重构工具",
+      "description": "数量分支：每次“代码重构”时，额外获得 1 点 RP。"
+    },
+    "metaprogramming": {
+      "name": "元编程",
+      "description": "数量分支终极技能：“代码重构”获得的 RP 数量提升 20%。"
+    }
+  },
   "singularity": {
     "confirmTitle": "确认进入技术奇点？",
     "description": "这将是你当前纪元的终点。你将重置所有算力(CP)和生成器，但会{keep}所有重构点(RP)、版本号和挑战进度，以换取强大的{sp}，开启一个全新的纪元。",
     "keepText": "保留",
     "spText": "奇点算力 (SP)",
     "irreversible": "此操作不可逆转。"
+  },
+  "paradigmModal": {
+    "title": "解锁新的范式？",
+    "info": "这将消耗您的奇点算力 (SP)。此操作在重构前不可撤销。",
+    "cannotUnlock": "无法解锁",
+    "confirmUnlock": "确认解锁",
+    "ruleRestriction": "规则限制",
+    "exclusiveChoiceWarning": "互斥选择警告",
+    "schoolLimitInfo": "您最多只能选择两个主要学派（效率、抽象、敏捷）进行发展。",
+    "exclusiveChoiceInfo": "此技能与【{conflictingParadigmName}】技能互斥。解锁此技能后，另一分支将无法选择。"
   }
 }

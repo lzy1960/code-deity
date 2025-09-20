@@ -5,23 +5,23 @@
         <div class="animated-border"></div>
         <div class="relative z-10 rounded-[6px] bg-[#101a23] m-[2px] p-6">
           <h2 class="mb-4 text-center text-xl font-bold text-white">
-            确认退出
-          </h2>
-          <p class="mb-6 text-center text-base text-gray-300">
-            确定要关闭 Code Deity 吗？
-          </p>
+          {{ $t('common.confirmExit') }}
+        </h2>
+        <p class="mb-6 text-center text-base text-gray-300">
+          {{ $t('common.confirmCloseApp') }}
+        </p>
           <div class="flex justify-around">
             <button
               class="rounded-md border border-gray-600 px-8 py-2 text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"
               @click="hide"
             >
-              取消
+              {{ $t('common.cancel') }}
             </button>
             <button
               class="rounded-md bg-red-600 px-8 py-2 text-white transition-colors hover:bg-red-700"
               @click="confirm"
             >
-              退出
+              {{ $t('common.exit') }}
             </button>
           </div>
         </div>

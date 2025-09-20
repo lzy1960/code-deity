@@ -9,14 +9,14 @@
         <div class="animated-border"></div>
         <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-6 text-center">
           <h2 class="text-2xl font-bold text-purple-300 mb-3">
-            解锁新的范式？
+            {{ $t('paradigmModal.title') }}
           </h2>
           
           <div v-if="modal.paradigmToPurchase.value" class="my-5 p-4 bg-gray-900 rounded-lg">
-            <p class="text-xl font-semibold text-white">{{ modal.paradigmToPurchase.value.name }}</p>
-            <p class="text-sm text-gray-400 mt-1">{{ modal.paradigmToPurchase.value.description }}</p>
+            <p class="text-xl font-semibold text-white">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.name') }}</p>
+            <p class="text-sm text-gray-400 mt-1">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.description') }}</p>
             <div class="mt-4 inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full font-bold">
-              花费: {{ modal.paradigmToPurchase.value.cost }} SP
+              {{ $t('common.cost') }}: {{ modal.paradigmToPurchase.value.cost }} SP
             </div>
           </div>
 
@@ -27,7 +27,7 @@
           </div>
 
           <p v-else class="text-gray-400 mb-6">
-            这将消耗您的奇点算力 (SP)。此操作在重构前不可撤销。
+            {{ $t('paradigmModal.info') }}
           </p>
 
           <div class="flex justify-center gap-4">
@@ -35,14 +35,14 @@
               @click="modal.hide()"
               class="px-8 py-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
-              取消
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="modal.confirm()"
               :disabled="analysis && !analysis.purchasable"
               class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
             >
-              {{ (analysis && !analysis.purchasable) ? '无法解锁' : '确认解锁' }}
+              {{ (analysis && !analysis.purchasable) ? $t('paradigmModal.cannotUnlock') : $t('paradigmModal.confirmUnlock') }}
             </button>
           </div>
         </div>
@@ -55,10 +55,10 @@
 import { computed } from 'vue'
 import { useParadigmPurchaseModal } from '~/composables/useParadigmPurchaseModal'
 import { useGameStore } from '~/store/game'
-import { paradigmConfigs } from '~~/game/paradigms.configs'
 
 const modal = useParadigmPurchaseModal()
 const gameStore = useGameStore()
+const { t } = useI18n()
 
 const analysis = computed(() => {
   if (!modal.paradigmToPurchase.value) return null
@@ -68,8 +68,8 @@ const analysis = computed(() => {
 const analysisTitle = computed(() => {
   if (!analysis.value) return ''
   switch (analysis.value.reason) {
-    case 'school_limit': return '规则限制'
-    case 'exclusive': return '互斥选择警告'
+    case 'school_limit': return t('paradigmModal.ruleRestriction')
+    case 'exclusive': return t('paradigmModal.exclusiveChoiceWarning')
     default: return ''
   }
 })
@@ -78,10 +78,10 @@ const analysisText = computed(() => {
   if (!analysis.value) return ''
   switch (analysis.value.reason) {
     case 'school_limit':
-      return '您最多只能选择两个主要学派（效率、抽象、敏捷）进行发展。'
+      return t('paradigmModal.schoolLimitInfo')
     case 'exclusive':
-      const conflictingParadigmName = paradigmConfigs.find(p => p.id === analysis.value.conflictingParadigm)?.name
-      return `此技能与【${conflictingParadigmName}】技能互斥。解锁此技能后，另一分支将无法选择。`
+      const conflictingParadigmName = t(`paradigms.${analysis.value.conflictingParadigm}.name`)
+      return t('paradigmModal.exclusiveChoiceInfo', { conflictingParadigmName })
     default:
       return ''
   }

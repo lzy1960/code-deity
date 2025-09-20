@@ -10,7 +10,7 @@
             </button>
             <h2 class="mb-4 text-center text-2xl font-bold text-cyan-300 shrink-0">
               <Icon name="mdi:rocket-launch" class="mr-2" />
-              广告增益中心
+              {{ $t('common.adBoostCenter') }}
             </h2>
             
             <div class="flex-1 overflow-y-auto pr-2 space-y-4 text-gray-300">
@@ -21,7 +21,7 @@
                 icon="mdi:atom"
                 :views-left="5 - gameStore.adViewsToday.quantumComputing"
                 :is-active="isQuantumComputingActive"
-                :active-text="`剩余: ${quantumComputingTimeLeft}`"
+                :active-text="`${$t('common.remaining')}: ${quantumComputingTimeLeft}`"
                 :is-loading="loadingBoost === 'quantumComputing'"
                 @trigger="activateBoost('quantumComputing')"
               />
@@ -33,7 +33,7 @@
                 icon="mdi:brain"
                 :views-left="5 - gameStore.adViewsToday.neuralBoost"
                 :is-active="isNeuralBoostActive"
-                :active-text="`剩余: ${neuralBoostTimeLeft}`"
+                :active-text="`${$t('common.remaining')}: ${neuralBoostTimeLeft}`"
                 :is-loading="loadingBoost === 'neuralBoost'"
                 @trigger="activateBoost('neuralBoost')"
               />
@@ -45,7 +45,7 @@
                 icon="mdi:chart-line"
                 :views-left="5 - gameStore.adViewsToday.supplyChainOptimization"
                 :is-active="isSupplyChainActive"
-                :active-text="`剩余: ${supplyChainTimeLeft}`"
+                :active-text="`${$t('common.remaining')}: ${supplyChainTimeLeft}`"
                 :is-loading="loadingBoost === 'supplyChainOptimization'"
                 @trigger="activateBoost('supplyChainOptimization')"
               />
@@ -57,7 +57,7 @@
                 icon="mdi:lightbulb-on-outline"
                 :views-left="5 - gameStore.adViewsToday.algorithmBreakthrough"
                 :is-active="gameStore.isAlgorithmBreakthroughActive"
-                active-text="已激活"
+                :active-text="$t('common.activated')"
                 :is-loading="loadingBoost === 'algorithmBreakthrough'"
                 @trigger="activateBoost('algorithmBreakthrough')"
               />

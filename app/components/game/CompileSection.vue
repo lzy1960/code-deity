@@ -2,13 +2,13 @@
   <div class="flex-grow flex flex-col items-center justify-center text-center p-4 md:p-8">
 
     <div class="mb-6">
-      <p class="text-base text-gray-300/80">Compile & Release a new version:</p>
+      <p class="text-base text-gray-300/80">{{ $t('common.compileReleaseNewVersion') }}</p>
       <h1 class="text-6xl md:text-7xl font-bold text-teal-400 my-2">+1</h1>
-      <p class="text-2xl font-semibold text-teal-400/90">Version</p>
+      <p class="text-2xl font-semibold text-teal-400/90">{{ $t('common.version') }}</p>
     </div>
 
-    <p class="text-base text-gray-400/80 mb-4">Current Version: <span class="font-bold text-white">{{ version }}</span></p>
-    <p class="text-base text-gray-400/80 mb-8">Cost: <span class="font-bold text-red-400">{{ formatNumber(cost) }}</span> Refactor Points</p>
+    <p class="text-base text-gray-400/80 mb-4">{{ $t('common.currentVersion') }} <span class="font-bold text-white">{{ version }}</span></p>
+    <p class="text-base text-gray-400/80 mb-8">{{ $t('common.cost') }}: <span class="font-bold text-red-400">{{ formatNumber(cost) }}</span> {{ $t('common.refactorPoints') }}</p>
     
     <div class="w-full max-w-sm mx-auto">
       <button
@@ -17,10 +17,10 @@
         :disabled="!canCompile"
         @click="$emit('compileAndRelease')"
       >
-        [ Compile & Release ]
+        {{ $t('common.compileRelease') }}
       </button>
       <p v-if="!canCompile && version === 0" class="text-sm text-gray-400 mt-3">
-        You need at least 25 Refactor Points to compile for the first time.
+        {{ $t('common.firstCompileHint') }}
       </p>
     </div>
   </div>
