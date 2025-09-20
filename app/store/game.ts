@@ -85,6 +85,7 @@ export interface GameState {
 
   // Ad-hoc flags
   doubleNextRefactor: boolean
+  doubleNextSingularity: boolean
 }
 
 // #endregion
@@ -143,7 +144,8 @@ export const useGameStore = defineStore('game', {
     },
 
     activeRefactoring: null,
-    doubleNextRefactor: false
+    doubleNextRefactor: false,
+    doubleNextSingularity: false
   }),
   // #endregion
 
@@ -787,6 +789,10 @@ export const useGameStore = defineStore('game', {
       this.doubleNextRefactor = true;
     },
 
+    doubleNextSingularityGain() {
+      this.doubleNextSingularity = true;
+    },
+
     compileAndRelease() {
       if (!this.isCompileUnlocked) return
       const cost = this.compileCost
@@ -806,36 +812,29 @@ export const useGameStore = defineStore('game', {
     performSingularityReset() {
       if (!this.canSingularity) return
 
-      const spGain = this.singularityGain
+      let spGain = this.singularityGain
+      if (this.doubleNextSingularity) {
+        spGain = spGain.times(2);
+        this.doubleNextSingularity = false; // Reset the flag
+      }
+
       if (spGain.gt(0)) {
         this.singularityPower = this.singularityPower.plus(spGain)
         this.singularityCount += 1
         this.unlockedSingularity = true
       }
 
-      // --- HARD RESET ---
-      // Reset all first era progress
+      // --- SOFT RESET ---
+      // Only reset active progress, keeping first-era prestige layers.
       this.currency = new Decimal(10)
       this.generators.forEach(g => {
         g.amount = new Decimal(0)
         g.bought = 0
       })
-      this.refactorPoints = new Decimal(0)
-      this.refactorCount = 0
-      this.version = 0
       this.lastUpdateTime = Date.now()
 
-      // Reset all challenges (unless a meta-upgrade prevents this in the future)
-      this.challengeCompletions = {
-        challenge1: false,
-        challenge2: false,
-        challenge3: false,
-        challenge4: false
-      }
+      // Exit any active challenge, but keep completions
       this.activeChallenge = 'none'
-
-      // We keep automation unlocks as a QoL feature
-      // this.automatorStates = {}
 
       this.checkNarrativeMilestones()
     },

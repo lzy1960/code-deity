@@ -14,6 +14,7 @@ const isNative = useIsNative();
 // --- Guidance Logic ---
 const guidanceShown = ref(false);
 const shouldShowGuidance = computed(() => {
+  // The v-if on the root element already checks for isNative
   return gameStore.isAdBoostUnlocked && !guidanceShown.value;
 });
 
@@ -83,13 +84,14 @@ function handleClick() {
       </div>
       <Icon v-else name="mdi:rocket-launch" class="text-2xl" />
     </button>
+
+    <Guidance
+      :show="shouldShowGuidance"
+      :target="el"
+      title="解锁增益功能！"
+      text="点击这里，通过观看广告获得强大的临时增益，加速你的发展！"
+      placement="top"
+      @dismiss="guidanceShown = true"
+    />
   </div>
-  <Guidance
-    :show="shouldShowGuidance"
-    :target="el"
-    title="解锁增益功能！"
-    text="点击这里，通过观看广告获得强大的临时增益，加速你的发展！"
-    placement="top"
-    @dismiss="guidanceShown = true"
-  />
 </template>

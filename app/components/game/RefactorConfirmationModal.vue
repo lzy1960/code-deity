@@ -31,6 +31,7 @@
 
           <div class="mt-6 flex flex-col gap-3">
             <button
+              v-if="isNative"
               @click="handleAdRefactor"
               :disabled="isLoading"
               class="w-full rounded-lg bg-yellow-500 text-black font-bold py-3 px-6 hover:bg-opacity-90 transition-all text-lg shadow-lg shadow-yellow-500/30 transform hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed group animate-shake"
@@ -73,10 +74,12 @@ import { useRefactorConfirmationModal } from '~/composables/useRefactorConfirmat
 import { formatNumber } from '~/utils/format';
 import { showRewardVideoAd } from '~/services/admob';
 import { useToast } from '~/composables/useToast';
+import { useIsNative } from '~/utils/platform';
 
 const modal = useRefactorConfirmationModal();
 const toast = useToast();
 const isLoading = ref(false);
+const isNative = useIsNative();
 
 const handleAdRefactor = async () => {
   if (isLoading.value) return;

@@ -119,6 +119,11 @@ onMounted(async () => {
           gameStore.refactor();
           toast.addToast('超级编译完成！本次重构收益翻倍', 'success', 5000);
           break;
+        case 'singularityBonus':
+          gameStore.doubleNextSingularityGain();
+          gameStore.performSingularityReset();
+          toast.addToast('奇点跃迁完成！本次SP收益翻倍', 'success', 5000);
+          break;
       }
 
       // Reset the state after applying the reward
