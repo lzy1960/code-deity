@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { useGameStore } from '~/store/game'
 import type { NarrativeMilestone } from '~~/game/configs'
+import GenesisEvent from './GenesisEvent.vue' // Import the new component
 
 const gameStore = useGameStore()
 const { t } = useI18n()
+const { $saveGameLocal } = useNuxtApp() as any // Get the save function
 
-// State to hold the currently visible narrative and its displayed text
-const currentNarrative = ref<NarrativeMilestone | null>(null)
+// State for 'log' type narratives
+const currentLog = ref<NarrativeMilestone | null>(null)
 const displayedText = ref('')
-
 let typingInterval: any = null
+
+// State for 'event' type narratives
+const currentEvent = ref<NarrativeMilestone | null>(null)
 
 // Watch for new narratives being pushed to the queue
 watch(() => gameStore.narrativeQueue.length, (newLength, oldLength) => {
-  // Start processing only when the queue was empty and a new item is added
-  if (newLength > 0 && oldLength === 0) {
+  if (newLength > 0 && (oldLength === 0 || (!currentLog.value && !currentEvent.value))) {
     processNextInQueue()
   }
 })
@@ -22,11 +25,15 @@ watch(() => gameStore.narrativeQueue.length, (newLength, oldLength) => {
 const randomDelay = computed(() => ({ '--random': Math.random() }))
 
 function processNextInQueue() {
-  if (currentNarrative.value) return // Already displaying something
+  if (currentLog.value || currentEvent.value) return // Already displaying something
 
   const narrative = gameStore.shiftNarrativeQueue()
-  if (narrative) {
-    currentNarrative.value = narrative
+  if (!narrative) return
+
+  if (narrative.type === 'event') {
+    currentEvent.value = narrative
+  } else {
+    currentLog.value = narrative
     startTypewriter(narrative.textKey)
   }
 }
@@ -43,37 +50,47 @@ function startTypewriter(textKey: string) {
       charIndex++
     } else {
       clearInterval(typingInterval)
-      // Narrative fully displayed, wait before hiding
-      setTimeout(hideNarrative, 3500) // Keep visible for 3.5s after typing
+      setTimeout(hideLog, 3500)
     }
-  }, 50) // Typing speed: 50ms per character
+  }, 50)
 }
 
-function hideNarrative() {
-  currentNarrative.value = null
-  // After hiding, wait a bit before showing the next one
-  setTimeout(processNextInQueue, 700) // 0.7s pause between narratives
+function hideLog() {
+  currentLog.value = null
+  $saveGameLocal() // Save state immediately after a narrative is processed
+  setTimeout(processNextInQueue, 700)
 }
 
+function hideEvent() {
+  currentEvent.value = null
+  $saveGameLocal() // Save state immediately after a narrative is processed
+  setTimeout(processNextInQueue, 700)
+}
 </script>
 
 <template>
-  <div class="narrative-container">
-    <Transition name="narrative-slide">
-      <div v-if="currentNarrative" :key="currentNarrative.id" class="narrative-item" :style="randomDelay">
-        <div class="narrative-header">
-          <div class="header-icon">
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M25 35H75" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-1"></path>
-              <path d="M25 50H75" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-2"></path>
-              <path d="M25 65H50" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-3"></path>
-            </svg>
+  <div>
+    <!-- Genesis Log (existing typewriter pop-up) -->
+    <div class="narrative-container">
+      <Transition name="narrative-slide">
+        <div v-if="currentLog" :key="currentLog.id" class="narrative-item" :style="randomDelay">
+          <div class="narrative-header">
+            <div class="header-icon">
+              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M25 35H75" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-1"></path>
+                <path d="M25 50H75" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-2"></path>
+                <path d="M25 65H50" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="line-3"></path>
+              </svg>
+            </div>
+            <span>[Genesis.log]:</span>
           </div>
-          <span>[Genesis.log]:</span>
+          <p class="narrative-text">{{ displayedText }}<span class="caret"></span></p>
         </div>
-        <p class="narrative-text">{{ displayedText }}<span class="caret"></span></p>
-      </div>
-    </Transition>
+      </Transition>
+    </div>
+
+    <!-- Genesis Event (new full-screen component) -->
+    <GenesisEvent :narrative="currentEvent" @close="hideEvent" />
   </div>
 </template>
 
@@ -186,6 +203,4 @@ function hideNarrative() {
   opacity: 0;
   transform: translateY(-20px) scale(0.95);
 }
-
-
 </style>

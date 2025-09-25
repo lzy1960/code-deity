@@ -95,85 +95,118 @@ export interface NarrativeMilestone {
   id: string
   name: string
   condition: {
-    type: 'currency' | 'generator_bought' | 'refactor_count' | 'version_count'
+    type: 'currency' | 'generator_bought' | 'refactor_count' | 'version_count' | 'game_start' | 'singularity_count'
     value: number | Decimal
     generatorId?: number
   }
   textKey: string
+  type: 'log' | 'event'
+  intensity?: 'normal' | 'epic'
 }
 
 export const narrativeMilestones: NarrativeMilestone[] = [
   {
+    id: 'n_000_intro',
+    name: 'Game Start',
+    condition: { type: 'game_start', value: 1 },
+    textKey: 'narrative.n_000',
+    type: 'event',
+    intensity: 'normal',
+  },
+  {
     id: 'n_001',
     name: 'First Click',
     condition: { type: 'currency', value: 1 },
-    textKey: 'narrative.n_001'
+    textKey: 'narrative.n_001',
+    type: 'log',
   },
   {
     id: 'n_002',
     name: 'Unlock Generators',
     condition: { type: 'currency', value: 10 },
-    textKey: 'narrative.n_002'
+    textKey: 'narrative.n_002',
+    type: 'log',
   },
   {
     id: 'n_003',
     name: 'Buy first Variable',
     condition: { type: 'generator_bought', generatorId: 1, value: 1 },
-    textKey: 'narrative.n_003'
+    textKey: 'narrative.n_003',
+    type: 'log',
   },
   {
     id: 'n_004',
     name: 'Buy first Function',
     condition: { type: 'generator_bought', generatorId: 2, value: 1 },
-    textKey: 'narrative.n_004'
+    textKey: 'narrative.n_004',
+    type: 'log',
   },
   {
     id: 'n_005',
     name: 'Buy first Class',
     condition: { type: 'generator_bought', generatorId: 3, value: 1 },
-    textKey: 'narrative.n_005'
+    textKey: 'narrative.n_005',
+    type: 'log',
   },
   {
     id: 'n_006',
     name: 'Buy first Module',
     condition: { type: 'generator_bought', generatorId: 4, value: 1 },
-    textKey: 'narrative.n_006'
+    textKey: 'narrative.n_006',
+    type: 'log',
   },
   {
     id: 'n_007',
     name: 'Buy first Library',
     condition: { type: 'generator_bought', generatorId: 5, value: 1 },
-    textKey: 'narrative.n_007'
+    textKey: 'narrative.n_007',
+    type: 'log',
   },
   {
     id: 'n_008',
     name: 'Buy first Framework',
     condition: { type: 'generator_bought', generatorId: 6, value: 1 },
-    textKey: 'narrative.n_008'
+    textKey: 'narrative.n_008',
+    type: 'log',
   },
   {
     id: 'n_009',
     name: 'Buy first Compiler',
     condition: { type: 'generator_bought', generatorId: 7, value: 1 },
-    textKey: 'narrative.n_009'
+    textKey: 'narrative.n_009',
+    type: 'log',
   },
   {
     id: 'n_010',
     name: 'Buy first AI Core',
     condition: { type: 'generator_bought', generatorId: 8, value: 1 },
-    textKey: 'narrative.n_010'
+    textKey: 'narrative.n_010',
+    type: 'event',
+    intensity: 'normal',
   },
   {
     id: 'n_011',
     name: 'First Refactor',
     condition: { type: 'refactor_count', value: 1 },
-    textKey: 'narrative.n_011'
+    textKey: 'narrative.n_011',
+    type: 'event',
+    intensity: 'normal',
   },
   {
     id: 'n_012',
     name: 'First Compile',
     condition: { type: 'version_count', value: 1 },
-    textKey: 'narrative.n_012'
+    textKey: 'narrative.n_012',
+    type: 'event',
+    intensity: 'normal',
+  },
+  {
+    id: 'n_013',
+    name: 'First Singularity',
+    condition: { type: 'singularity_count', value: 1 },
+    textKey: 'narrative.n_013',
+    type: 'event',
+    intensity: 'epic',
   }
 ]
 // #endregion

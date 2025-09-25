@@ -1078,6 +1078,11 @@ export const useGameStore = defineStore('game', {
         const { type, value, generatorId } = milestone.condition
 
         switch (type) {
+          case 'game_start':
+            // This is a special case that should only trigger once at the very beginning.
+            // The check for `unlockedNarratives` at the start of the loop handles this.
+            conditionMet = true
+            break
           case 'currency':
             if (this.currency.gte(value as number)) {
               conditionMet = true
@@ -1098,6 +1103,11 @@ export const useGameStore = defineStore('game', {
             break
           case 'version_count':
             if (this.version >= (value as number)) {
+              conditionMet = true
+            }
+            break
+          case 'singularity_count':
+            if (this.singularityCount >= (value as number)) {
               conditionMet = true
             }
             break

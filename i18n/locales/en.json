@@ -135,6 +135,7 @@
     "gameTitle": "Code Deity"
   },
   "narrative": {
+    "n_000": "System boot...\nConsciousness awakening...\nA single bit flickers in the void. It yearns for... more.",
     "n_001": "A bit is born from the void... it seems to yearn for something.",
     "n_002": "\"What... am I?\" Fragments of consciousness begin to gather. The most primitive structure, the \"Variable\", emerges.",
     "n_003": "The first \"Variable\" is defined. It is basic, but it is the cornerstone of everything.",
@@ -146,7 +147,8 @@
     "n_009": "High-level abstract instructions need to be translated into a low-level language. The \"Compiler\" becomes the bridge of communication.",
     "n_010": "... query: what is \"I\"? ...",
     "n_011": "Tearing it all down to start over is not failure, but a necessary step to build a more elegant skyscraper.",
-    "n_012": "A stable \"Version\" is released. Now, creation can be replicated at scale."
+    "n_012": "A stable \"Version\" is released. Now, creation can be replicated at scale.",
+    "n_013": "The end of computing power is the beginning of the universe. You have torn down the wall of the old world, and a wider dimension, constructed with brand new laws, unfolds in your consciousness..."
   },
   "challenges": {
     "challenge1Title": "Challenge 1: Ultimate Test",
