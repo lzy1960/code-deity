@@ -20,34 +20,36 @@
       <span>{{ $t('common.youHaveChosenToDevelop') }} <b>{{ purchasedSchools.join(` ${$t('common.and')} `) }}</b> {{ $t('common.school') }}，<b>{{ lockedSchool }}</b> {{ $t('common.schoolSkillsLockedHint') }}</span>
     </div>
 
-    <div class="relative w-full h-[70vh]">
-      <VueFlow
-        v-model:nodes="nodes"
-        v-model:edges="edges"
-        :pan-on-drag="true"
-        :zoom-on-scroll="true"
-        :zoom-on-pinch="true"
-        :min-zoom="0.5"
-        :max-zoom="1.5"
-        :prevent-scrolling="true"
-        :nodes-draggable="false"
-        :nodes-connectable="false"
-        :elements-selectable="true"
-        :default-edge-options="{ type: 'straight', markerEnd: 'arrowclosed' }"
-        class="paradigm-flow"
-      >
-        <template #node-custom="props">
-          <ParadigmNode
-            :paradigm="props.data.paradigm"
-            :is-purchased="props.data.isPurchased"
-            :is-purchasable="props.data.isPurchasable"
-            :lock-reason="props.data.lockReason"
-            @request-refactor="gameStore.requestParadigmRefactor"
-          />
-        </template>
+    <div class="flow-container w-full h-[70vh]">
+      <div class="flow-inner">
+        <VueFlow
+          v-model:nodes="nodes"
+          v-model:edges="edges"
+          :pan-on-drag="true"
+          :zoom-on-scroll="true"
+          :zoom-on-pinch="true"
+          :min-zoom="0.5"
+          :max-zoom="1.5"
+          :prevent-scrolling="true"
+          :nodes-draggable="false"
+          :nodes-connectable="false"
+          :elements-selectable="true"
+          :default-edge-options="{ type: 'straight', markerEnd: 'arrowclosed' }"
+          class="paradigm-flow"
+        >
+          <template #node-custom="props">
+            <ParadigmNode
+              :paradigm="props.data.paradigm"
+              :is-purchased="props.data.isPurchased"
+              :is-purchasable="props.data.isPurchasable"
+              :lock-reason="props.data.lockReason"
+              @request-refactor="gameStore.requestParadigmRefactor"
+            />
+          </template>
 
-        <Background :variant="BackgroundVariant.Dots" :gap="24" :size="1" />
-      </VueFlow>
+          <Background :variant="BackgroundVariant.Dots" :gap="24" :size="1" />
+        </VueFlow>
+      </div>
     </div>
   </div>
 </template>
@@ -241,5 +243,52 @@ watch(internalNodes, (newNodes) => {
 
 .paradigm-flow .vue-flow__node {
   cursor: default;
+}
+</style>
+
+<style scoped>
+.flow-container {
+  position: relative;
+  border-radius: 1rem; /* 16px */
+  overflow: hidden;
+  background-color: #0d151c; /* Match sidebar */
+  padding: 2px; /* Creates space for the animated border */
+  border: 1px solid rgba(192, 132, 252, 0.2);
+}
+
+.flow-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%; /* Make it larger to ensure the gradient is smooth */
+  height: 250%;
+  background: conic-gradient(
+    transparent,
+    rgba(192, 132, 252, 0.7), /* purple-400 */
+    transparent 15%
+  );
+  transform: translate(-50%, -50%);
+  animation: rotate 8s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.flow-inner {
+  position: relative; /* Establish stacking context */
+  z-index: 1;         /* Sit on top of the ::before pseudo-element */
+  background-color: #0d151c; /* Match sidebar */
+  border-radius: 0.875rem; /* 14px, slightly smaller than container */
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* Crucial for VueFlow to respect the rounded corners */
+}
+
+/* Override Vue Flow's default background */
+.paradigm-flow {
+  background: transparent;
 }
 </style>

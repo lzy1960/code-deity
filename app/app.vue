@@ -14,6 +14,7 @@ import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
 import AdBoostModal from '~/components/game/AdBoostModal.vue'
 import LanguageModal from '~/components/layout/LanguageModal.vue'
+import AutoSaveNotifier from '~/components/layout/AutoSaveNotifier.vue'
 import GenesisLogModal from '~/components/game/GenesisLogModal.vue'
 import { useEventListener } from '@vueuse/core'
 import { useIsNative } from '~/utils/platform'
@@ -216,6 +217,7 @@ onMounted(async () => {
     <AdBoostModal />
     <LanguageModal />
     <GenesisLogModal />
+    <AutoSaveNotifier />
 
     <!-- 
       The modal component is now a generic frame.

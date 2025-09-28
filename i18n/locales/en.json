@@ -179,7 +179,8 @@
     "neuralBoostActive": "Neural Boost Activated! Manual click effect increased by 10x for 2 minutes",
     "hyperthreadingActive": "Hyperthreading Activated! Offline gains doubled",
     "superCompileComplete": "Super Compile Complete! This refactor gain doubled",
-    "singularityJumpComplete": "Singularity Jump Complete! This SP gain doubled"
+    "singularityJumpComplete": "Singularity Jump Complete! This SP gain doubled",
+    "autoSaveSuccess": "Auto-save successful"
   },
   "generatorItem": {
     "nextBonusHint": "Buy {nextBonus} more to get next bonus"

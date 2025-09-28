@@ -169,7 +169,8 @@
     "neuralBoostActive": "神经超频已激活！手动点击效果提升10倍",
     "hyperthreadingActive": "超线程已启动！离线收益翻倍",
     "superCompileComplete": "超级编译完成！本次重构收益翻倍",
-    "singularityJumpComplete": "奇点跃迁完成！本次SP收益翻倍"
+    "singularityJumpComplete": "奇点跃迁完成！本次SP收益翻倍",
+    "autoSaveSuccess": "自动保存成功"
   },
   "generatorItem": {
     "nextBonusHint": "购买 {nextBonus} 更多以获得下一个奖励"

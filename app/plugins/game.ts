@@ -2,14 +2,18 @@ import { defineNuxtPlugin } from '#app'
 import { useGameStore } from '~/store/game'
 import { useAuthStore } from '~/store/auth'
 import { saveManager } from '~~/services/saveManager'
+import { useAutoSaveNotifier } from '~/composables/useAutoSaveNotifier'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const gameStore = useGameStore()
   const authStore = useAuthStore()
   const supabase = useSupabaseClient()
+  const autoSaveNotifier = useAutoSaveNotifier()
+  const { $i18n } = useNuxtApp()
 
   const saveGameLocal = async () => {
     await saveManager.save(gameStore.toJSON(), authStore.user, supabase, { cloud: false })
+    autoSaveNotifier.show($i18n.t('toast.autoSaveSuccess'))
     console.log('Game saved locally!')
   }
 
