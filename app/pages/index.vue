@@ -145,16 +145,28 @@ watch(() => unlockedGenerators.value.length, (newLength, oldLength) => {
   }
 });
 
-watch(() => gameStore.isRefactorUnlocked, (isUnlocked, wasUnlocked) => {
+watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
   if (isUnlocked && !wasUnlocked) {
     Haptics.impact({ style: ImpactStyle.Medium });
   }
 });
 
-watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
-  if (isUnlocked && !wasUnlocked) {
-    Haptics.impact({ style: ImpactStyle.Medium });
+const codeRushButtonText = computed(() => {
+  if (gameStore.isCodeRushActive) {
+    return `${$t('common.codeRushActive')} (${$t('common.codeRushActiveMultiplier')})`;
+  } else if (gameStore.isCodeRushReady) {
+    return $t('common.activateCodeRush');
+  } else {
+    return`${$t('common.manualOverclock')} (${$t('common.manualOverclockCpsPercentage')})`;
   }
+});
+
+const codeRushFillWidth = computed(() => {
+  return `${gameStore.codeRushProgress}%`;
+});
+
+const isCodeRushChargedAndReady = computed(() => {
+  return gameStore.codeRushProgress >= 100 && !gameStore.isCodeRushActive;
 });
 </script>
 
@@ -224,11 +236,29 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
       <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-6">
         <div :class="{ 'mx-auto max-w-4xl': activeTab !== 'singularity' }" class="space-y-4 pb-24 lg:pb-6">
           <!-- Manual Overclock Button (Visible on all screen sizes when generators tab is active) -->
-          <button v-if="activeTab === 'generators'" @click.prevent="handleManualClick" class="w-full px-6 py-4 bg-gradient-to-br from-purple-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all transform hover:scale-105 active:scale-100 flex items-center justify-center gap-3 text-sm">
-            <Icon name="mdi:flash" />
-            <span>{{ $t('common.manualOverclock') }} ({{ $t('common.cpsBonus') }})</span>
-          </button>
-
+          <div v-if="activeTab === 'generators'">
+            <div class="code-rush-animated-border-wrapper relative rounded-xl overflow-hidden" :class="{ 'code-rush-active-shadow': gameStore.isCodeRushActive }">
+              <button
+                @click.prevent="gameStore.isCodeRushReady ? gameStore.activateCodeRush() : handleManualClick()"
+                class="code-rush-button relative w-full px-6 py-4 text-white font-bold rounded-xl shadow-lg overflow-hidden"
+                :class="{
+                  'code-rush-charged-ready': isCodeRushChargedAndReady,
+                }"
+              >
+                <div v-if="!gameStore.isCodeRushActive" class="code-rush-fill absolute inset-0 transition-all duration-500 ease-out"
+                  :class="isCodeRushChargedAndReady ? 'bg-gradient-to-r from-purple-600 to-purple-500' : 'bg-gradient-to-r from-purple-600 to-blue-500'"
+                  :style="{ width: codeRushFillWidth }"></div>
+                <div v-else class="code-rush-fill code-rush-active-zebra absolute inset-0 transition-all duration-500 ease-out"
+                  :style="{ width: codeRushFillWidth }"></div>
+                <div class="relative z-10 flex items-center justify-center gap-3 text-sm">
+                  <Icon name="mdi:flash" />
+                  <Transition name="fade" mode="out-in">
+                    <span :key="codeRushButtonText">{{ codeRushButtonText }}</span>
+                  </Transition>
+                </div>
+              </button>
+            </div>
+          </div>
           <!-- Mobile-only Tab Content -->
           <div class="lg:hidden">
             <!-- Generators Section -->
@@ -304,12 +334,12 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
               <StatsSection />
             </div>
             
-             <!-- Challenges Section -->
+            <!-- Challenges Section -->
             <div v-show="activeTab === 'challenges'">
               <ChallengesSection />
             </div>
             
-             <!-- Automation Section -->
+            <!-- Automation Section -->
             <div v-show="activeTab === 'automation'">
               <AutomationSection />
             </div>
@@ -404,5 +434,71 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
     transform: translateY(-80px) scale(0.8);
     opacity: 0;
   }
+}
+
+@keyframes float-up {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-80px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.code-rush-button {
+  background-color: #333; /* Base background for the button */
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.3s ease; /* Smooth transition for base background if needed */
+}
+
+.code-rush-fill {
+  transition: width 0.5s ease-out; /* Smooth transition for the fill width */
+}
+
+/* New zebra-stripe animation for active state */
+.code-rush-active-zebra {
+  background-image: linear-gradient(
+    -45deg,
+    rgba(139, 92, 246, 0.8) 25%,
+    rgba(59, 130, 246, 0.8) 25.1%,
+    rgba(59, 130, 246, 0.8) 50%,
+    rgba(139, 92, 246, 0.8) 50.1%,
+    rgba(139, 92, 246, 0.8) 75%,
+    rgba(59, 130, 246, 0.8) 75.1%
+  );
+  background-size: 80px 80px; /* Increased size for smoother diagonal lines */
+  animation: zebra-stripe-move 0.5s linear infinite; /* Faster animation */
+}
+
+@keyframes zebra-stripe-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 80px 0; } /* Adjusted to match new background-size */
+}
+
+/* Animated border for Code Rush active state */
+.code-rush-animated-border-wrapper {
+  position: relative;
+  border-radius: 0.75rem; /* Match button's rounded-xl */
+}
+
+.code-rush-active-shadow {
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5); /* Smaller Purple glow */
+  animation: pulseShadow 1s infinite alternate; /* Faster animation */
+}
+
+@keyframes pulseShadow {
+  0% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5); }
+  100% { box-shadow: 0 0 12px rgba(139, 92, 246, 0.9), 0 0 25px rgba(139, 92, 246, 0.7); }
+}
+
+/* Fade transition for text/icon */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

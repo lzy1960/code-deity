@@ -87,7 +87,14 @@ export const generatorConfigs: GeneratorConfig[] = [
 export const prestigeThresholds = {
   REFACTOR_UNLOCK_AI_CORES: 10,
   COMPILE_UNLOCK_RP: 25,
-  ARCHITECTURAL_OVERHEAD_AI_CORES: 25
+  ARCHITECTURAL_OVERHEAD_AI_CORES: 25,
+
+  // Code Rush
+  CODE_RUSH_CHARGE_CLICKS: 50, // Clicks needed to charge Code Rush
+  CODE_RUSH_DURATION_SECONDS: 20, // Duration of Code Rush active state
+  CODE_RUSH_MULTIPLIER: 100, // 100x manual click power (10000% increase)
+  NEURAL_BOOST_CODE_RUSH_EFFECT: 'duration', // 'charge_speed' or 'duration'
+  NEURAL_BOOST_CODE_RUSH_BONUS_PERCENT: 50, // 50% bonus
 }
 
 // #region NARRATIVE

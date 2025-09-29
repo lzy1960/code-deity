@@ -129,7 +129,11 @@
     "inProgress": "In Progress",
     "startChallenge": "Start Challenge",
     "exitChallenge": "Exit Challenge",
-    "moreChallengesComingSoon": "More challenges coming soon..."
+    "moreChallengesComingSoon": "More challenges coming soon...",
+    "codeRush": "Code Rush",
+    "codeRushActive": "Code Rush Active",
+    "codeRushActiveMultiplier": "100x Multiplier",
+    "manualOverclockCpsPercentage": "CPS * 5%"
   },
   "index": {
     "gameTitle": "Code Deity"

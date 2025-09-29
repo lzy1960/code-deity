@@ -29,6 +29,7 @@ export interface GameState {
   saveVersion: string
   lastUpdateTime: number
   lastCloudSync: number | null // Timestamp of the last successful cloud sync
+  currentTime: number // Added for reactivity of time-dependent getters
   currency: Decimal // CP, Code Power
   generators: Generator[]
   buyMultiplier: BuyMultiplier
@@ -86,6 +87,11 @@ export interface GameState {
   // Ad-hoc flags
   doubleNextRefactor: boolean
   doubleNextSingularity: boolean
+
+  // Code Rush
+  codeRushCharge: number // Current charge level (0 to 100)
+  codeRushActiveExpiry: number | null // Timestamp when Code Rush active state ends
+  codeRushClickCount: number // Total manual clicks since last Code Rush activation or reset
 }
 
 // #endregion
@@ -96,6 +102,7 @@ export const useGameStore = defineStore('game', {
     saveVersion: '1.0.5', // version up for state change
     lastUpdateTime: Date.now(),
     lastCloudSync: null,
+    currentTime: Date.now(), // Initialize with current time
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
       id: config.id,
@@ -145,7 +152,12 @@ export const useGameStore = defineStore('game', {
 
     activeRefactoring: null,
     doubleNextRefactor: false,
-    doubleNextSingularity: false
+    doubleNextSingularity: false,
+
+    // Code Rush
+    codeRushCharge: 0,
+    codeRushActiveExpiry: null,
+    codeRushClickCount: 0,
   }),
   // #endregion
 
@@ -443,11 +455,19 @@ export const useGameStore = defineStore('game', {
     },
 
     manualClickPower(): Decimal {
-      let clickMultiplier = 0.05;
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
-        clickMultiplier = 0.5; // 10x boost
+      let baseClickPower = this.cps.times(0.05);
+      // Ensure baseClickPower is at least 1, even if CPS is very small
+      if (baseClickPower.lt(1)) {
+        baseClickPower = new Decimal(1);
       }
-      return this.cps.times(clickMultiplier).plus(1);
+
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > this.currentTime) {
+        baseClickPower = baseClickPower.times(10); // 10x boost
+      }
+      if (this.isCodeRushActive) {
+        baseClickPower = baseClickPower.times(prestigeThresholds.CODE_RUSH_MULTIPLIER);
+      }
+      return baseClickPower;
     },
 
     adBoostMultiplier(state) {
@@ -461,6 +481,28 @@ export const useGameStore = defineStore('game', {
         multiplier = multiplier * 5
       }
       return multiplier
+    },
+
+    // --- Code Rush ---
+    isCodeRushActive: state => {
+      return state.codeRushActiveExpiry !== null && state.codeRushActiveExpiry > state.currentTime;
+    },
+    isCodeRushReady: state => {
+      return state.codeRushCharge >= 100 && !state.isCodeRushActive;
+    },
+    codeRushProgress: state => {
+      if (state.isCodeRushActive) {
+        const remaining = Math.max(0, state.codeRushActiveExpiry! - state.currentTime);
+        return (remaining / (prestigeThresholds.CODE_RUSH_DURATION_SECONDS * 1000)) * 100;
+      } else {
+        return state.codeRushCharge;
+      }
+    },
+    codeRushTimeRemaining: state => {
+      if (state.isCodeRushActive) {
+        return Math.max(0, Math.floor((state.codeRushActiveExpiry! - state.currentTime) / 1000));
+      }
+      return 0;
     },
 
     // --- Prestige Gain Calculation ---
@@ -582,6 +624,11 @@ export const useGameStore = defineStore('game', {
       this.paradigms = stateToLoad.paradigms ?? {}
       this.singularityCount = stateToLoad.singularityCount ?? 0
 
+      // Hydrate Code Rush state
+      this.codeRushCharge = stateToLoad.codeRushCharge ?? 0;
+      this.codeRushActiveExpiry = stateToLoad.codeRushActiveExpiry ?? null;
+      this.codeRushClickCount = stateToLoad.codeRushClickCount ?? 0;
+
       // Hydrate new ad system state
       this.quantumComputingExpiry = stateToLoad.quantumComputingExpiry ?? null
       this.supplyChainOptimizationExpiry = stateToLoad.supplyChainOptimizationExpiry ?? null
@@ -626,9 +673,14 @@ export const useGameStore = defineStore('game', {
 
     gameLoop() {
       const now = Date.now()
+      this.currentTime = now // Update reactive current time
       const diff = new Decimal(now - this.lastUpdateTime).div(1000) // diff in seconds
       this.simulateProgress(diff.toNumber() * 1000);
 
+      // Check Code Rush expiry
+      if (this.codeRushActiveExpiry !== null && this.codeRushActiveExpiry <= now) {
+        this.endCodeRush();
+      }
       // Handle automators
       if (this.isAutomationUnlocked) {
         // ## Abstraction School: Continuous Integration ##
@@ -705,6 +757,13 @@ export const useGameStore = defineStore('game', {
       const clickPower = this.manualClickPower;
       this.currency = this.currency.plus(clickPower)
       this.checkNarrativeMilestones()
+
+      // Code Rush charging logic
+      if (!this.isCodeRushActive) {
+        this.codeRushClickCount++;
+        const chargePerClick = 100 / prestigeThresholds.CODE_RUSH_CHARGE_CLICKS;
+        this.codeRushCharge = Math.min(100, this.codeRushCharge + chargePerClick);
+      }
     },
 
     buyGenerator(id: number) {
@@ -742,6 +801,28 @@ export const useGameStore = defineStore('game', {
       this.automatorStates[id] = !this.automatorStates[id]
     },
     
+    // --- Code Rush Actions ---
+    activateCodeRush() {
+      if (!this.isCodeRushReady) return;
+
+      let duration = prestigeThresholds.CODE_RUSH_DURATION_SECONDS * 1000; // in ms
+
+      // Apply Neural Boost effect
+      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
+        if (prestigeThresholds.NEURAL_BOOST_CODE_RUSH_EFFECT === 'duration') {
+          duration *= (1 + prestigeThresholds.NEURAL_BOOST_CODE_RUSH_BONUS_PERCENT / 100);
+        }
+      }
+
+      this.codeRushActiveExpiry = Date.now() + duration;
+      this.codeRushCharge = 0;
+      this.codeRushClickCount = 0;
+    },
+
+    endCodeRush() {
+      this.codeRushActiveExpiry = null;
+    },
+
     // --- Prestige Actions ---
     _resetForPrestige(startingCurrency: Decimal = new Decimal(10)) {
       this.currency = startingCurrency
@@ -903,6 +984,11 @@ export const useGameStore = defineStore('game', {
       this.pendingOfflineGains = null
       this.unlockedNarratives = []
       this.narrativeQueue = []
+
+      // Reset Code Rush state
+      this.codeRushCharge = 0;
+      this.codeRushActiveExpiry = null;
+      this.codeRushClickCount = 0;
 
       console.log('Game state has been manually reset to initial values.')
     },

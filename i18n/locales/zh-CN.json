@@ -120,7 +120,12 @@
     "inProgress": "进行中",
     "startChallenge": "开始挑战",
     "exitChallenge": "退出挑战",
-    "moreChallengesComingSoon": "更多挑战即将到来..."
+    "moreChallengesComingSoon": "更多挑战即将推出...",
+    "codeRush": "代码狂潮",
+    "codeRushActive": "代码狂潮激活中",
+    "activateCodeRush": "激活狂潮",
+    "codeRushActiveMultiplier": "100倍收益",
+    "manualOverclockCpsPercentage": "CPS * 5%"
   },
   "index": {
     "gameTitle": "代码神祇 (Code Deity)"
