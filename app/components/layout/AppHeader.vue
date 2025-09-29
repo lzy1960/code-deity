@@ -48,7 +48,6 @@
 
 <script setup lang="ts">
 import { useGameStore } from '~/store/game';
-import { useAuthStore } from '~/store/auth';
 import { formatNumber } from '~/utils/format';
 import { useHelpModal } from '~/composables/useHelpModal';
 import { useGenesisLogModal } from '~/composables/useGenesisLogModal';
@@ -61,7 +60,6 @@ defineProps<{
 defineEmits(['singularityClick']);
 
 const gameStore = useGameStore();
-const authStore = useAuthStore();
 const helpModal = useHelpModal();
 const genesisLogModal = useGenesisLogModal();
 </script>
