@@ -121,11 +121,6 @@
   - 状态管理: Pinia
   - 本地存储: IndexedDB (通过 Dexie.js 库封装)
   - 测试框架: Vitest (用于单元测试)
-- 后端 (Server-Side - BaaS):
-  - 服务商: Supabase
-  - 认证: Supabase Auth (集成 Google 第三方登录)
-  - 数据库: Supabase PostgreSQL (启用 RLS 行级安全)
-  - 服务端逻辑: Supabase Edge Functions
 
 ## 开发规范
 

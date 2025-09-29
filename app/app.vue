@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, computed, watch, ref } from 'vue'
 import { useGameStore } from '~/store/game'
-import { useAuthStore } from '~/store/auth'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
 import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
@@ -20,13 +19,12 @@ import { useEventListener } from '@vueuse/core'
 import { useIsNative } from '~/utils/platform'
 import { useToast } from '~/composables/useToast'
 import { useAdState } from '~/composables/useAdState'
-
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
 import { App } from '@capacitor/app';
 import { initializeAdMob, showRewardVideoAd } from '~/services/admob';
 
 const gameStore = useGameStore()
-const authStore = useAuthStore()
+
 const { $loadGame, $saveGameLocal } = useNuxtApp() as any
 const exitConfirmationModal = useExitConfirmationModal()
 const router = useRouter()
@@ -34,13 +32,7 @@ const route = useRoute()
 const toast = useToast()
 const adState = useAdState()
 
-// Get user state from the module's composable
-const user = useSupabaseUser()
 
-// Watch for changes in the user state and update our auth store
-watch(user, (newUser) => {
-  authStore.setUser(newUser)
-}, { immediate: true })
 
 
 const isDev = computed(() => process.env.NODE_ENV === 'development')
