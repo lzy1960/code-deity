@@ -29,12 +29,13 @@ Code Deity 是一款独特的放置游戏，玩家将从零开始，通过“写
 
 - **主题驱动机制:** 所有游戏元素均与编程/科技主题深度绑定。
 - **渐进式系统解锁:** 界面初始极简，新系统和功能随进程逐步解锁。
+- **沉浸式叙事:** 通过“创世日志”和“创世事件”提供电影级叙事体验。
 - **多层级重置循环:**
   - **代码重构 (Refactor):** 获取“重构点”，提升算力产出。
   - **编译发布 (Compile & Release):** 获取“版本号”，提升“重构点”效率。
   - **技术奇点 (Singularity):** 达成纪元目标，解锁“编程范式”技能树。
-- **沉浸式叙事:** 通过“创世日志”和“创世事件”提供电影级叙事体验。
-- **移动端支持:** 基于 Capacitor 提供安卓和 iOS 原生体验。
+  - **……**
+  - **更多内容等你探索！**
 
 ## 💻 技术栈 (Tech Stack)
 
@@ -53,7 +54,7 @@ Code Deity 是一款独特的放置游戏，玩家将从零开始，通过“写
 1.  **克隆仓库:**
 
     ```bash
-    git clone https://github.com/your-username/code-deity.git
+    git clone https://github.com/lzy1960/code-deity.git
     cd code-deity
     ```
 
@@ -71,8 +72,9 @@ Code Deity 是一款独特的放置游戏，玩家将从零开始，通过“写
 
     项目将在 `http://localhost:3000` 运行。
 
-4.  **移动端开发（搁置）**
-    请参考 `docs/android-debugging-guide.md` 进行原生应用调试。
+4.  ~~**移动端开发（搁置）**~~
+
+    ~~请参考 `docs/android-debugging-guide.md` 进行原生应用调试。~~
 
 > [!TIP]
 > 更详细的开发理念和设计文档，请参阅 [GEMINI.md](GEMINI.md)。
