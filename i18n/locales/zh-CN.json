@@ -125,7 +125,8 @@
     "codeRushActive": "代码狂潮激活中",
     "activateCodeRush": "激活狂潮",
     "codeRushActiveMultiplier": "100倍收益",
-    "manualOverclockCpsPercentage": "CPS * 5%"
+    "manualOverclockCpsPercentage": "CPS * 5%",
+    "offlineGainMessage": "在您离线的这段时间里，您的代码产生了新的算力："
   },
   "index": {
     "gameTitle": "代码神祇 (Code Deity)"
@@ -160,7 +161,8 @@
     "challenge4Title": "挑战 4：逆水行舟",
     "challenge4Rule": "所有生成器的成本增长率 costMultiplier 小幅提升 0.02。",
     "challenge4Reward": "永久降低所有生成器的基础成本 5%。"
-  },  "toast": {
+  },
+  "toast": {
     "refactorSuggestion": "代码结构已达瓶颈，建议进行重构",
     "architecturalOverload": "架构过载：AI核心数量过多导致效率衰减",
     "adViewsUsedUp": "今日观看次数已用完",

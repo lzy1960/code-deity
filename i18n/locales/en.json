@@ -133,7 +133,8 @@
     "codeRush": "Code Rush",
     "codeRushActive": "Code Rush Active",
     "codeRushActiveMultiplier": "100x Multiplier",
-    "manualOverclockCpsPercentage": "CPS * 5%"
+    "manualOverclockCpsPercentage": "CPS * 5%",
+    "offlineGainMessage": "During the time you were offline, your code generated new CPs:"
   },
   "index": {
     "gameTitle": "Code Deity"
