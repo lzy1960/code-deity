@@ -111,13 +111,13 @@ watch(() => gameStore.automatorStates, () => {
     <AutoSaveNotifier />
 
     <OfflineProgressModal :is-revealed="isRevealed">
-      <h2 class="text-lg font-bold text-[#3899fa] flex items-center justify-center gap-2">
+      <h2 class="text-base font-bold text-[#3899fa] flex items-center justify-center gap-2">
         <Icon name="mdi:timer-sand" />
         <span>{{ $t('common.welcomeBack') }}</span>
       </h2>
-      <p class="mt-3 text-sm text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
+      <p class="mt-3 text-xs text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
 
-      <div class="my-4 bg-[#101a23] rounded-lg p-3">
+      <div class="my-4 bg-black/30 rounded-lg p-3">
         <p class="text-2xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
         <p class="mt-1 text-xs text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
       </div>

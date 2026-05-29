@@ -348,8 +348,8 @@ const isCodeRushChargedAndReady = computed(() =>
             <AutomationSection />
           </div>
 
-          <!-- Singularity -->
-          <div v-show="activeTab === 'singularity'" class="pt-2">
+          <!-- Singularity: v-if so VueFlow can measure node dimensions on mount -->
+          <div v-if="activeTab === 'singularity'" class="pt-2">
             <SingularitySection />
           </div>
         </div>

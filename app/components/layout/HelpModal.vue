@@ -16,27 +16,27 @@
                 <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.coreResources') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
-                    <dt class="font-bold text-white">{{ $t('common.computingPower') }} (CP)</dt>
-                    <dd class="text-sm">{{ $t('common.cpDescription') }}</dd>
+                    <dt class="text-xs font-bold text-white">{{ $t('common.computingPower') }} (CP)</dt>
+                    <dd class="text-xs">{{ $t('common.cpDescription') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isRefactorUnlocked" class="font-bold text-white">{{ $t('common.refactorPoints') }} (RP)</dt>
-                    <dd v-if="gameStore.isRefactorUnlocked" class="text-sm">{{ $t('common.rpDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isRefactorUnlocked" class="text-xs font-bold text-white">{{ $t('common.refactorPoints') }} (RP)</dt>
+                    <dd v-if="gameStore.isRefactorUnlocked" class="text-xs">{{ $t('common.rpDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isCompileUnlocked" class="font-bold text-white">{{ $t('common.version') }}</dt>
-                    <dd v-if="gameStore.isCompileUnlocked" class="text-sm">{{ $t('common.versionDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isCompileUnlocked" class="text-xs font-bold text-white">{{ $t('common.version') }}</dt>
+                    <dd v-if="gameStore.isCompileUnlocked" class="text-xs">{{ $t('common.versionDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.singularityPower') }} (SP)</dt>
-                    <dd v-if="gameStore.unlockedSingularity" class="text-sm">{{ $t('common.spDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.singularityPower') }} (SP)</dt>
+                    <dd v-if="gameStore.unlockedSingularity" class="text-xs">{{ $t('common.spDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.genesisShards') }}</dt>
-                    <dd class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.genesisShards') }}</dt>
+                    <dd class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                 </div>
               </div>
@@ -46,37 +46,37 @@
                 <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.coreMechanicsEvents') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
-                    <dt class="font-bold text-white">{{ $t('common.generators') }}</dt>
-                    <dd class="text-sm">{{ $t('common.generatorsDescription') }}</dd>
+                    <dt class="text-xs font-bold text-white">{{ $t('common.generators') }}</dt>
+                    <dd class="text-xs">{{ $t('common.generatorsDescription') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isRefactorUnlocked" class="font-bold text-white">{{ $t('common.refactor') }}</dt>
-                    <dd v-if="gameStore.isRefactorUnlocked" class="text-sm">{{ $t('common.refactorEventDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isRefactorUnlocked" class="text-xs font-bold text-white">{{ $t('common.refactor') }}</dt>
+                    <dd v-if="gameStore.isRefactorUnlocked" class="text-xs">{{ $t('common.refactorEventDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isCompileUnlocked" class="font-bold text-white">{{ $t('common.compileRelease') }}</dt>
-                    <dd v-if="gameStore.isCompileUnlocked" class="text-sm">{{ $t('common.compileReleaseEventDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isCompileUnlocked" class="text-xs font-bold text-white">{{ $t('common.compileRelease') }}</dt>
+                    <dd v-if="gameStore.isCompileUnlocked" class="text-xs">{{ $t('common.compileReleaseEventDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isRefactorUnlocked" class="font-bold text-white">{{ $t('common.architecturalOverhead') }}</dt>
-                    <dd v-if="gameStore.isRefactorUnlocked" class="text-sm">{{ $t('common.architecturalOverheadDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isRefactorUnlocked" class="text-xs font-bold text-white">{{ $t('common.architecturalOverhead') }}</dt>
+                    <dd v-if="gameStore.isRefactorUnlocked" class="text-xs">{{ $t('common.architecturalOverheadDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.singularity') }}</dt>
-                    <dd v-if="gameStore.unlockedSingularity" class="text-sm">{{ $t('common.singularityEventDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.singularity') }}</dt>
+                    <dd v-if="gameStore.unlockedSingularity" class="text-xs">{{ $t('common.singularityEventDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.becomeGenesis') }}</dt>
-                    <dd class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.becomeGenesis') }}</dt>
+                    <dd class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.technicalDebt') }}</dt>
-                    <dd v-if="gameStore.unlockedSingularity" class="text-sm">{{ $t('common.technicalDebtDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.technicalDebt') }}</dt>
+                    <dd v-if="gameStore.unlockedSingularity" class="text-xs">{{ $t('common.technicalDebtDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                 </div>
               </div>
@@ -86,23 +86,23 @@
                 <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.gameSystems') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
-                    <dt v-if="gameStore.isChallengesUnlocked" class="font-bold text-white">{{ $t('common.challenges') }}</dt>
-                    <dd v-if="gameStore.isChallengesUnlocked" class="text-sm">{{ $t('common.challengesDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isChallengesUnlocked" class="text-xs font-bold text-white">{{ $t('common.challenges') }}</dt>
+                    <dd v-if="gameStore.isChallengesUnlocked" class="text-xs">{{ $t('common.challengesDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.isAutomationUnlocked" class="font-bold text-white">{{ $t('common.automation') }}</dt>
-                    <dd v-if="gameStore.isAutomationUnlocked" class="text-sm">{{ $t('common.automationDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.isAutomationUnlocked" class="text-xs font-bold text-white">{{ $t('common.automation') }}</dt>
+                    <dd v-if="gameStore.isAutomationUnlocked" class="text-xs">{{ $t('common.automationDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.programmingParadigms') }}</dt>
-                    <dd v-if="gameStore.unlockedSingularity" class="text-sm">{{ $t('common.programmingParadigmsDescription') }}</dd>
-                    <dd v-else class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.programmingParadigms') }}</dt>
+                    <dd v-if="gameStore.unlockedSingularity" class="text-xs">{{ $t('common.programmingParadigmsDescription') }}</dd>
+                    <dd v-else class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                   <div class="help-item">
-                    <dt v-if="gameStore.unlockedSingularity" class="font-bold text-white">{{ $t('common.systemPatches') }}</dt>
-                    <dd class="text-sm text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
+                    <dt v-if="gameStore.unlockedSingularity" class="text-xs font-bold text-white">{{ $t('common.systemPatches') }}</dt>
+                    <dd class="text-xs text-gray-500 italic">{{ $t('common.notUnlocked') }}</dd>
                   </div>
                 </div>
               </div>
@@ -176,7 +176,7 @@ const gameStore = useGameStore()
 }
 
 .help-item {
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;

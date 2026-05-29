@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref, nextTick } from 'vue'
+import { watch, ref, nextTick, onMounted } from 'vue'
 import { useGameStore } from '~/store/game'
 import { paradigmConfigs } from '~~/game/paradigms.configs'
 import type { Paradigm } from '~/types/paradigms'
@@ -147,13 +147,10 @@ const runLayout = () => {
     }
   })
 
-  if (!hasLayoutBeenRun) {
-    nextTick(() => {
-      fitView({ nodes: ['system_kernel'], duration: 800, maxZoom: 1.2 });
-    });
-  }
-
   hasLayoutBeenRun = true
+  nextTick(() => {
+    fitView({ duration: 400, padding: 0.2, maxZoom: 0.65 })
+  })
 }
 
 // --- Watch for game state changes to update the flow ---
@@ -229,6 +226,15 @@ watch(internalNodes, (newNodes) => {
     })
   }
 }, { deep: true })
+
+// Fallback: if dimensions are never reported (e.g. slow render), force layout after 300ms
+onMounted(() => {
+  setTimeout(() => {
+    if (!hasLayoutBeenRun) {
+      runLayout()
+    }
+  }, 300)
+})
 
 </script>
 

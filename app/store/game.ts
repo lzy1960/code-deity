@@ -465,13 +465,13 @@ export const useGameStore = defineStore('game', {
     },
 
     // --- Singularity ---
-    canSingularity: state => state.currency.gte('1e308'),
+    canSingularity: state => state.currency.gte('1e120'),
 
     singularityGain(): Decimal {
       if (!this.canSingularity) return new Decimal(0)
-      // New Formula: SP = floor(sqrt(log10(CP) - 308) * 1.5)
+      // SP = floor(sqrt(log10(CP) - 120) * 4)
       const gain = Decimal.floor(
-        Decimal.sqrt(this.currency.log10() - 308).times(1.5)
+        Decimal.sqrt(this.currency.log10() - 120).times(4)
       )
       return gain.max(0)
     },
@@ -1015,8 +1015,8 @@ export const useGameStore = defineStore('game', {
           frozenSP = frozenSP.plus(config.cost)
         }
       }
-      // Cost formula: 10^(total_frozen_sp * 1.5 + 308)
-      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 308)
+      // Cost formula: 10^(total_frozen_sp * 1.5 + 120)
+      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 120)
 
       return { frozenParadigms, frozenSP, cpCost }
     },

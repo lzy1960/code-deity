@@ -7,7 +7,7 @@
     >
       <div class="relative w-full max-w-md rounded-2xl bg-transparent shadow-2xl m-4 overflow-hidden border border-purple-500/20">
         <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-4 text-center">
+        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-4 text-center">
           <h2 class="text-base font-bold text-purple-300 mb-3">
             {{ $t('paradigmModal.title') }}
           </h2>
@@ -22,7 +22,7 @@
 
           <!-- Analysis Section -->
           <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="mb-4 p-3 rounded-lg text-xs text-left space-y-2" :class="analysisClass">
-            <p class="font-bold text-sm flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
+            <p class="font-bold text-xs flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
             <p>{{ analysisText }}</p>
           </div>
 
