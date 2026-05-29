@@ -111,21 +111,21 @@ watch(() => gameStore.automatorStates, () => {
     <AutoSaveNotifier />
 
     <OfflineProgressModal :is-revealed="isRevealed">
-      <h2 class="text-3xl font-bold text-[#3899fa] flex items-center justify-center gap-3">
+      <h2 class="text-lg font-bold text-[#3899fa] flex items-center justify-center gap-2">
         <Icon name="mdi:timer-sand" />
         <span>{{ $t('common.welcomeBack') }}</span>
       </h2>
-      <p class="mt-4 text-lg text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
+      <p class="mt-3 text-sm text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
 
-      <div class="my-6 bg-[#101a23] rounded-lg p-4">
-        <p class="text-4xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
-        <p class="mt-1 text-sm text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
+      <div class="my-4 bg-[#101a23] rounded-lg p-3">
+        <p class="text-2xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
+        <p class="mt-1 text-xs text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
       </div>
 
       <div class="flex flex-col gap-3">
         <button
           @click="confirm"
-          class="w-full rounded-lg bg-[#3899fa] text-white font-bold py-4 px-6 hover:bg-opacity-90 transition-colors text-xl shadow-lg shadow-[#3899fa]/30 transform hover:scale-105 active:scale-100"
+          class="w-full rounded-lg bg-[#3899fa] text-white font-bold py-2 px-4 hover:bg-opacity-90 transition-colors text-sm shadow-lg shadow-[#3899fa]/30"
         >
           {{ $t('common.confirmGains') }}
         </button>

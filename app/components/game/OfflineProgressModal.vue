@@ -4,7 +4,7 @@
       <div v-if="isRevealed" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="relative bg-transparent rounded-2xl shadow-xl w-full max-w-md text-white text-center p-0 overflow-hidden border border-blue-500/20">
           <div class="animated-border"></div>
-          <div class="relative z-10 rounded-[14px] bg-[#1C2836] m-[2px] p-8">
+          <div class="relative z-10 rounded-[14px] bg-[#1C2836] m-[2px] p-5">
             <!-- Slot for any content -->
             <slot />
           </div>

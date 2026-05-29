@@ -1,17 +1,17 @@
 <template>
-  <div class="fixed top-5 right-5 z-[9999] w-full max-w-xs" style="padding-top: env(safe-area-inset-top);">
-    <TransitionGroup name="toast-list" tag="div" class="relative space-y-3">
+  <div class="fixed top-3 right-3 z-[9999] w-full max-w-[260px]" style="padding-top: env(safe-area-inset-top);">
+    <TransitionGroup name="toast-list" tag="div" class="relative space-y-2">
       <div
         v-for="toast in toastStore.toasts.value"
         :key="toast.id"
-        class="flex items-center w-full p-4 text-white rounded-lg shadow-2xl"
+        class="flex items-center w-full px-3 py-2 text-white rounded-lg shadow-2xl"
         :class="toastClasses[toast.type]"
         role="alert"
       >
-        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg" :class="iconWrapperClasses[toast.type]">
-          <Icon :name="icons[toast.type]" class="w-5 h-5" />
+        <div class="inline-flex items-center justify-center flex-shrink-0 w-6 h-6 rounded-md" :class="iconWrapperClasses[toast.type]">
+          <Icon :name="icons[toast.type]" class="w-3.5 h-3.5" />
         </div>
-        <div class="ml-3 text-sm font-normal">{{ toast.message }}</div>
+        <div class="ml-2 text-xs font-normal">{{ toast.message }}</div>
       </div>
     </TransitionGroup>
   </div>

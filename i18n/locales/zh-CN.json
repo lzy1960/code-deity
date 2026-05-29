@@ -1,6 +1,7 @@
 {
   "common": {
     "manualCode": "手动编写代码",
+    "clickSceneToCode": "点击上方场景来编写代码",
     "manualOverclock": "手动超频",
     "cpsBonus": "+5% CPS",
     "refactor": "重构",

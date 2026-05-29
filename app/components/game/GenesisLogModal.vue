@@ -5,12 +5,12 @@
       <div class="flex-shrink-0 px-4 py-2 flex items-center justify-between border-b border-green-500/20">
         <div class="text-green-400">[GENESIS_LOG]</div>
         <button @click="modal.hide()" class="text-red-400 hover:text-red-300">
-          <Icon name="mdi:close-box" class="h-8 w-8" />
+          <Icon name="mdi:close-box" class="h-6 w-6" />
         </button>
       </div>
 
       <!-- Log Display -->
-      <div ref="logContainer" class="flex-1 p-4 overflow-y-auto space-y-2 text-green-400 text-base">
+      <div ref="logContainer" class="flex-1 p-4 overflow-y-auto space-y-2 text-green-400 text-sm">
         <div v-for="(entry, index) in displayedLog" :key="entry.id">
           <span class="text-gray-500 select-none">> </span>
           <span v-if="index === displayedLog.length - 1 && isTyping">{{ typingBuffer }}</span>
@@ -63,7 +63,7 @@ const typeLogEntry = (entry: NarrativeMilestone) => {
       typingBuffer.value += fullText.charAt(charIndex);
       charIndex++;
       scrollToBottom();
-      typingTimeout = setTimeout(typeChar, 30);
+      typingTimeout = setTimeout(typeChar, 18);
     } else {
       isTyping.value = false;
       // Once typing is done, the full entry is part of the displayedLog

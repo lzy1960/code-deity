@@ -3,29 +3,29 @@
     <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
       <div class="relative m-4 w-full max-w-md rounded-2xl bg-transparent p-0 shadow-2xl shadow-purple-500/20 overflow-hidden border border-purple-500/20">
         <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-6">
-          <h2 class="mb-3 text-center text-2xl font-bold text-purple-300">
-            <Icon name="mdi:creation" class="mr-2" />
+        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-4">
+          <h2 class="mb-3 text-center text-base font-bold text-purple-300">
+            <Icon name="mdi:creation" class="mr-1" />
             {{ $t('singularity.confirmTitle') }}
           </h2>
-          <p class="mb-6 text-center text-base text-gray-300">
+          <p class="mb-4 text-center text-xs text-gray-300">
             <i18n-t keypath="singularity.description" tag="span">
               <template #keep><b class="text-green-400">{{ $t('singularity.keepText') }}</b></template>
               <template #sp><span class="font-bold text-green-400">{{ $t('singularity.spText') }}</span></template>
             </i18n-t>
           </p>
-          <p class="mb-6 text-center font-bold text-yellow-400">
+          <p class="mb-4 text-center text-xs font-bold text-yellow-400">
             {{ $t('singularity.irreversible') }}
           </p>
           <div class="flex justify-between gap-3">
             <button
-              class="flex-1 rounded-lg border border-gray-600 px-6 py-3 font-bold text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"
+              class="flex-1 rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"
               @click="modal.hide()"
             >
               {{ $t('common.cancel') }}
             </button>
             <button
-              class="flex-1 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700"
+              class="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700"
               @click="modal.confirm()"
             >
               {{ $t('common.confirm') }}

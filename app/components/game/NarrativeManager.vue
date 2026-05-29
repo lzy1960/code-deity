@@ -50,9 +50,9 @@ function startTypewriter(textKey: string) {
       charIndex++
     } else {
       clearInterval(typingInterval)
-      setTimeout(hideLog, 3500)
+      setTimeout(hideLog, 1800)
     }
-  }, 50)
+  }, 22)
 }
 
 function hideLog() {

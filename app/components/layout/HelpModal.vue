@@ -4,16 +4,16 @@
       <div class="relative w-full max-w-2xl h-[80vh] m-4 rounded-2xl bg-transparent p-0 shadow-2xl shadow-cyan-500/20 overflow-hidden border border-cyan-500/20">
         <div class="animated-border"></div>
         <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] h-full overflow-hidden">
-          <div class="p-6 h-full flex flex-col">
-            <h2 class="mb-4 text-center text-2xl font-bold text-cyan-300 shrink-0">
-              <Icon name="mdi:help-circle" class="mr-2" />
+          <div class="p-4 h-full flex flex-col">
+            <h2 class="mb-3 text-center text-base font-bold text-cyan-300 shrink-0">
+              <Icon name="mdi:help-circle" class="mr-1" />
               {{ $t('common.helpDocs') }}
             </h2>
-            
-            <div class="flex-1 overflow-y-auto pr-2 space-y-6 text-gray-300">
+
+            <div class="flex-1 overflow-y-auto pr-2 space-y-4 text-gray-300">
               <!-- Core Resources -->
               <div>
-                <h3 class="text-lg font-bold text-cyan-400 mb-3 border-b border-cyan-500/30 pb-1">{{ $t('common.coreResources') }}</h3>
+                <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.coreResources') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
                     <dt class="font-bold text-white">{{ $t('common.computingPower') }} (CP)</dt>
@@ -43,7 +43,7 @@
 
               <!-- Core Mechanics -->
               <div>
-                <h3 class="text-lg font-bold text-cyan-400 mb-3 border-b border-cyan-500/30 pb-1">{{ $t('common.coreMechanicsEvents') }}</h3>
+                <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.coreMechanicsEvents') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
                     <dt class="font-bold text-white">{{ $t('common.generators') }}</dt>
@@ -83,7 +83,7 @@
 
               <!-- Game Systems -->
               <div>
-                <h3 class="text-lg font-bold text-cyan-400 mb-3 border-b border-cyan-500/30 pb-1">{{ $t('common.gameSystems') }}</h3>
+                <h3 class="text-sm font-bold text-cyan-400 mb-2 border-b border-cyan-500/30 pb-1">{{ $t('common.gameSystems') }}</h3>
                 <div class="space-y-3">
                   <div class="help-item">
                     <dt v-if="gameStore.isChallengesUnlocked" class="font-bold text-white">{{ $t('common.challenges') }}</dt>
@@ -108,9 +108,9 @@
               </div>
             </div>
 
-            <div class="mt-6 text-center shrink-0">
+            <div class="mt-4 text-center shrink-0">
               <button
-                class="rounded-lg bg-cyan-600 px-8 py-3 font-bold text-white shadow-lg shadow-cyan-600/30 transition-colors hover:bg-cyan-700"
+                class="rounded-lg bg-cyan-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-cyan-600/30 transition-colors hover:bg-cyan-700"
                 @click="modal.hide()"
               >
                 {{ $t('common.close') }}

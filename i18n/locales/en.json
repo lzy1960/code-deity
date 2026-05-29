@@ -1,6 +1,7 @@
 {
   "common": {
     "manualCode": "Manual Code",
+    "clickSceneToCode": "click the scene above to write code",
     "manualOverclock": "Manual Overclock",
     "cpsBonus": "+5% CPS",
     "refactor": "Refactor",

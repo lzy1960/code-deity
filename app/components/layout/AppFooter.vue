@@ -1,19 +1,17 @@
 <template>
-  <footer class="sticky bottom-0 bg-[#182635]/80 backdrop-blur-sm border-t border-[#21364a]">
-    <div class="flex items-center px-2 overflow-x-auto whitespace-nowrap">
-      <nav class="flex justify-around items-center w-full min-w-max pt-2 pb-3">
-        <a 
-          v-for="tab in tabs" 
-          :key="tab.id"
-          @click="handleTabClick(tab)" 
-          :class="getTabClass(tab)" 
-          :title="getTabTitle(tab)"
-        >
-          <Icon :name="`mdi:${tab.icon}`" class="text-2xl" />
-          <p class="text-xs font-medium" :class="{ 'font-bold': isActive(tab.id) }">{{ tab.name }}</p>
-        </a>
-      </nav>
-    </div>
+  <footer class="bg-[#0d151c] border-t border-[#21364a]">
+    <nav class="flex justify-around items-center px-1 pt-1.5 pb-2">
+      <a
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="handleTabClick(tab)"
+        :class="getTabClass(tab)"
+        :title="tab.name"
+      >
+        <Icon :name="`mdi:${tab.icon}`" class="text-xl" />
+        <span class="text-[9px] leading-none mt-0.5">{{ tab.name }}</span>
+      </a>
+    </nav>
   </footer>
 </template>
 
@@ -66,12 +64,11 @@ const handleTabClick = (tab: Tab) => {
 };
 
 const getTabClass = (tab: Tab) => {
-  const baseClasses = 'flex flex-1 flex-col items-center justify-end gap-1 cursor-pointer px-4 py-1';
+  const baseClasses = 'flex flex-1 flex-col items-center justify-center gap-0.5 cursor-pointer px-2 py-1 rounded-lg transition-colors';
   if (!tab.isUnlocked()) {
-    return `${baseClasses} text-gray-600 cursor-not-allowed`;
+    return `${baseClasses} text-gray-700 cursor-not-allowed`;
   }
-  const activeColor = isActive(tab.id) ? 'text-[#3899fa]' : 'text-[#8eadcc] hover:text-white transition-colors';
-  return `${baseClasses} ${activeColor}`;
+  return `${baseClasses} ${isActive(tab.id) ? 'text-[#3899fa]' : 'text-[#5a7a96] hover:text-[#8eadcc]'}`;
 };
 
 const getTabTitle = (tab: Tab): string => {
@@ -85,18 +82,4 @@ const getTabTitle = (tab: Tab): string => {
 };
 </script>
 
-<style scoped>
-/* For Webkit browsers like Chrome, Safari */
-.overflow-x-auto::-webkit-scrollbar {
-  height: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-  background: #182635;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background-color: #3899fa;
-  border-radius: 20px;
-}
-</style>
+<style scoped></style>

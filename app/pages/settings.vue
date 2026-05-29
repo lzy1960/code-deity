@@ -16,7 +16,7 @@
           <div class="bg-[#1C2836] rounded-lg p-4">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-lg">{{ $t('common.language') }}</p>
+                <p class="text-sm font-medium">{{ $t('common.language') }}</p>
                 <p class="text-sm text-gray-400">{{ $t('common.current') }} {{ currentLocaleName }}</p>
               </div>
               <button @click="languageModal.show()" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
@@ -27,11 +27,11 @@
 
           <!-- Danger Zone -->
           <div class="border-t-2 border-red-500/30 pt-6">
-            <h3 class="text-xl font-bold text-red-400">{{ $t('common.dangerZone') }}</h3>
+            <h3 class="text-base font-bold text-red-400">{{ $t('common.dangerZone') }}</h3>
             <div class="mt-4 bg-[#1C2836] rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-lg">{{ $t('common.wipeAllData') }}</p>
+                  <p class="text-sm font-medium">{{ $t('common.wipeAllData') }}</p>
                   <p class="text-sm text-gray-400">{{ $t('common.wipeDataHint') }}</p>
                 </div>
                 <button @click="wipeAllData" class="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">

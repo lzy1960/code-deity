@@ -11,7 +11,7 @@
     <Transition name="dropdown-fade">
       <div
         v-if="isOpen"
-        class="absolute z-10 top-full mt-2 w-full bg-[#182635] border border-gray-700 rounded-lg shadow-lg overflow-hidden"
+        class="absolute z-10 bottom-full mb-2 w-full bg-[#182635] border border-gray-700 rounded-lg shadow-lg overflow-hidden"
       >
         <ul>
           <li

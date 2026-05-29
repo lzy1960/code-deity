@@ -3,13 +3,13 @@
     <div v-if="isVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm" @click.self="hide">
       <div class="relative m-4 w-full max-w-sm rounded-lg bg-transparent p-0 shadow-2xl shadow-cyan-500/10 overflow-hidden border border-cyan-500/20">
         <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[6px] bg-[#101a23] m-[2px] p-6">
-          <h2 class="mb-4 text-center text-xl font-bold text-white">
-          {{ $t('common.confirmExit') }}
-        </h2>
-        <p class="mb-6 text-center text-base text-gray-300">
-          {{ $t('common.confirmCloseApp') }}
-        </p>
+        <div class="relative z-10 rounded-[6px] bg-[#101a23] m-[2px] p-4">
+          <h2 class="mb-3 text-center text-base font-bold text-white">
+            {{ $t('common.confirmExit') }}
+          </h2>
+          <p class="mb-4 text-center text-xs text-gray-300">
+            {{ $t('common.confirmCloseApp') }}
+          </p>
           <div class="flex justify-around">
             <button
               class="rounded-md border border-gray-600 px-8 py-2 text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"

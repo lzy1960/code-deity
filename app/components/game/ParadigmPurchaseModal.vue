@@ -7,40 +7,40 @@
     >
       <div class="relative w-full max-w-md rounded-2xl bg-transparent shadow-2xl m-4 overflow-hidden border border-purple-500/20">
         <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-6 text-center">
-          <h2 class="text-2xl font-bold text-purple-300 mb-3">
+        <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-4 text-center">
+          <h2 class="text-base font-bold text-purple-300 mb-3">
             {{ $t('paradigmModal.title') }}
           </h2>
-          
-          <div v-if="modal.paradigmToPurchase.value" class="my-5 p-4 bg-gray-900 rounded-lg">
-            <p class="text-xl font-semibold text-white">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.name') }}</p>
-            <p class="text-sm text-gray-400 mt-1">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.description') }}</p>
-            <div class="mt-4 inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full font-bold">
+
+          <div v-if="modal.paradigmToPurchase.value" class="my-3 p-3 bg-gray-900 rounded-lg">
+            <p class="text-sm font-semibold text-white">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.name') }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.description') }}</p>
+            <div class="mt-3 inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold">
               {{ $t('common.cost') }}: {{ modal.paradigmToPurchase.value.cost }} SP
             </div>
           </div>
 
           <!-- Analysis Section -->
-          <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="mb-6 p-3 rounded-lg text-sm text-left space-y-2" :class="analysisClass">
-            <p class="font-bold text-base flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
+          <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="mb-4 p-3 rounded-lg text-xs text-left space-y-2" :class="analysisClass">
+            <p class="font-bold text-sm flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
             <p>{{ analysisText }}</p>
           </div>
 
-          <p v-else class="text-gray-400 mb-6">
+          <p v-else class="text-xs text-gray-400 mb-4">
             {{ $t('paradigmModal.info') }}
           </p>
 
-          <div class="flex justify-center gap-4">
+          <div class="flex justify-center gap-3">
             <button
               @click="modal.hide()"
-              class="px-8 py-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+              class="px-4 py-2 rounded-lg bg-gray-600 text-sm text-white font-bold hover:bg-gray-500 transition-colors"
             >
               {{ $t('common.cancel') }}
             </button>
             <button
               @click="modal.confirm()"
               :disabled="!!(analysis && !analysis.purchasable)"
-              class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
+              class="px-4 py-2 rounded-lg bg-purple-600 text-sm text-white font-bold transition-colors shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
             >
               {{ (analysis && !analysis.purchasable) ? $t('paradigmModal.cannotUnlock') : $t('paradigmModal.confirmUnlock') }}
             </button>

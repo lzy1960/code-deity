@@ -1,16 +1,16 @@
 <template>
   <Transition name="modal-bounce">
     <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
-      <div class="relative m-4 w-full max-w-sm rounded-2xl bg-gray-900 p-6 shadow-xl">
-        <h2 class="mb-6 text-center text-2xl font-bold text-white">
+      <div class="relative m-4 w-full max-w-sm rounded-2xl bg-gray-900 p-4 shadow-xl">
+        <h2 class="mb-4 text-center text-base font-bold text-white">
           {{ $t('common.selectLanguage') }}
         </h2>
-        <div class="space-y-3">
+        <div class="space-y-2">
           <button
             v-for="locale in locales"
             :key="locale.code"
             @click="switchLanguage(locale.code)"
-            class="w-full rounded-lg px-5 py-3 text-lg font-bold transition-colors duration-200"
+            class="w-full rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-200"
             :class="currentLocale === locale.code ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
           >
             {{ locale.name }}
