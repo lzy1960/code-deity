@@ -39,7 +39,7 @@
             </button>
             <button
               @click="modal.confirm()"
-              :disabled="analysis && !analysis.purchasable"
+              :disabled="!!(analysis && !analysis.purchasable)"
               class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
             >
               {{ (analysis && !analysis.purchasable) ? $t('paradigmModal.cannotUnlock') : $t('paradigmModal.confirmUnlock') }}

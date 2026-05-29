@@ -12,7 +12,6 @@ import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
 import SingularitySection from '~/components/game/SingularitySection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
-import AdBoostButton from '~/components/game/AdBoostButton.vue';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useSingularityModal } from '~/composables/useSingularityModal';
 import { useToast } from '~/composables/useToast';
@@ -268,8 +267,7 @@ const isCodeRushChargedAndReady = computed(() => {
                   v-for="generator in unlockedGenerators"
                   :key="generator.id"
                   :generator-id="generator.id"
-                  :discounted-cost="gameStore.isAlgorithmBreakthroughActive ? gameStore.costForAmount(generator.id, gameStore.buyAmount(generator.id)).times(0.1) : undefined"
-                  @buy="buyGenerator(generator.id)"
+                    @buy="buyGenerator(generator.id)"
                 />
               </div>
             </div>
@@ -304,9 +302,9 @@ const isCodeRushChargedAndReady = computed(() => {
               </div>
 
               <div v-show="upgradesSubTab === 'refactor'">
-                <RefactorSection 
-                  :potential-rp-gain="gameStore.refactorGain.toNumber()" 
-                  :can-refactor="gameStore.canRefactor" 
+                <RefactorSection
+                  :potential-rp-gain="gameStore.refactorGain"
+                  :can-refactor="gameStore.canRefactor"
                   :current-rp-bonus="gameStore.rpBonus" 
                   :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
                   @refactor="gameStore.refactor" 
@@ -357,15 +355,14 @@ const isCodeRushChargedAndReady = computed(() => {
                 v-for="generator in unlockedGenerators"
                 :key="generator.id"
                 :generator-id="generator.id"
-                :discounted-cost="gameStore.isAlgorithmBreakthroughActive ? gameStore.costForAmount(generator.id, gameStore.buyAmount(generator.id)).times(0.1) : undefined"
                 @buy="buyGenerator(generator.id)"
               />
             </div>
 
             <div v-if="activeTab === 'upgrades'">
-              <RefactorSection 
-                :potential-rp-gain="gameStore.refactorGain.toNumber()" 
-                :can-refactor="gameStore.canRefactor" 
+              <RefactorSection
+                :potential-rp-gain="gameStore.refactorGain"
+                :can-refactor="gameStore.canRefactor"
                 :current-rp-bonus="gameStore.rpBonus" 
                 :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
                 @refactor="gameStore.refactor" 
@@ -398,7 +395,6 @@ const isCodeRushChargedAndReady = computed(() => {
 
     <!-- Footer (Mobile Only) -->
     <div class="fixed bottom-0 left-0 right-0 z-20 lg:hidden">
-      <AdBoostButton v-if="isGeneratorSectionUnlocked" />
       <AppFooter v-if="isGeneratorSectionUnlocked" v-model:active-tab="activeTab" context="game" />
     </div>
   </div>

@@ -1,8 +1,8 @@
 import Dexie, { type Table } from 'dexie';
 
 export interface GameSave {
-  id?: number;
-  saveData: string; // Storing the stringified JSON
+  id?: string | number;
+  saveData: string;
   timestamp: number;
 }
 

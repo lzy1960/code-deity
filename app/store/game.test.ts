@@ -120,7 +120,7 @@ describe('Game Store - Core Mechanics', () => {
     it('should cost baseCost * multiplier when buying the second generator', () => {
       const generatorId = 1
       const config = store.generatorConfig(generatorId)
-      store.generators[0].bought = 1 // Pretend we already bought one
+      store.generators[0]!.bought = 1 // Pretend we already bought one
 
       const expectedCost = config.baseCost.times(config.costMultiplier)
       const cost = store.costForAmount(generatorId, new Decimal(1))
@@ -154,36 +154,36 @@ describe('Game Store - Singularity & Paradigms', () => {
 
   it('should not purchase a paradigm if SP is insufficient', () => {
     store.singularityPower = new Decimal(0)
-    store.purchaseParadigm('procedural')
-    expect(store.paradigms.procedural).toBeUndefined()
+    store.purchaseParadigm('system_kernel') // cost is 1
+    expect(store.paradigms.system_kernel).toBeUndefined()
   })
 
   it('should purchase a paradigm successfully with enough SP', () => {
     store.singularityPower = new Decimal(10)
-    store.purchaseParadigm('procedural') // cost is 1
-    expect(store.paradigms.procedural).toBe(true)
+    store.purchaseParadigm('system_kernel') // cost is 1, no dependencies
+    expect(store.paradigms.system_kernel).toBe(true)
     expect(store.singularityPower.toString()).toBe('9')
   })
 
   it('should not purchase a paradigm if dependencies are not met', () => {
     store.singularityPower = new Decimal(10)
-    store.purchaseParadigm('structured') // requires 'procedural'
-    expect(store.paradigms.structured).toBeUndefined()
+    store.purchaseParadigm('efficiency_starter') // requires 'system_kernel'
+    expect(store.paradigms.efficiency_starter).toBeUndefined()
   })
 
   it('should purchase a paradigm with dependencies if they are met', () => {
     store.singularityPower = new Decimal(10)
-    store.paradigms.procedural = true // manually unlock dependency
-    store.purchaseParadigm('structured') // cost is 3
-    expect(store.paradigms.structured).toBe(true)
-    expect(store.singularityPower.toString()).toBe('7')
+    store.paradigms.system_kernel = true // manually unlock dependency
+    store.purchaseParadigm('efficiency_starter') // cost is 2
+    expect(store.paradigms.efficiency_starter).toBe(true)
+    expect(store.singularityPower.toString()).toBe('8')
   })
 
   it('should not be able to purchase the same paradigm twice', () => {
     store.singularityPower = new Decimal(10)
-    store.purchaseParadigm('procedural')
+    store.purchaseParadigm('system_kernel')
     expect(store.singularityPower.toString()).toBe('9')
-    store.purchaseParadigm('procedural') // try to buy again
+    store.purchaseParadigm('system_kernel') // try to buy again
     expect(store.singularityPower.toString()).toBe('9') // SP should not be deducted again
   })
 })

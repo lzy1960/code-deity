@@ -87,12 +87,6 @@ function refreshValues() {
           </div>
         </div>
 
-        <!-- Ad Reset Button -->
-        <div class="border-t border-white/10 pt-3">
-          <button @click="gameStore._dev_resetAdViews()" class="w-full px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 text-xs font-bold">
-            Reset Ad Views
-          </button>
-        </div>
       </div>
     </Transition>
   </div>

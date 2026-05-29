@@ -47,7 +47,7 @@ watch(() => props.show, async (newValue) => {
     isVisible.value = true;
   } else {
     isVisible.value = false;
-  n}
+  }
 });
 
 const dismiss = () => {

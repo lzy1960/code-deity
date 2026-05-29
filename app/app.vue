@@ -11,17 +11,12 @@ import RefactorConfirmationModal from '~/components/game/RefactorConfirmationMod
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
-import AdBoostModal from '~/components/game/AdBoostModal.vue'
 import LanguageModal from '~/components/layout/LanguageModal.vue'
 import AutoSaveNotifier from '~/components/layout/AutoSaveNotifier.vue'
 import GenesisLogModal from '~/components/game/GenesisLogModal.vue'
 import { useEventListener } from '@vueuse/core'
-import { useIsNative } from '~/utils/platform'
-import { useToast } from '~/composables/useToast'
-import { useAdState } from '~/composables/useAdState'
 import { useExitConfirmationModal } from '~/composables/useExitConfirmationModal'
 import { App } from '@capacitor/app';
-import { initializeAdMob, showRewardVideoAd } from '~/services/admob';
 
 const gameStore = useGameStore()
 
@@ -29,27 +24,16 @@ const { $loadGame, $saveGameLocal } = useNuxtApp() as any
 const exitConfirmationModal = useExitConfirmationModal()
 const router = useRouter()
 const route = useRoute()
-const toast = useToast()
-const adState = useAdState()
-
-
-
 
 const isDev = computed(() => process.env.NODE_ENV === 'development')
-const adWatched = ref(false)
-const isNative = useIsNative()
-const isOfflineAdLoading = ref(false)
 
-// 1. Use the composable to get modal controls
 const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
 
-// 2. Define what happens when the user confirms
 onConfirm(async () => {
   gameStore.applyOfflineGains()
-  adWatched.value = false // Reset ad state when modal closes
 })
 
-// Add a global event listeners to save the game locally when the user leaves the page.
+// Save on page hide
 useEventListener(document, 'visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     $saveGameLocal()
@@ -59,98 +43,11 @@ useEventListener(window, 'pagehide', () => {
   $saveGameLocal()
 })
 
-async function watchAdForBonus() {
-  if (isOfflineAdLoading.value) return;
-
-  try {
-    isOfflineAdLoading.value = true;
-    // Fire and forget. The global watcher will handle the reward.
-    await showRewardVideoAd('offlineBonus');
-  } catch (error) {
-    console.error('Error showing offline reward video ad:', error);
-    toast.addToast('广告加载失败，请稍后再试', 'error');
-  } finally {
-    isOfflineAdLoading.value = false;
-  }
-}
-
 onMounted(async () => {
-  // Initialize AdMob and its global listeners
-  initializeAdMob();
-
-  // Central watcher for when a reward is successfully granted
-  watch(() => adState.rewardGranted.value, (isGranted) => {
-    if (isGranted) {
-      const boostType = adState.requestedBoostType.value;
-
-      switch (boostType) {
-        case 'quantumComputing':
-          gameStore.activateQuantumComputing();
-          toast.addToast($t('toast.quantumComputingActive'), 'success', 5000);
-          break;
-        case 'supplyChainOptimization':
-          gameStore.activateSupplyChainOptimization();
-          toast.addToast($t('toast.supplyChainOptimized'), 'success', 5000);
-          break;
-        case 'algorithmBreakthrough':
-          gameStore.activateAlgorithmBreakthrough();
-          toast.addToast($t('toast.algorithmBreakthroughActive'), 'success', 5000);
-          break;
-        case 'codeInjection':
-          gameStore.applyCodeInjection();
-          toast.addToast($t('toast.codeInjectionSuccess'), 'success', 5000);
-          break;
-        case 'neuralBoost':
-          gameStore.activateNeuralBoost();
-          toast.addToast($t('toast.neuralBoostActive'), 'success', 5000);
-          break;
-        case 'offlineBonus':
-          gameStore.doubleOfflineGains();
-          adWatched.value = true; // Disable the button in the offline modal
-          toast.addToast($t('toast.hyperthreadingActive'), 'success', 5000);
-          break;
-        case 'refactorBonus':
-          gameStore.doubleNextRefactorGain();
-          gameStore.refactor();
-          toast.addToast($t('toast.superCompileComplete'), 'success', 5000);
-          break;
-        case 'singularityBonus':
-          gameStore.doubleNextSingularityGain();
-          gameStore.performSingularityReset();
-          toast.addToast($t('toast.singularityJumpComplete'), 'success', 5000);
-          break;
-      }
-
-      // Reset the state after applying the reward
-      adState.rewardGranted.value = false;
-      adState.requestedBoostType.value = null;
-    }
-  });
-
-  // Central watcher for when an ad is dismissed (closed)
-  watch(() => adState.adDismissed.value, async (wasDismissed) => {
-    if (wasDismissed) {
-      const adWatchDuration = Date.now() - adState.adShownTimestamp.value;
-      
-      if (adWatchDuration > 0) {
-        // Pause resource generation by shifting the clock forward
-        gameStore.adjustLastUpdateTime(adWatchDuration);
-        // Pause active boost timers by extending their expiry
-        gameStore.extendBoosts(adWatchDuration);
-      }
-
-      // Immediately save the new state with the corrected timestamps
-      await $saveGameLocal();
-
-      // Reset the dismiss flag
-      adState.adDismissed.value = false;
-    }
-  });
-
   // Load game data
   await $loadGame()
 
-  // Check for offline progress and reveal the modal if needed
+  // Check for offline progress
   if (gameStore.hasPendingOfflineGains) {
     reveal()
   } else {
@@ -163,7 +60,7 @@ onMounted(async () => {
   // Start the game loop
   gameStore.startGameLoop()
 
-  // Set up auto-save (local only)
+  // Auto-save every 15 seconds
   setInterval(() => {
     $saveGameLocal()
   }, 15000)
@@ -177,21 +74,24 @@ onMounted(async () => {
     }
   });
 
-  // Listen for app state changes (background/foreground) - now simplified
+  // Listen for app state changes (background/foreground)
   App.addListener('appStateChange', async (state) => {
     if (state.isActive) {
-      // App came to foreground, check for offline progress
       await $loadGame();
       gameStore.calculateOfflineProgress();
       if (gameStore.hasPendingOfflineGains) {
         reveal();
       }
     } else {
-      // App went to background, ensure game is saved
       $saveGameLocal();
     }
   });
 })
+
+// Save immediately when automator states change (fixes the known auto-save bug)
+watch(() => gameStore.automatorStates, () => {
+  $saveGameLocal()
+}, { deep: true })
 </script>
 
 <template>
@@ -206,45 +106,24 @@ onMounted(async () => {
     <TechDebtPanel />
     <HelpModal />
     <ToastManager />
-    <AdBoostModal />
     <LanguageModal />
     <GenesisLogModal />
     <AutoSaveNotifier />
 
-    <!-- 
-      The modal component is now a generic frame.
-      We pass the specific content and the button with the correctly scoped
-      `confirm` function directly into the slot.
-    -->
     <OfflineProgressModal :is-revealed="isRevealed">
       <h2 class="text-3xl font-bold text-[#3899fa] flex items-center justify-center gap-3">
         <Icon name="mdi:timer-sand" />
         <span>{{ $t('common.welcomeBack') }}</span>
       </h2>
       <p class="mt-4 text-lg text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
-      
+
       <div class="my-6 bg-[#101a23] rounded-lg p-4">
         <p class="text-4xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
         <p class="mt-1 text-sm text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
       </div>
 
       <div class="flex flex-col gap-3">
-        <button 
-          v-if="isNative"
-          @click="watchAdForBonus"
-          :disabled="adWatched || isOfflineAdLoading"
-          class="w-full rounded-lg bg-yellow-500 text-black font-bold py-4 px-6 hover:bg-opacity-90 transition-all text-xl shadow-lg shadow-yellow-500/30 transform hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
-        >
-          <template v-if="isOfflineAdLoading">
-            <Icon name="mdi:loading" class="animate-spin" />
-            <span>{{ $t('common.loading') }}</span>
-          </template>
-          <template v-else>
-            <Icon name="mdi:movie-play" />
-            <span>{{ $t('common.activateHyperthreading') }}</span>
-          </template>
-        </button>
-        <button 
+        <button
           @click="confirm"
           class="w-full rounded-lg bg-[#3899fa] text-white font-bold py-4 px-6 hover:bg-opacity-90 transition-colors text-xl shadow-lg shadow-[#3899fa]/30 transform hover:scale-105 active:scale-100"
         >

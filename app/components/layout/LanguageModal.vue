@@ -28,7 +28,7 @@ const modal = useLanguageModal();
 const { locales, locale: currentLocale, setLocale } = useI18n();
 
 const switchLanguage = (code: string) => {
-  setLocale(code);
+  setLocale(code as 'en' | 'zh-CN');
   modal.hide();
 };
 </script>

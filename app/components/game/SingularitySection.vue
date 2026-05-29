@@ -58,9 +58,9 @@
 import { watch, ref, nextTick } from 'vue'
 import { useGameStore } from '~/store/game'
 import { paradigmConfigs } from '~~/game/paradigms.configs'
-import type { Paradigm } from '~/types/paradigims'
+import type { Paradigm } from '~/types/paradigms'
 import { formatNumber } from '~/utils/format'
-import { VueFlow, useVueFlow, MarkerType } from '@vue-flow/core'
+import { VueFlow, useVueFlow, MarkerType, Position } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
 import type { Node, Edge } from '@vue-flow/core'
 import ParadigmNode from './ParadigmNode.vue'
@@ -193,8 +193,8 @@ const initialNodes: Node[] = paradigmConfigs.map(p => {
     id: p.id,
     type: 'custom',
     position: { x: 0, y: 0 },
-    sourcePosition: 'right',
-    targetPosition: 'left',
+    sourcePosition: Position.Right,
+    targetPosition: Position.Left,
     data: {
       paradigm: p,
       isPurchased: isPurchased(p.id),

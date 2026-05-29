@@ -1,6 +1,6 @@
 import { ref, shallowRef } from 'vue'
 import { createSharedComposable } from '@vueuse/core'
-import type { Paradigm } from '~~/game/paradigms.configs'
+import type { Paradigm } from '~/types/paradigms'
 
 export const useParadigmPurchaseModal = createSharedComposable(() => {
   const isRevealed = ref(false)

@@ -4,7 +4,7 @@
     <p class="text-gray-400">{{ $t('common.automationHint') }}</p>
     <div v-for="generator in unlockedGenerators" :key="generator.id" class="flex items-center justify-between rounded-lg bg-[#191933] p-3">
       <div>
-        <p class="text-base font-medium">{{ $t('common.autoBuy') }} {{ getLocalizedGameName(generatorConfig(generator.id).name, $i18n.locale.value) }}</p>
+        <p class="text-base font-medium">{{ $t('common.autoBuy') }} {{ getLocalizedGameName(generatorConfig(generator.id).name, $i18n.locale) }}</p>
       </div>
       
       <label class="relative inline-flex items-center cursor-pointer">

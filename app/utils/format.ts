@@ -29,8 +29,8 @@ export function formatNumber(value?: Decimal | number): string {
 export function getLocalizedGameName(name: string, locale: string): string {
   const match = name.match(/^(.*?)\s*\((.*?)\)$/);
   if (match) {
-    const chinesePart = match[1].trim();
-    const englishPart = match[2].trim();
+    const chinesePart = match[1]!.trim();
+    const englishPart = match[2]!.trim();
     return locale === 'en' ? englishPart : chinesePart;
   }
   return name; // Return original name if no match

@@ -59,23 +59,6 @@ export interface GameState {
   unlockedNarratives: string[]
   narrativeQueue: NarrativeMilestone[]
 
-  // Ad Boosts
-  adBoostExpiry: number | null // DEPRECATED: To be removed in a future version
-  adBoostCooldownExpiry: number | null // DEPRECATED
-
-  quantumComputingExpiry: number | null
-  supplyChainOptimizationExpiry: number | null
-  isAlgorithmBreakthroughActive: boolean
-  neuralBoostExpiry: number | null
-  lastAdResetDate: string | null
-  adViewsToday: {
-    quantumComputing: number
-    supplyChainOptimization: number
-    algorithmBreakthrough: number
-    codeInjection: number
-    neuralBoost: number
-  }
-
   // Technical Debt
   activeRefactoring: {
     paradigmId: string;
@@ -84,10 +67,6 @@ export interface GameState {
     cpCost: Decimal;
   } | null
 
-  // Ad-hoc flags
-  doubleNextRefactor: boolean
-  doubleNextSingularity: boolean
-
   // Code Rush
   codeRushCharge: number // Current charge level (0 to 100)
   codeRushActiveExpiry: number | null // Timestamp when Code Rush active state ends
@@ -95,6 +74,8 @@ export interface GameState {
 }
 
 // #endregion
+
+let _gameLoopInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
@@ -134,25 +115,7 @@ export const useGameStore = defineStore('game', {
     unlockedNarratives: [],
     narrativeQueue: [],
 
-    adBoostExpiry: null,
-    adBoostCooldownExpiry: null,
-
-    quantumComputingExpiry: null,
-    supplyChainOptimizationExpiry: null,
-    isAlgorithmBreakthroughActive: false,
-    neuralBoostExpiry: null,
-    lastAdResetDate: null,
-    adViewsToday: {
-      quantumComputing: 0,
-      supplyChainOptimization: 0,
-      algorithmBreakthrough: 0,
-      codeInjection: 0,
-      neuralBoost: 0,
-    },
-
     activeRefactoring: null,
-    doubleNextRefactor: false,
-    doubleNextSingularity: false,
 
     // Code Rush
     codeRushCharge: 0,
@@ -178,33 +141,27 @@ export const useGameStore = defineStore('game', {
       return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES
     },
     isCompileUnlocked: state => state.refactorPoints.gte(prestigeThresholds.COMPILE_UNLOCK_RP) || state.version > 0,
-    isAutomationUnlocked() {
-      if (this.paradigms.dependency_injection) {
+    isAutomationUnlocked: state => {
+      if (state.paradigms.dependency_injection) {
         return true
       }
-      return this.version > 0
+      return state.version > 0
     },
     isChallengesUnlocked: state => state.version >= 2,
     isMultiplierUnlocked: state => {
       const moduleGenerator = state.generators.find(g => g.id === 4)
       return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
     },
-    isAdBoostUnlocked: state => {
-      const classGenerator = state.generators.find(g => g.id === 3);
-      return (classGenerator?.bought ?? 0) > 0 || state.refactorCount > 0;
-    },
-
     // --- Soft Cap: Architectural Overhead ---
-    architecturalOverheadPenalty() {
-      const aiCores = this.generators.find(g => g.id === 8)!.bought
+    architecturalOverheadPenalty: state => {
+      const aiCores = state.generators.find(g => g.id === 8)!.bought
       if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
 
       let penaltyFactor = 0.1
-      if (this.paradigms.api_interface) {
+      if (state.paradigms.api_interface) {
         penaltyFactor *= 0.5 // Penalty effect is reduced by 50%
       }
 
-      // Penalty = 1 / (1 + penaltyFactor * log10(AI_Cores_Owned - 24))
       return 1 / (1 + penaltyFactor * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
     },
 
@@ -218,11 +175,6 @@ export const useGameStore = defineStore('game', {
         const originalConfig = this.generatorConfig(id)
         // Must be a new object to avoid mutation
         const effectiveConfig = { ...originalConfig }
-
-        // --- Apply Ad Boosts ---
-        if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > Date.now()) {
-          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.75) // 25% cost reduction
-        }
 
         // --- Apply Paradigm Bonuses ---
         if (this.paradigms.memory_management) {
@@ -256,17 +208,11 @@ export const useGameStore = defineStore('game', {
         const r = config.costMultiplier
         const k = generator.bought
         const B = config.baseCost
-        
-        // FIX: Use a temporary, boosted currency value for calculation if the breakthrough is active.
-        let effectiveCurrency = this.currency;
-        if (this.isAlgorithmBreakthroughActive) {
-          effectiveCurrency = this.currency.times(10); // Mathematically equivalent to a 90% cost reduction
-        }
 
-        if (effectiveCurrency.lt(B.times(r.pow(k)))) return new Decimal(0)
+        if (this.currency.lt(B.times(r.pow(k)))) return new Decimal(0)
 
         // n <= log_r(C * (r - 1) / (B * r^k) + 1)
-        const num = effectiveCurrency.times(r.minus(1)).div(B.times(r.pow(k))).plus(1)
+        const num = this.currency.times(r.minus(1)).div(B.times(r.pow(k))).plus(1)
         const n = Decimal.floor(num.log(r.toNumber()))
         return n.max(0)
       }
@@ -442,7 +388,7 @@ export const useGameStore = defineStore('game', {
     },
     
     cps(): Decimal {
-      let finalCps = this.generatorProduction(1).times(this.adBoostMultiplier)
+      let finalCps = this.generatorProduction(1)
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
         finalCps = finalCps.times(penalty)
@@ -461,26 +407,10 @@ export const useGameStore = defineStore('game', {
         baseClickPower = new Decimal(1);
       }
 
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > this.currentTime) {
-        baseClickPower = baseClickPower.times(10); // 10x boost
-      }
       if (this.isCodeRushActive) {
         baseClickPower = baseClickPower.times(prestigeThresholds.CODE_RUSH_MULTIPLIER);
       }
       return baseClickPower;
-    },
-
-    adBoostMultiplier(state) {
-      let multiplier = 1
-      // Legacy boost
-      if (state.adBoostExpiry && state.adBoostExpiry > Date.now()) {
-        multiplier = multiplier * 2
-      }
-      // Quantum Computing boost
-      if (state.quantumComputingExpiry && state.quantumComputingExpiry > Date.now()) {
-        multiplier = multiplier * 5
-      }
-      return multiplier
     },
 
     // --- Code Rush ---
@@ -488,10 +418,12 @@ export const useGameStore = defineStore('game', {
       return state.codeRushActiveExpiry !== null && state.codeRushActiveExpiry > state.currentTime;
     },
     isCodeRushReady: state => {
-      return state.codeRushCharge >= 100 && !state.isCodeRushActive;
+      const isActive = state.codeRushActiveExpiry !== null && state.codeRushActiveExpiry > state.currentTime;
+      return state.codeRushCharge >= 100 && !isActive;
     },
     codeRushProgress: state => {
-      if (state.isCodeRushActive) {
+      const isActive = state.codeRushActiveExpiry !== null && state.codeRushActiveExpiry > state.currentTime;
+      if (isActive) {
         const remaining = Math.max(0, state.codeRushActiveExpiry! - state.currentTime);
         return (remaining / (prestigeThresholds.CODE_RUSH_DURATION_SECONDS * 1000)) * 100;
       } else {
@@ -499,7 +431,8 @@ export const useGameStore = defineStore('game', {
       }
     },
     codeRushTimeRemaining: state => {
-      if (state.isCodeRushActive) {
+      const isActive = state.codeRushActiveExpiry !== null && state.codeRushActiveExpiry > state.currentTime;
+      if (isActive) {
         return Math.max(0, Math.floor((state.codeRushActiveExpiry! - state.currentTime) / 1000));
       }
       return 0;
@@ -574,7 +507,7 @@ export const useGameStore = defineStore('game', {
           'dynamic_typing': ['jit_compilation', 'refactoring_tools'],
         }
         for (const parent in forks) {
-          const children = forks[parent]
+          const children = forks[parent]!
           if (children.includes(paradigmId)) {
             const otherChild = children.find(c => c !== paradigmId)!
             if (this.paradigms[otherChild]) {
@@ -609,12 +542,11 @@ export const useGameStore = defineStore('game', {
       const primitiveKeys: (keyof GameState)[] = [
         'saveVersion', 'lastUpdateTime', 'buyMultiplier', 'refactorCount', 'version',
         'challengeCompletions', 'activeChallenge', 'automatorStates', 'unlockedNarratives',
-        'adBoostExpiry', 'adBoostCooldownExpiry'
       ];
       
       for (const key of primitiveKeys) {
         if (stateToLoad.hasOwnProperty(key)) {
-          this[key] = stateToLoad[key] as any;
+          (this as any)[key] = stateToLoad[key];
         }
       }
       // Handle nullable fields separately
@@ -629,26 +561,17 @@ export const useGameStore = defineStore('game', {
       this.codeRushActiveExpiry = stateToLoad.codeRushActiveExpiry ?? null;
       this.codeRushClickCount = stateToLoad.codeRushClickCount ?? 0;
 
-      // Hydrate new ad system state
-      this.quantumComputingExpiry = stateToLoad.quantumComputingExpiry ?? null
-      this.supplyChainOptimizationExpiry = stateToLoad.supplyChainOptimizationExpiry ?? null
-      this.isAlgorithmBreakthroughActive = stateToLoad.isAlgorithmBreakthroughActive ?? false
-      this.neuralBoostExpiry = stateToLoad.neuralBoostExpiry ?? null
-      this.lastAdResetDate = stateToLoad.lastAdResetDate ?? null
-      if (stateToLoad.adViewsToday) {
-        // Ensure forward compatibility by merging with defaults
-        this.adViewsToday = {
-          quantumComputing: 0,
-          supplyChainOptimization: 0,
-          algorithmBreakthrough: 0,
-          codeInjection: 0,
-          neuralBoost: 0,
-          ...stateToLoad.adViewsToday,
+      // Hydrate Technical Debt state
+      if (stateToLoad.activeRefactoring) {
+        this.activeRefactoring = {
+          paradigmId: stateToLoad.activeRefactoring.paradigmId,
+          frozenParadigms: stateToLoad.activeRefactoring.frozenParadigms,
+          frozenSP: new Decimal(stateToLoad.activeRefactoring.frozenSP),
+          cpCost: new Decimal(stateToLoad.activeRefactoring.cpCost),
         };
+      } else {
+        this.activeRefactoring = null;
       }
-
-      // After hydrating, check if ad views need to be reset
-      this.resetAdViewsIfNeeded()
     },
 
     /**
@@ -665,10 +588,6 @@ export const useGameStore = defineStore('game', {
       };
       // A bit of a hack to force serialization of Decimals
       return JSON.parse(JSON.stringify(state, replacer));
-    },
-
-    setLastCloudSync(timestamp: number) {
-      this.lastCloudSync = timestamp;
     },
 
     gameLoop() {
@@ -734,21 +653,21 @@ export const useGameStore = defineStore('game', {
       }
 
       for (let i = 8; i > 1; i--) {
-          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1].times(diff));
+          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1]!.times(diff));
       }
       
       // Apply Architectural Overhead penalty to final CP gain
-      let cpGain = productions[0]
+      let cpGain = productions[0]!
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
         cpGain = cpGain.times(penalty)
       }
-      this.currency = this.currency.plus(cpGain.times(this.adBoostMultiplier).times(diff));
+      this.currency = this.currency.plus(cpGain.times(diff));
 
       // ## Abstraction School: Supply Chain Optimization ##
       if (this.paradigms.supply_chain_optimization) {
         // productions[3] is the production rate of Module (id=4)
-        const bonusForClass = productions[3].times(0.05).times(diff);
+        const bonusForClass = productions[3]!.times(0.05).times(diff);
         this.generators[2]!.amount = this.generators[2]!.amount.plus(bonusForClass);
       }
     },
@@ -770,13 +689,7 @@ export const useGameStore = defineStore('game', {
       const amountToBuy = this.buyAmount(id)
       if (amountToBuy.eq(0)) return
 
-      let cost = this.costForAmount(id, amountToBuy)
-
-      // Apply Algorithm Breakthrough discount
-      if (this.isAlgorithmBreakthroughActive) {
-        cost = cost.times(0.1); // 90% discount
-        this.isAlgorithmBreakthroughActive = false; // Consume the buff
-      }
+      const cost = this.costForAmount(id, amountToBuy)
 
       if (this.currency.gte(cost)) {
         this.currency = this.currency.minus(cost)
@@ -805,15 +718,7 @@ export const useGameStore = defineStore('game', {
     activateCodeRush() {
       if (!this.isCodeRushReady) return;
 
-      let duration = prestigeThresholds.CODE_RUSH_DURATION_SECONDS * 1000; // in ms
-
-      // Apply Neural Boost effect
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > Date.now()) {
-        if (prestigeThresholds.NEURAL_BOOST_CODE_RUSH_EFFECT === 'duration') {
-          duration *= (1 + prestigeThresholds.NEURAL_BOOST_CODE_RUSH_BONUS_PERCENT / 100);
-        }
-      }
-
+      const duration = prestigeThresholds.CODE_RUSH_DURATION_SECONDS * 1000; // in ms
       this.codeRushActiveExpiry = Date.now() + duration;
       this.codeRushCharge = 0;
       this.codeRushClickCount = 0;
@@ -836,11 +741,8 @@ export const useGameStore = defineStore('game', {
     refactor() {
       if (!this.canRefactor) return
 
-      let gain = this.refactorGain
-      if (this.doubleNextRefactor) {
-        gain = gain.times(2);
-        this.doubleNextRefactor = false; // Reset the flag
-      }
+      const gain = this.refactorGain
+      if (gain.lte(0)) return
 
       // --- Challenge Completion Check ---
       if (this.activeChallenge === 'challenge1') {
@@ -866,14 +768,6 @@ export const useGameStore = defineStore('game', {
       this.checkNarrativeMilestones()
     },
 
-    doubleNextRefactorGain() {
-      this.doubleNextRefactor = true;
-    },
-
-    doubleNextSingularityGain() {
-      this.doubleNextSingularity = true;
-    },
-
     compileAndRelease() {
       if (!this.isCompileUnlocked) return
       const cost = this.compileCost
@@ -893,11 +787,7 @@ export const useGameStore = defineStore('game', {
     performSingularityReset() {
       if (!this.canSingularity) return
 
-      let spGain = this.singularityGain
-      if (this.doubleNextSingularity) {
-        spGain = spGain.times(2);
-        this.doubleNextSingularity = false; // Reset the flag
-      }
+      const spGain = this.singularityGain
 
       if (spGain.gt(0)) {
         this.singularityPower = this.singularityPower.plus(spGain)
@@ -984,6 +874,7 @@ export const useGameStore = defineStore('game', {
       this.pendingOfflineGains = null
       this.unlockedNarratives = []
       this.narrativeQueue = []
+      this.activeRefactoring = null
 
       // Reset Code Rush state
       this.codeRushCharge = 0;
@@ -994,7 +885,8 @@ export const useGameStore = defineStore('game', {
     },
 
     startGameLoop() {
-      setInterval(() => {
+      if (_gameLoopInterval !== null) return;
+      _gameLoopInterval = setInterval(() => {
         this.gameLoop()
       }, 50)
     },
@@ -1012,35 +904,15 @@ export const useGameStore = defineStore('game', {
       // Per production.md, cap offline time to 1 hour (3600 seconds)
       const effectiveDiff = Math.min(diff, 3600)
 
-      // --- Simulate gains for the effectiveDiff ---
-      // This is a simplified simulation. A full simulation would be too slow.
-      // We take the production rate at the start of the offline period and multiply it.
-      const tempGens = this.generators.map(g => ({ ...g, amount: new Decimal(g.amount) }))
-      const productions: Decimal[] = []
-      for (let i = 8; i >= 1; i--) {
-        const config = this.generatorConfig(i)
-        const generator = tempGens.find(g => g.id === i)!
-        let production = config.baseProduction
-          .times(generator.amount)
-          .times(this.buy10Bonus(i))
-          .times(this.rpBonus)
-        if (this.activeChallenge === 'challenge1' && i <= 4) {
-          production = new Decimal(0)
-        }
-        productions[i - 1] = production
-      }
-
-      for (let i = 8; i > 1; i--) {
-        tempGens[i - 2]!.amount = tempGens[i - 2]!.amount.plus(productions[i - 1]!.times(effectiveDiff))
-      }
-
-      let cpGain = productions[0]!
+      // Simplified simulation: use the current production rate (including all paradigm bonuses)
+      // and multiply by elapsed time. Generator chain growth is ignored for simplicity.
+      let cpPerSecond = this.generatorProduction(1)
       const penalty = this.architecturalOverheadPenalty
       if (penalty < 1) {
-        cpGain = cpGain.times(penalty) // Use multiplication as per our design change
+        cpPerSecond = cpPerSecond.times(penalty)
       }
-      
-      const totalCpGained = this.currency.plus(cpGain.times(effectiveDiff)).minus(this.currency)
+
+      const totalCpGained = cpPerSecond.times(effectiveDiff)
 
       if (totalCpGained.gt(0)) {
         this.pendingOfflineGains = {
@@ -1058,99 +930,8 @@ export const useGameStore = defineStore('game', {
       if (!this.pendingOfflineGains) return
 
       this.currency = this.currency.plus(this.pendingOfflineGains.cp)
-      this.lastUpdateTime = Date.now() // Rer-calculate from now
+      this.lastUpdateTime = Date.now()
       this.pendingOfflineGains = null
-    },
-
-    doubleOfflineGains() {
-      if (this.pendingOfflineGains) {
-        this.pendingOfflineGains.cp = this.pendingOfflineGains.cp.times(2);
-      }
-    },
-
-    // --- New Ad System Actions ---
-    resetAdViewsIfNeeded() {
-      const today = new Date().toISOString().slice(0, 10); // Get YYYY-MM-DD
-      if (this.lastAdResetDate !== today) {
-        this.adViewsToday = {
-          quantumComputing: 0,
-          supplyChainOptimization: 0,
-          algorithmBreakthrough: 0,
-          codeInjection: 0,
-          neuralBoost: 0,
-        };
-        this.lastAdResetDate = today;
-        console.log('Ad views have been reset for the day.');
-      }
-    },
-
-    activateQuantumComputing() {
-      if (this.adViewsToday.quantumComputing >= 5) return;
-      this.quantumComputingExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
-      this.adViewsToday.quantumComputing++;
-    },
-
-    activateSupplyChainOptimization() {
-      if (this.adViewsToday.supplyChainOptimization >= 5) return;
-      this.supplyChainOptimizationExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-      this.adViewsToday.supplyChainOptimization++;
-    },
-
-    activateAlgorithmBreakthrough() {
-      if (this.adViewsToday.algorithmBreakthrough >= 5) return;
-      this.isAlgorithmBreakthroughActive = true;
-      this.adViewsToday.algorithmBreakthrough++;
-    },
-
-    activateNeuralBoost() {
-      if (this.adViewsToday.neuralBoost >= 5) return;
-      this.neuralBoostExpiry = Date.now() + 2 * 60 * 1000; // 2 minutes
-      this.adViewsToday.neuralBoost++;
-    },
-
-    applyCodeInjection() {
-      if (this.adViewsToday.codeInjection >= 5) return;
-      const offlineCps = this.cps; // Use current CPS as a baseline
-      const cpGain = offlineCps.times(3600); // 1 hour of production
-      this.currency = this.currency.plus(cpGain);
-      this.adViewsToday.codeInjection++;
-    },
-
-    simulateProgressAndPauseBoosts(durationInMs: number) {
-      if (durationInMs <= 0) return;
-
-      // 1. Store original expiries and temporarily disable boosts
-      const now = Date.now();
-      const tempExpiries = {
-        quantum: this.quantumComputingExpiry,
-        supply: this.supplyChainOptimizationExpiry,
-        neural: this.neuralBoostExpiry,
-      };
-
-      if (tempExpiries.quantum && tempExpiries.quantum > now) this.quantumComputingExpiry = null;
-      if (tempExpiries.supply && tempExpiries.supply > now) this.supplyChainOptimizationExpiry = null;
-      if (tempExpiries.neural && tempExpiries.neural > now) this.neuralBoostExpiry = null;
-
-      // 2. Simulate progress with boosts disabled (un-boosted CPS)
-      this.simulateProgress(durationInMs);
-
-      // 3. Restore expiries and add the duration to truly "pause" them
-      if (tempExpiries.quantum && tempExpiries.quantum > now) {
-        this.quantumComputingExpiry = tempExpiries.quantum + durationInMs;
-      }
-      if (tempExpiries.supply && tempExpiries.supply > now) {
-        this.supplyChainOptimizationExpiry = tempExpiries.supply + durationInMs;
-      }
-      if (tempExpiries.neural && tempExpiries.neural > now) {
-        this.neuralBoostExpiry = tempExpiries.neural + durationInMs;
-      }
-    },
-
-    activateAdBoost() {
-      // Set boost for 1 hour from now
-      this.adBoostExpiry = Date.now() + 60 * 60 * 1000;
-      // Set cooldown for 4 hours from now
-      this.adBoostCooldownExpiry = Date.now() + 4 * 60 * 60 * 1000;
     },
 
     // --- Narrative Actions ---
@@ -1303,37 +1084,6 @@ export const useGameStore = defineStore('game', {
         this.singularityPower = new Decimal(amount)
       } catch (e) {
         console.error('Invalid Decimal format for SP', e)
-      }
-    },
-    _dev_resetAdViews() {
-      this.adViewsToday = {
-        quantumComputing: 0,
-        supplyChainOptimization: 0,
-        algorithmBreakthrough: 0,
-        codeInjection: 0,
-        neuralBoost: 0,
-      };
-      console.log('Developer action: Ad views have been reset.');
-    },
-
-    adjustLastUpdateTime(durationInMs: number) {
-      if (durationInMs > 0) {
-        this.lastUpdateTime += durationInMs;
-      }
-    },
-
-    extendBoosts(durationInMs: number) {
-      if (durationInMs <= 0) return;
-      const now = Date.now();
-
-      if (this.quantumComputingExpiry && this.quantumComputingExpiry > now) {
-        this.quantumComputingExpiry += durationInMs;
-      }
-      if (this.supplyChainOptimizationExpiry && this.supplyChainOptimizationExpiry > now) {
-        this.supplyChainOptimizationExpiry += durationInMs;
-      }
-      if (this.neuralBoostExpiry && this.neuralBoostExpiry > now) {
-        this.neuralBoostExpiry += durationInMs;
       }
     },
   }

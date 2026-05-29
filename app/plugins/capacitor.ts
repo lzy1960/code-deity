@@ -16,7 +16,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     // as it doesn't reliably track Vue Router's history.
     // Instead, we rely solely on the router's current path.
 
-    const isAtRoot = router.current.value.path === '/'
+    const isAtRoot = router.currentRoute.value.path === '/'
 
     if (isAtRoot) {
       // If on the root page, show our custom confirmation modal.

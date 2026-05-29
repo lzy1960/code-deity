@@ -17,38 +17,19 @@
           <p class="mb-6 text-center font-bold text-yellow-400">
             {{ $t('singularity.irreversible') }}
           </p>
-          <div class="flex flex-col gap-3">
+          <div class="flex justify-between gap-3">
             <button
-              v-if="isNative"
-              @click="handleAdSingularity"
-              :disabled="isLoading"
-              class="w-full rounded-lg bg-yellow-500 text-black font-bold py-3 px-6 hover:bg-opacity-90 transition-all text-lg shadow-lg shadow-yellow-500/30 transform hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed group animate-shake"
+              class="flex-1 rounded-lg border border-gray-600 px-6 py-3 font-bold text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"
+              @click="modal.hide()"
             >
-              <template v-if="isLoading">
-                <Icon name="mdi:loading" class="animate-spin" />
-                <span>{{ $t('common.loading') }}</span>
-              </template>
-              <template v-else>
-                <Icon name="mdi:movie-play" class="transition-transform duration-200 group-hover:scale-110" />
-                <span>{{ $t('common.singularityJump') }}</span>
-              </template>
+              {{ $t('common.cancel') }}
             </button>
-            <div class="flex justify-between gap-3">
-              <button
-                class="flex-1 rounded-lg border border-gray-600 px-6 py-3 font-bold text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700 disabled:opacity-50"
-                @click="modal.hide()"
-                :disabled="isLoading"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-              <button
-                class="flex-1 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700 disabled:opacity-50"
-                @click="modal.confirm()"
-                :disabled="isLoading"
-              >
-                {{ $t('common.confirm') }}
-              </button>
-            </div>
+            <button
+              class="flex-1 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700"
+              @click="modal.confirm()"
+            >
+              {{ $t('common.confirm') }}
+            </button>
           </div>
         </div>
       </div>
@@ -57,33 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useSingularityModal } from '~/composables/useSingularityModal'
-import { useIsNative } from '~/utils/platform';
-import { showRewardVideoAd } from '~/services/admob';
-import { useToast } from '~/composables/useToast';
 
 const modal = useSingularityModal()
-const isNative = useIsNative();
-const toast = useToast();
-const { t } = useI18n();
-const isLoading = ref(false);
-
-const handleAdSingularity = async () => {
-  if (isLoading.value) return;
-
-  try {
-    isLoading.value = true;
-    await showRewardVideoAd('singularityBonus');
-    // The global watcher in app.vue will handle the reward and singularity logic.
-    modal.hide();
-  } catch (error) {
-    console.error('Error showing singularity reward ad:', error);
-    toast.addToast(t('toast.adLoadFailed'), 'error');
-  } finally {
-    isLoading.value = false;
-  }
-};
 </script>
 
 <style scoped>
@@ -107,7 +64,7 @@ const handleAdSingularity = async () => {
   height: 200%;
   background: conic-gradient(
     transparent,
-    rgba(192, 132, 252, 0.7), /* purple-300 */
+    rgba(192, 132, 252, 0.7),
     transparent 35%
   );
   transform: translate(-50%, -50%);
@@ -128,19 +85,5 @@ const handleAdSingularity = async () => {
     transform: translate(-50%, -50%) rotate(360deg) scale(1);
     opacity: 0.7;
   }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0) rotate(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px) rotate(-2deg); }
-  20%, 40%, 60%, 80% { transform: translateX(2px) rotate(2deg); }
-}
-
-.animate-shake {
-  animation: shake 1.5s infinite;
-}
-
-.group:hover .animate-shake {
-  animation-play-state: paused;
 }
 </style>
