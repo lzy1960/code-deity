@@ -72,7 +72,7 @@ export const generatorConfigs: GeneratorConfig[] = [
     baseCost: new Decimal(1e31),     // Rebalanced from 1e32
     costMultiplier: new Decimal(1.50),
     baseProduction: new Decimal(1),
-    globalMultiplierBonus: 0.001
+    globalMultiplierBonus: 0.003
   },
   {
     id: 8,
@@ -80,7 +80,7 @@ export const generatorConfigs: GeneratorConfig[] = [
     baseCost: new Decimal(1e42),     // Rebalanced from 1e44
     costMultiplier: new Decimal(1.55),
     baseProduction: new Decimal(1),
-    globalMultiplierBonus: 0.002
+    globalMultiplierBonus: 0.010
   }
 ]
 

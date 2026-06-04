@@ -2,6 +2,9 @@
   "common": {
     "manualCode": "手动编写代码",
     "clickSceneToCode": "点击上方场景来编写代码",
+    "skip": "跳过",
+    "clickToAccumulate": "↑ 点击终端积累算力",
+    "goalHint": "目标：10 CP → 购买第一个变量生成器",
     "manualOverclock": "手动超频",
     "cpsBonus": "+5% CPS",
     "refactor": "重构",
@@ -166,18 +169,8 @@
   "toast": {
     "refactorSuggestion": "代码结构已达瓶颈，建议进行重构",
     "architecturalOverload": "架构过载：AI核心数量过多导致效率衰减",
-    "adViewsUsedUp": "今日观看次数已用完",
-    "adLoadFailed": "广告加载失败，请稍后再试",
     "wipeDataConfirm": "您确定要清除所有数据吗？此操作无法撤销。",
     "dataWiped": "所有数据已清除。",
-    "quantumComputingActive": "量子计算已激活！CPS x5，持续10分钟",
-    "supplyChainOptimized": "供应链已优化！成本降低25%，持续15分钟",
-    "algorithmBreakthroughActive": "算法突破已激活！下次购买生成器成本降低90%",
-    "codeInjectionSuccess": "代码注入成功！获得1小时算力",
-    "neuralBoostActive": "神经超频已激活！手动点击效果提升10倍",
-    "hyperthreadingActive": "超线程已启动！离线收益翻倍",
-    "superCompileComplete": "超级编译完成！本次重构收益翻倍",
-    "singularityJumpComplete": "奇点跃迁完成！本次SP收益翻倍",
     "autoSaveSuccess": "自动保存成功"
   },
   "generatorItem": {
@@ -289,5 +282,23 @@
     "exclusiveChoiceWarning": "互斥选择警告",
     "schoolLimitInfo": "您最多只能选择两个主要学派（效率、抽象、敏捷）进行发展。",
     "exclusiveChoiceInfo": "此技能与【{conflictingParadigmName}】技能互斥。解锁此技能后，另一分支将无法选择。"
+  },
+  "onboarding": {
+    "step1Title": "编写代码",
+    "step1Desc": "点击高亮区域来编写代码，积攒算力 (CP)！",
+    "step2Title": "购买生成器",
+    "step2Desc": "当你有足够的算力时，点击这里购买你的第一个生成器，让它为你自动产出算力！",
+    "step3Title": "准备就绪！",
+    "step3Desc": "你已经掌握了基础操作，尽情享受游戏吧！更多高级功能将随着你的进度逐步解锁。",
+    "next": "下一步",
+    "finish": "开始游戏",
+    "skip": "跳过引导",
+    "clickRemaining": "还需点击 {count} 次",
+    "codeRushStep1Title": "超频就绪！",
+    "codeRushStep1Desc": "点击此按钮激活超频，获得短时间内的产出加成！",
+    "codeRushStep2Title": "疯狂点击！",
+    "codeRushStep2Desc": "超频期间，快速点击屏幕来获得更多算力！",
+    "resetTour": "重新引导",
+    "resetTourHint": "重新展示新手引导教程。"
   }
 }

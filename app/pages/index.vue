@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useGameStore } from '~/store/game';
 import { prestigeThresholds } from '~~/game/configs';
 import AppHeader from '~/components/layout/AppHeader.vue';
@@ -13,14 +13,178 @@ import StatsSection from '~/components/game/StatsSection.vue';
 import SingularitySection from '~/components/game/SingularitySection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 import CodeScene from '~/components/game/CodeScene.vue';
+import CodeRushButton from '~/components/game/CodeRushButton.vue';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useSingularityModal } from '~/composables/useSingularityModal';
 import { useToast } from '~/composables/useToast';
+import { useOnboarding } from '~/composables/useOnboarding';
+import { useSpotlight } from '~/composables/useSpotlight';
 import { formatNumber } from '~/utils/format';
 
 const gameStore = useGameStore();
 const singularityModal = useSingularityModal();
 const toast = useToast();
+const { shouldShowTour, shouldShowCodeRushTour, completeTour, completeCodeRushTour } = useOnboarding();
+const { spotlightRect, update: updateSpotlightRect, clear: clearSpotlight, forwardClickIfInsideSpotlight } = useSpotlight();
+
+const isTourActive = ref(false);
+const tourClickCount = ref(0);
+const TOUR_CLICK_TARGET = 10;
+const tourStep = ref(0);
+
+const tourStepConfigs = computed(() => [
+  { selector: '[data-onboarding="code-area"]', title: $t('onboarding.step1Title'), description: $t('onboarding.step1Desc') },
+  { selector: '[data-onboarding="generator-buy"]', title: $t('onboarding.step2Title'), description: $t('onboarding.step2Desc') },
+  { selector: '[data-onboarding="code-area"]', title: $t('onboarding.step3Title'), description: $t('onboarding.step3Desc') },
+]);
+
+const currentTourStep = computed(() => tourStepConfigs.value[tourStep.value]);
+const tourClickRemaining = computed(() => TOUR_CLICK_TARGET - tourClickCount.value);
+
+function updateSpotlight() {
+  updateSpotlightRect(currentTourStep.value?.selector, isTourActive.value);
+}
+
+const tooltipPosition = computed(() => {
+  if (!spotlightRect.value) return { display: 'none' } as Record<string, string>;
+  const rect = spotlightRect.value;
+  const tooltipWidth = 272;
+  const tooltipHeight = 120;
+  let top = rect.top + rect.height + 24;
+  let left = rect.left + (rect.width - tooltipWidth) / 2;
+  left = Math.max(16, Math.min(left, window.innerWidth - tooltipWidth - 16));
+  if (top + tooltipHeight > window.innerHeight) {
+    top = rect.top - tooltipHeight - 16;
+  }
+  // If still off-screen (spotlight too tall), place inside the spotlight area
+  if (top < 0) {
+    top = Math.min(rect.top + 24, window.innerHeight - tooltipHeight - 16);
+  }
+  return { top: `${top}px`, left: `${left}px` };
+});
+
+function goToTourStep(step: number) {
+  tourStep.value = step;
+  nextTick(updateSpotlight);
+}
+
+function handleOverlayClick(e: MouseEvent) {
+  if (tourStep.value === 0) {
+    forwardClickIfInsideSpotlight(e, '[data-onboarding="code-area"]');
+  } else if (tourStep.value === 1) {
+    forwardClickIfInsideSpotlight(e, '[data-onboarding="generator-buy"]');
+  } else if (tourStep.value === 2) {
+    handleTourEnd();
+  }
+}
+
+const handleTourEnd = () => {
+  isTourActive.value = false;
+  clearSpotlight();
+  completeTour();
+};
+
+// ── Code Rush Tour ──────────────────────────────
+const isCodeRushTourActive = ref(false);
+const codeRushTourStep = ref(0); // 0: activate, 1: click frantically
+
+const codeRushTourStepConfigs = computed(() => [
+  { selector: '[data-onboarding="code-rush"]', title: $t('onboarding.codeRushStep1Title'), description: $t('onboarding.codeRushStep1Desc') },
+  { selector: '[data-onboarding="code-area"]', title: $t('onboarding.codeRushStep2Title'), description: $t('onboarding.codeRushStep2Desc') },
+]);
+
+const currentCodeRushTourStep = computed(() => codeRushTourStepConfigs.value[codeRushTourStep.value]);
+
+function updateCodeRushSpotlight() {
+  updateSpotlightRect(currentCodeRushTourStep.value?.selector, isCodeRushTourActive.value);
+}
+
+function handleCodeRushOverlayClick(e: MouseEvent) {
+  if (codeRushTourStep.value === 0) {
+    forwardClickIfInsideSpotlight(e, '[data-onboarding="code-rush"] button');
+  } else if (codeRushTourStep.value === 1) {
+    forwardClickIfInsideSpotlight(e, '[data-onboarding="code-area"]');
+  }
+}
+
+function startCodeRushTour() {
+  if (isTourActive.value || isCodeRushTourActive.value) return;
+  isCodeRushTourActive.value = true;
+  codeRushTourStep.value = 0;
+  nextTick(updateCodeRushSpotlight);
+}
+
+function endCodeRushTour() {
+  isCodeRushTourActive.value = false;
+  clearSpotlight();
+  completeCodeRushTour();
+}
+
+watch(() => gameStore.isCodeRushReady, (ready) => {
+  if (ready && shouldShowCodeRushTour.value && !isTourActive.value) {
+    startCodeRushTour();
+  }
+});
+
+watch(() => gameStore.isCodeRushActive, (active, wasActive) => {
+  if (!isCodeRushTourActive.value) return;
+  if (active && codeRushTourStep.value === 0) {
+    codeRushTourStep.value = 1;
+    nextTick(updateCodeRushSpotlight);
+  } else if (!active && wasActive && codeRushTourStep.value === 1) {
+    endCodeRushTour();
+  }
+});
+
+onMounted(async () => {
+  window.addEventListener('resize', updateSpotlight);
+
+  if (shouldShowTour.value) {
+    // Wait for intro animation (GenesisEvent) to appear and then finish
+    await new Promise<void>(resolve => {
+      let appeared = !!document.querySelector('[data-genesis-event]');
+      if (appeared) {
+        // Already present, just wait for removal
+        const observer = new MutationObserver(() => {
+          if (!document.querySelector('[data-genesis-event]')) {
+            observer.disconnect();
+            resolve();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        return;
+      }
+      // Not yet present — wait for it to appear then disappear
+      const observer = new MutationObserver(() => {
+        if (!appeared && document.querySelector('[data-genesis-event]')) {
+          appeared = true;
+        } else if (appeared && !document.querySelector('[data-genesis-event]')) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      // If no genesis event appears within 500ms, proceed without waiting
+      setTimeout(() => {
+        if (!appeared) {
+          observer.disconnect();
+          resolve();
+        }
+      }, 500);
+    });
+
+    // Show spotlight
+    isTourActive.value = true;
+    tourClickCount.value = 0;
+    tourStep.value = 0;
+    await nextTick();
+    updateSpotlight();
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSpotlight);
+});
 
 const activeTab = ref('generators');
 const upgradesSubTab = ref('refactor');
@@ -52,6 +216,13 @@ const handleManualClick = (event?: MouseEvent) => {
   setTimeout(() => {
     floatingNumbers.value = floatingNumbers.value.filter(n => n.id !== newId);
   }, 1500);
+
+  if (isTourActive.value && tourStep.value === 0 && tourClickCount.value < TOUR_CLICK_TARGET) {
+    tourClickCount.value++;
+    if (tourClickCount.value >= TOUR_CLICK_TARGET) {
+      goToTourStep(1);
+    }
+  }
 };
 
 const handleSingularityReset = () => {
@@ -114,6 +285,12 @@ const handleDesktopNavClick = (item: { id: string; unlocked: boolean }) => {
   }
 };
 
+watch(() => gameStore.generators[0]?.bought, (bought) => {
+  if (isTourActive.value && tourStep.value === 1 && bought && bought > 0) {
+    goToTourStep(2);
+  }
+});
+
 watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   if (isUnlocked && !hasShownRefactorMessage.value) {
     toast.addToast($t('toast.refactorSuggestion'), 'warning', 5000);
@@ -122,7 +299,7 @@ watch(() => gameStore.isRefactorUnlocked, (isUnlocked) => {
   }
 });
 
-watch(() => gameStore.generators.find(g => g.id === 8)!.bought, (aiCores) => {
+watch(() => gameStore.generators[7]!.bought, (aiCores) => {
   if (aiCores > prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES && !hasShownOverloadMessage.value) {
     toast.addToast($t('toast.architecturalOverload'), 'error', 8000);
     hasShownOverloadMessage.value = true;
@@ -151,22 +328,6 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
     Haptics.impact({ style: ImpactStyle.Medium });
   }
 });
-
-const codeRushButtonText = computed(() => {
-  if (gameStore.isCodeRushActive) {
-    return `${$t('common.codeRushActive')} (${$t('common.codeRushActiveMultiplier')})`;
-  } else if (gameStore.isCodeRushReady) {
-    return $t('common.activateCodeRush');
-  } else {
-    return `${$t('common.manualOverclock')} (${$t('common.manualOverclockCpsPercentage')})`;
-  }
-});
-
-const codeRushFillWidth = computed(() => `${gameStore.codeRushProgress}%`);
-
-const isCodeRushChargedAndReady = computed(() =>
-  gameStore.codeRushProgress >= 100 && !gameStore.isCodeRushActive
-);
 </script>
 
 <template>
@@ -174,6 +335,73 @@ const isCodeRushChargedAndReady = computed(() =>
     class="flex h-dvh flex-col bg-[#101a23] text-white"
     style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'
   >
+    <!-- ── Onboarding Overlay ─────────────────────────── -->
+    <div v-if="isTourActive" class="fixed inset-0 z-[9999]">
+      <!-- Full-screen click blocker (always present during tour) -->
+      <div class="absolute inset-0 z-0" @click.stop.prevent="handleOverlayClick" />
+
+      <!-- Spotlight + tooltip (fade in when ready) -->
+      <Transition name="onboarding-fade">
+        <div v-if="spotlightRect" class="absolute inset-0 pointer-events-none">
+          <!-- Spotlight cutout (dark overlay via box-shadow) -->
+          <div
+            class="absolute rounded-lg transition-all duration-300 ease-out"
+            :style="{
+              top: `${spotlightRect.top - 8}px`,
+              left: `${spotlightRect.left - 8}px`,
+              width: `${spotlightRect.width + 16}px`,
+              height: `${spotlightRect.height + 16}px`,
+              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.75)',
+            }"
+          />
+
+          <!-- Tooltip -->
+          <div class="absolute onboarding-tooltip pointer-events-auto" style="z-index: 1" :style="tooltipPosition">
+            <h3 class="text-sm font-bold text-white mb-2">{{ currentTourStep?.title }}</h3>
+            <p class="text-xs text-gray-300 leading-relaxed mb-3">{{ currentTourStep?.description }}</p>
+
+            <div class="flex items-center justify-between">
+              <div class="flex gap-1">
+                <span v-for="i in 3" :key="i" class="w-1.5 h-1.5 rounded-full" :class="i - 1 === tourStep ? 'bg-[#3899fa]' : 'bg-gray-600'" />
+              </div>
+              <span v-if="tourStep === 0" class="text-xs text-[#3899fa] font-mono font-bold">
+                {{ $t('onboarding.clickRemaining', { count: tourClickRemaining }) }}
+              </span>
+              <button v-if="tourStep === 2" @click.stop="handleTourEnd" class="px-3 py-1 bg-[#3899fa] text-white text-xs font-bold rounded hover:bg-[#2a7ada] transition-colors">
+                {{ $t('onboarding.finish') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- ── Code Rush Tour Overlay ─────────────────────── -->
+    <div v-if="isCodeRushTourActive" class="fixed inset-0 z-[9999]" :class="{ 'pointer-events-none': codeRushTourStep === 1 }">
+      <div v-if="codeRushTourStep === 0" class="absolute inset-0 z-0" @click.stop.prevent="handleCodeRushOverlayClick" />
+
+      <Transition name="onboarding-fade">
+        <div v-if="spotlightRect" class="absolute inset-0 pointer-events-none">
+          <div
+            v-if="codeRushTourStep === 0"
+            class="absolute rounded-lg transition-all duration-300 ease-out"
+            :style="{
+              top: `${spotlightRect.top - 8}px`,
+              left: `${spotlightRect.left - 8}px`,
+              width: `${spotlightRect.width + 16}px`,
+              height: `${spotlightRect.height + 16}px`,
+              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.75)',
+            }"
+          />
+
+          <div class="absolute onboarding-tooltip pointer-events-none" style="z-index: 1" :style="tooltipPosition">
+            <h3 class="text-sm font-bold text-white mb-2">{{ currentCodeRushTourStep?.title }}</h3>
+            <p class="text-xs text-gray-300 leading-relaxed">{{ currentCodeRushTourStep?.description }}</p>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
     <!-- ── Header ─────────────────────────────────────── -->
     <div class="relative shrink-0 sticky top-0 z-30">
       <AppHeader
@@ -205,15 +433,18 @@ const isCodeRushChargedAndReady = computed(() =>
         @manual-click="handleManualClick"
       />
 
-      <!-- Pre-unlock hint text (before generators) -->
-      <div
-        v-if="!isGeneratorSectionUnlocked"
-        class="absolute bottom-8 inset-x-0 text-center pointer-events-none z-10"
-      >
-        <p class="text-gray-500 text-xs">
-          {{ $t('common.manualCode') }} — {{ $t('common.clickSceneToCode') }}
-        </p>
-      </div>
+      <!-- Click guidance hint, pinned to top of terminal area -->
+      <Transition name="fade">
+        <div
+          v-if="gameStore.generators[0]!.bought === 0 && !isTourActive"
+          class="absolute inset-x-0 top-4 z-[25] flex justify-center pointer-events-none"
+        >
+          <div class="flex flex-col items-center gap-0.5 bg-black/60 px-3 py-1.5 rounded-md backdrop-blur-sm border border-green-900/40">
+            <p class="text-green-400 text-[10px] animate-pulse font-mono">{{ $t('common.clickToAccumulate') }}</p>
+            <p class="text-gray-500 text-[9px]">{{ $t('common.goalHint') }}</p>
+          </div>
+        </div>
+      </Transition>
 
       <!-- ── Bottom Sheet (once generators are unlocked) ── -->
       <div
@@ -227,34 +458,7 @@ const isCodeRushChargedAndReady = computed(() =>
 
         <!-- Code Rush + 倍率选择器（合并为一行，generators tab only） -->
         <div v-if="activeTab === 'generators'" class="px-3 pb-1.5 shrink-0 flex items-center gap-2">
-          <div
-            class="code-rush-animated-border-wrapper relative rounded-lg overflow-hidden flex-1"
-            :class="{ 'code-rush-active-shadow': gameStore.isCodeRushActive }"
-          >
-            <button
-              @click.prevent="gameStore.isCodeRushReady ? gameStore.activateCodeRush() : handleManualClick()"
-              class="code-rush-button relative w-full px-3 py-1.5 text-white font-bold rounded-lg overflow-hidden"
-              :class="{ 'code-rush-charged-ready': isCodeRushChargedAndReady }"
-            >
-              <div
-                v-if="!gameStore.isCodeRushActive"
-                class="code-rush-fill absolute inset-0 transition-all duration-500 ease-out"
-                :class="isCodeRushChargedAndReady ? 'bg-gradient-to-r from-purple-600 to-purple-500' : 'bg-gradient-to-r from-purple-600 to-blue-500'"
-                :style="{ width: codeRushFillWidth }"
-              />
-              <div
-                v-else
-                class="code-rush-fill code-rush-active-zebra absolute inset-0"
-                :style="{ width: codeRushFillWidth }"
-              />
-              <div class="relative z-10 flex items-center justify-center gap-1.5 text-xs">
-                <Icon name="mdi:flash" class="text-xs" />
-                <Transition name="fade" mode="out-in">
-                  <span :key="codeRushButtonText">{{ codeRushButtonText }}</span>
-                </Transition>
-              </div>
-            </button>
-          </div>
+          <CodeRushButton size="sm" @manual-click="handleManualClick" />
           <BuyMultiplierSelector v-if="gameStore.isMultiplierUnlocked" />
         </div>
 
@@ -363,7 +567,7 @@ const isCodeRushChargedAndReady = computed(() =>
     <div class="hidden lg:flex flex-1 overflow-hidden min-h-0">
 
       <!-- ── Left: CodeScene panel (full height) ─────── -->
-      <div class="relative shrink-0 w-[360px] xl:w-[420px] p-3 flex flex-col">
+      <div class="relative shrink-0 w-[360px] xl:w-[420px] p-3 flex flex-col" data-onboarding="code-area">
         <!-- Floating click numbers -->
         <div class="floating-numbers-container pointer-events-none">
           <span
@@ -378,9 +582,10 @@ const isCodeRushChargedAndReady = computed(() =>
           class="rounded-xl overflow-hidden flex-1"
           @manual-click="handleManualClick"
         />
-        <p v-if="!isGeneratorSectionUnlocked" class="text-center text-gray-500 text-xs mt-2">
-          {{ $t('common.manualCode') }} — {{ $t('common.clickSceneToCode') }}
-        </p>
+        <div v-if="gameStore.generators[0]!.bought === 0 && !isTourActive" class="text-center mt-2">
+          <p class="text-green-500/70 text-xs animate-pulse">{{ $t('common.clickToAccumulate') }}</p>
+          <p class="text-gray-600 text-xs mt-1">{{ $t('common.goalHint') }}</p>
+        </div>
       </div>
 
       <!-- ── Right: tab nav + scrollable content ──────── -->
@@ -388,8 +593,9 @@ const isCodeRushChargedAndReady = computed(() =>
 
         <!-- Horizontal tab navigation bar -->
         <nav class="shrink-0 flex items-end gap-0.5 px-4 pt-3 bg-[#0a1520] border-b border-gray-800/60 overflow-x-auto">
+          <TransitionGroup name="tab-appear" tag="div" class="flex items-end gap-0.5">
           <a
-            v-for="item in desktopNavItems"
+            v-for="item in desktopNavItems.filter(t => t.unlocked)"
             :key="item.id"
             @click="handleDesktopNavClick(item)"
             class="relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-sm font-medium whitespace-nowrap shrink-0 transition-colors"
@@ -405,6 +611,7 @@ const isCodeRushChargedAndReady = computed(() =>
             <span>{{ item.label }}</span>
             <Icon v-if="!item.unlocked" name="mdi:lock-outline" class="text-xs opacity-60" />
           </a>
+          </TransitionGroup>
         </nav>
 
         <!-- Scrollable content -->
@@ -413,33 +620,15 @@ const isCodeRushChargedAndReady = computed(() =>
 
             <!-- Code Rush + multiplier row (generators tab) -->
             <div v-if="activeTab === 'generators' && isGeneratorSectionUnlocked" class="flex items-center gap-2">
-              <div
-                class="code-rush-animated-border-wrapper relative rounded-lg overflow-hidden flex-1"
-                :class="{ 'code-rush-active-shadow': gameStore.isCodeRushActive }"
-              >
-                <button
-                  @click.prevent="gameStore.isCodeRushReady ? gameStore.activateCodeRush() : handleManualClick()"
-                  class="code-rush-button relative w-full px-4 py-2 text-white font-bold rounded-lg overflow-hidden"
-                  :class="{ 'code-rush-charged-ready': isCodeRushChargedAndReady }"
-                >
-                  <div v-if="!gameStore.isCodeRushActive"
-                    class="code-rush-fill absolute inset-0 transition-all duration-500 ease-out"
-                    :class="isCodeRushChargedAndReady ? 'bg-gradient-to-r from-purple-600 to-purple-500' : 'bg-gradient-to-r from-purple-600 to-blue-500'"
-                    :style="{ width: codeRushFillWidth }"
-                  />
-                  <div v-else class="code-rush-fill code-rush-active-zebra absolute inset-0" :style="{ width: codeRushFillWidth }" />
-                  <div class="relative z-10 flex items-center justify-center gap-2 text-xs">
-                    <Icon name="mdi:flash" class="text-sm" />
-                    <Transition name="fade" mode="out-in">
-                      <span :key="codeRushButtonText">{{ codeRushButtonText }}</span>
-                    </Transition>
-                  </div>
-                </button>
-              </div>
+              <CodeRushButton size="md" @manual-click="handleManualClick" />
               <BuyMultiplierSelector v-if="gameStore.isMultiplierUnlocked" />
             </div>
 
             <div v-if="activeTab === 'generators'" class="space-y-3">
+              <div v-if="gameStore.generators[0]!.bought === 0 && !isTourActive" class="text-center py-2 pointer-events-none">
+                <p class="text-green-500/70 text-xs animate-pulse">{{ $t('common.clickToAccumulate') }}</p>
+                <p class="text-gray-600 text-xs mt-1">{{ $t('common.goalHint') }}</p>
+              </div>
               <GeneratorItem
                 v-for="generator in unlockedGenerators"
                 :key="generator.id"
@@ -478,6 +667,9 @@ const isCodeRushChargedAndReady = computed(() =>
 </template>
 
 <style scoped>
+.tab-appear-enter-active { transition: all 0.3s ease; }
+.tab-appear-enter-from   { opacity: 0; transform: translateY(8px); }
+
 /* ── Floating click numbers ─────────────────────────── */
 .floating-numbers-container {
   position: absolute;
@@ -511,51 +703,21 @@ const isCodeRushChargedAndReady = computed(() =>
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ── Code Rush button ───────────────────────────────── */
-.code-rush-button {
-  background-color: #1e2a38;
-  position: relative;
-  overflow: hidden;
-}
-
-.code-rush-fill {
-  transition: width 0.5s ease-out;
-}
-
-.code-rush-active-zebra {
-  background-image: linear-gradient(
-    -45deg,
-    rgba(139, 92, 246, 0.8) 25%,
-    rgba(59, 130, 246, 0.8) 25.1%,
-    rgba(59, 130, 246, 0.8) 50%,
-    rgba(139, 92, 246, 0.8) 50.1%,
-    rgba(139, 92, 246, 0.8) 75%,
-    rgba(59, 130, 246, 0.8) 75.1%
-  );
-  background-size: 80px 80px;
-  animation: zebra-stripe-move 0.5s linear infinite;
-}
-
-@keyframes zebra-stripe-move {
-  0%   { background-position: 0 0; }
-  100% { background-position: 80px 0; }
-}
-
-.code-rush-animated-border-wrapper {
-  position: relative;
-  border-radius: 0.5rem;
-}
-
-.code-rush-active-shadow {
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5);
-  animation: pulseShadow 1s infinite alternate;
-}
-
-@keyframes pulseShadow {
-  0%   { box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5); }
-  100% { box-shadow: 0 0 12px rgba(139, 92, 246, 0.9), 0 0 25px rgba(139, 92, 246, 0.7); }
-}
+/* ── Code Rush button styles moved to CodeRushButton.vue ── */
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ── Onboarding tooltip ───────────────────────────── */
+.onboarding-tooltip {
+  background: #182635;
+  border: 1px solid #2a4a66;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  width: 17rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.onboarding-fade-enter-active { transition: opacity 0.4s ease; }
+.onboarding-fade-enter-from { opacity: 0; }
 </style>

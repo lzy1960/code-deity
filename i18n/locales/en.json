@@ -2,6 +2,9 @@
   "common": {
     "manualCode": "Manual Code",
     "clickSceneToCode": "click the scene above to write code",
+    "skip": "Skip",
+    "clickToAccumulate": "↑ Click terminal to generate CP",
+    "goalHint": "Goal: 10 CP → Buy your first Variable",
     "manualOverclock": "Manual Overclock",
     "cpsBonus": "+5% CPS",
     "refactor": "Refactor",
@@ -67,15 +70,6 @@
     "unlockRefactorHint": "Unlock by purchasing 10 AI Cores.",
     "unlockAutomationHint": "Unlock by performing your first Compile & Release.",
     "unlockChallengesHint": "Unlock after your 2nd Compile & Release.",
-    "loggedInAs": "Logged in as:",
-    "logOut": "Log Out",
-    "logInWithGoogle": "Log in with Google Account",
-    "cloudSync": "Cloud Sync",
-    "lastSync": "Last Sync:",
-    "never": "Never",
-    "syncNow": "Sync Now",
-    "exportSave": "Export Save",
-    "importSave": "Import Save",
     "language": "Language",
     "current": "Current:",
     "switch": "Switch",
@@ -174,18 +168,8 @@
   "toast": {
     "refactorSuggestion": "Code structure has reached a bottleneck, consider refactoring",
     "architecturalOverload": "Architectural Overload: Too many AI Cores lead to efficiency decay",
-    "adViewsUsedUp": "Daily views used up",
-    "adLoadFailed": "Ad failed to load, please try again later",
     "wipeDataConfirm": "Are you absolutely sure you want to wipe all data? This action cannot be undone.",
     "dataWiped": "All data has been wiped.",
-    "quantumComputingActive": "Quantum Computing Activated! CPS x5 for 10 minutes",
-    "supplyChainOptimized": "Supply Chain Optimized! Cost reduced by 25% for 15 minutes",
-    "algorithmBreakthroughActive": "Algorithm Breakthrough Activated! Next generator purchase cost reduced by 90%",
-    "codeInjectionSuccess": "Code Injection Successful! Gained 1 hour of CP",
-    "neuralBoostActive": "Neural Boost Activated! Manual click effect increased by 10x for 2 minutes",
-    "hyperthreadingActive": "Hyperthreading Activated! Offline gains doubled",
-    "superCompileComplete": "Super Compile Complete! This refactor gain doubled",
-    "singularityJumpComplete": "Singularity Jump Complete! This SP gain doubled",
     "autoSaveSuccess": "Auto-save successful"
   },
   "generatorItem": {
@@ -297,5 +281,23 @@
     "exclusiveChoiceWarning": "Exclusive Choice Warning",
     "schoolLimitInfo": "You can only choose a maximum of two main schools (Efficiency, Abstraction, Agility) to develop.",
     "exclusiveChoiceInfo": "This skill is mutually exclusive with the [{conflictingParadigmName}] skill. After unlocking this skill, the other branch cannot be selected."
+  },
+  "onboarding": {
+    "step1Title": "Write Code",
+    "step1Desc": "Click the highlighted area to write code and earn Computing Power (CP)!",
+    "step2Title": "Buy Generator",
+    "step2Desc": "When you have enough CP, click here to buy your first generator. It will automatically produce CP for you!",
+    "step3Title": "All Set!",
+    "step3Desc": "You've got the basics down. Enjoy the game! More advanced features will unlock as you progress.",
+    "next": "Next",
+    "finish": "Start Game",
+    "skip": "Skip Tour",
+    "clickRemaining": "{count} clicks remaining",
+    "codeRushStep1Title": "Code Rush Ready!",
+    "codeRushStep1Desc": "Click this button to activate Code Rush and get a temporary production boost!",
+    "codeRushStep2Title": "Click Frantically!",
+    "codeRushStep2Desc": "During Code Rush, tap the screen as fast as you can to earn more CP!",
+    "resetTour": "Restart Tour",
+    "resetTourHint": "Show the onboarding tutorial again."
   }
 }

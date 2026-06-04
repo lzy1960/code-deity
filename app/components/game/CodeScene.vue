@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootEl" class="code-scene flex flex-col select-none" :class="sceneClass">
+  <div class="code-scene flex flex-col select-none" :class="sceneClass">
 
     <!-- ── 顶部标题栏 ── -->
     <div class="scene-header flex items-center justify-between px-3 py-1 shrink-0">
@@ -11,12 +11,12 @@
       </div>
       <div class="flex items-center gap-2">
         <span v-if="gameStore.isCodeRushActive" class="rush-badge">⚡ RUSH ×100</span>
-        <span v-if="gameStore.activeChallenge !== null" class="challenge-badge">⚠ CHALLENGE</span>
+        <span v-if="gameStore.activeChallenge !== 'none'" class="challenge-badge">⚠ CHALLENGE</span>
       </div>
     </div>
 
     <!-- ── 数据条 ── -->
-    <div class="data-bar flex items-center justify-between px-3 py-1 shrink-0">
+    <div class="data-bar flex items-center justify-between px-3 py-1 shrink-0" data-onboarding="data-bar">
       <div class="flex items-baseline gap-3 flex-1 min-w-0">
         <!-- CP -->
         <span class="data-cp">
@@ -46,6 +46,7 @@
     <div
       ref="codeAreaEl"
       class="relative flex-1 overflow-hidden cursor-crosshair"
+      data-onboarding="code-area"
       @click="handleClick"
     >
       <!-- 背景扫描线 -->
@@ -55,7 +56,7 @@
       <div class="top-fade absolute left-0 right-0 top-0 pointer-events-none" />
 
       <!-- 代码行 -->
-      <div ref="linesEl" class="lines-scroll absolute inset-0 overflow-y-auto px-2 py-1">
+      <div class="lines-scroll absolute inset-0 overflow-hidden px-2 py-1 flex flex-col justify-end">
         <div
           v-for="line in visibleLines"
           :key="line.id"
@@ -93,10 +94,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useGameStore } from '~/store/game'
 import { formatNumber } from '~/utils/format'
-import { gsap } from 'gsap'
 
 const emit = defineEmits<{ manualClick: [e: MouseEvent] }>()
 const gameStore = useGameStore()
@@ -165,9 +165,7 @@ const POOL: { html: string; gen: number }[] = [
 const CODE_CHARS = ['{}', '<>', '=>', '//', '[ ]', '()', '/*', '*/', '01', ';;']
 
 // ── Refs ──────────────────────────────────────────────────────────────────
-const rootEl = ref<HTMLElement>()
 const codeAreaEl = ref<HTMLElement>()
-const linesEl = ref<HTMLElement>()
 const particlesEl = ref<HTMLElement>()
 
 interface Line { id: number; lineNum: number; html: string; isCursor: boolean }
@@ -175,7 +173,8 @@ interface Line { id: number; lineNum: number; html: string; isCursor: boolean }
 const visibleLines = ref<Line[]>([])
 const displayLineNum = ref(1000)
 let nextLineId = 0
-const MAX_VISIBLE = 12
+const LINE_HEIGHT = 24 // ~1.5em at 0.72rem ≈ 24px per line
+let maxVisible = 12
 
 // cursor blink
 const cursorVisible = ref(true)
@@ -195,7 +194,7 @@ const maxGenOwned = computed(() =>
 )
 
 const availablePool = computed(() => {
-  const isChallenge = gameStore.activeChallenge !== null
+  const isChallenge = gameStore.activeChallenge !== 'none'
   return POOL.filter(l => {
     if (l.gen === -1) return isChallenge
     return l.gen <= maxGenOwned.value
@@ -212,12 +211,12 @@ const linesPerSec = computed(() => {
 
 const sceneClass = computed(() => ({
   'rush-mode': gameStore.isCodeRushActive,
-  'challenge-mode': gameStore.activeChallenge !== null,
+  'challenge-mode': gameStore.activeChallenge !== 'none',
 }))
 
 const statusLabel = computed(() => {
   if (gameStore.isCodeRushActive) return 'OVERCLOCKING'
-  if (gameStore.activeChallenge !== null) return 'CONSTRAINED'
+  if (gameStore.activeChallenge !== 'none') return 'CONSTRAINED'
   const cps = gameStore.cps.toNumber()
   if (cps <= 0) return 'IDLE'
   if (cps < 1e6) return 'COMPILING'
@@ -231,9 +230,14 @@ function randomLine(): string {
   return pool[Math.floor(Math.random() * pool.length)]?.html ?? POOL[0]!.html
 }
 
+function calcMaxVisible() {
+  if (!codeAreaEl.value) return
+  const h = codeAreaEl.value.clientHeight
+  maxVisible = Math.max(8, Math.floor(h / LINE_HEIGHT))
+}
+
 function addLine(html?: string) {
   displayLineNum.value++
-  // Remove cursor from previous last line
   if (visibleLines.value.length > 0) {
     visibleLines.value[visibleLines.value.length - 1]!.isCursor = false
   }
@@ -243,14 +247,9 @@ function addLine(html?: string) {
     html: html ?? randomLine(),
     isCursor: true,
   })
-  if (visibleLines.value.length > MAX_VISIBLE) {
+  if (visibleLines.value.length > maxVisible) {
     visibleLines.value.shift()
   }
-  nextTick(() => {
-    if (linesEl.value) {
-      linesEl.value.scrollTop = linesEl.value.scrollHeight
-    }
-  })
 }
 
 // ── Line generation timer ─────────────────────────────────────────────────
@@ -292,37 +291,30 @@ function handleClick(event: MouseEvent) {
 function spawnParticles(x: number, y: number) {
   if (!particlesEl.value) return
   const count = gameStore.isCodeRushActive ? 14 : 9
+  const color = gameStore.isCodeRushActive ? '#fbbf24' : '#4ade80'
+  const shadow = `${color}99`
   for (let i = 0; i < count; i++) {
     const el = document.createElement('span')
     el.textContent = CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)] ?? '{}'
     const sx = x + (Math.random() - 0.5) * 16
     const sy = y + (Math.random() - 0.5) * 10
-    const color = gameStore.isCodeRushActive ? '#fbbf24' : '#4ade80'
-    Object.assign(el.style, {
-      position: 'absolute',
-      left: `${sx}px`,
-      top: `${sy}px`,
-      color,
-      fontFamily: 'monospace',
-      fontSize: `${9 + Math.random() * 7}px`,
-      pointerEvents: 'none',
-      zIndex: '50',
-      textShadow: `0 0 6px ${color}99`,
-      transform: 'translate(-50%, -50%)',
-      whiteSpace: 'nowrap',
-    })
-    particlesEl.value.appendChild(el)
     const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.7
     const dist = 45 + Math.random() * 65
-    gsap.to(el, {
-      x: Math.cos(angle) * dist,
-      y: Math.sin(angle) * dist - 35,
-      opacity: 0,
-      scale: 0.4,
-      duration: 0.65 + Math.random() * 0.45,
-      ease: 'power2.out',
-      onComplete: () => el.remove(),
-    })
+    const dx = Math.cos(angle) * dist
+    const dy = Math.sin(angle) * dist - 35
+    const duration = 0.65 + Math.random() * 0.45
+    el.className = 'click-particle'
+    el.style.left = `${sx}px`
+    el.style.top = `${sy}px`
+    el.style.color = color
+    el.style.fontSize = `${9 + Math.random() * 7}px`
+    el.style.textShadow = `0 0 6px ${shadow}`
+    el.style.setProperty('--px', `${dx}px`)
+    el.style.setProperty('--py', `${dy}px`)
+    el.style.animation = `particle-fly ${duration}s cubic-bezier(0.22, 1, 0.36, 1) forwards`
+    particlesEl.value.appendChild(el)
+    const node = el
+    setTimeout(() => node.remove(), duration * 1000 + 50)
   }
 }
 
@@ -339,15 +331,17 @@ function spawnRipple(x: number, y: number) {
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
 onMounted(() => {
-  // Seed visible area with initial lines
-  for (let i = 0; i < 8; i++) addLine()
+  calcMaxVisible()
+  for (let i = 0; i < maxVisible; i++) addLine()
   startTimer()
   cursorTimer = setInterval(() => { cursorVisible.value = !cursorVisible.value }, 530)
+  window.addEventListener('resize', calcMaxVisible)
 })
 
 onUnmounted(() => {
   if (lineTimer) clearInterval(lineTimer)
   if (cursorTimer) clearInterval(cursorTimer)
+  window.removeEventListener('resize', calcMaxVisible)
 })
 
 // Boost scroll speed on Code Rush state change
@@ -562,6 +556,28 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 :deep(.cn) { color: #6ee7b7; }                                               /* number */
 :deep(.cc) { color: #166534; text-shadow: none; }                           /* comment — dimmest */
 :deep(.cw) { color: #fb923c; text-shadow: 0 0 5px rgba(251,146,60,0.4); }  /* warning — amber */
+
+/* ── Click particles ─────────────────────────────────── */
+:deep(.click-particle) {
+  position: absolute;
+  font-family: monospace;
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+@keyframes particle-fly {
+  from {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) translate(var(--px), var(--py)) scale(0.4);
+    opacity: 0;
+  }
+}
 
 /* ── Ripple ─────────────────────────────────────────── */
 .ripple-ring {

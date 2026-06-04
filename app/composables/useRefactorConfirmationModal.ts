@@ -1,43 +1,22 @@
-import { ref, shallowRef } from 'vue'
-import { createSharedComposable } from '@vueuse/core'
 import type Decimal from 'break_infinity.js'
+import { createPayloadModal } from './createModal'
 
 interface RefactorGains {
-  potentialRpGain: Decimal;
-  currentRpBonus: Decimal;
-  projectedRpBonus: Decimal;
-  currentRefactorPoints: Decimal;
+  potentialRpGain: Decimal
+  currentRpBonus: Decimal
+  projectedRpBonus: Decimal
+  currentRefactorPoints: Decimal
 }
 
-export const useRefactorConfirmationModal = createSharedComposable(() => {
-  const isRevealed = ref(false)
-  const gains = shallowRef<RefactorGains | null>(null)
-  let onConfirmCallback: (() => void) | null = null
+const _modal = createPayloadModal<RefactorGains>()
 
-  const show = (gainsData: RefactorGains, onConfirmAction: () => void) => {
-    gains.value = gainsData
-    onConfirmCallback = onConfirmAction
-    isRevealed.value = true
-  }
-
-  const hide = () => {
-    isRevealed.value = false
-    gains.value = null
-    onConfirmCallback = null
-  }
-
-  const confirm = () => {
-    if (onConfirmCallback) {
-      onConfirmCallback()
-    }
-    hide()
-  }
-
+export function useRefactorConfirmationModal() {
+  const m = _modal()
   return {
-    isRevealed,
-    gains,
-    show,
-    hide,
-    confirm,
+    isRevealed: m.isRevealed,
+    gains: m.payload,
+    show: m.show,
+    hide: m.hide,
+    confirm: m.confirm,
   }
-})
+}

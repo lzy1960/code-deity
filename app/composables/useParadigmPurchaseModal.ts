@@ -1,37 +1,15 @@
-import { ref, shallowRef } from 'vue'
-import { createSharedComposable } from '@vueuse/core'
+import { createPayloadModal } from './createModal'
 import type { Paradigm } from '~/types/paradigms'
 
-export const useParadigmPurchaseModal = createSharedComposable(() => {
-  const isRevealed = ref(false)
-  const paradigmToPurchase = shallowRef<Paradigm | null>(null)
-  
-  let onConfirmCallback: (() => void) | null = null
+const _modal = createPayloadModal<Paradigm>()
 
-  const show = (paradigm: Paradigm, onConfirmAction: () => void) => {
-    paradigmToPurchase.value = paradigm
-    onConfirmCallback = onConfirmAction
-    isRevealed.value = true
-  }
-
-  const hide = () => {
-    isRevealed.value = false
-    paradigmToPurchase.value = null
-    onConfirmCallback = null // Clear callback on hide
-  }
-
-  const confirm = () => {
-    if (onConfirmCallback) {
-      onConfirmCallback()
-    }
-    hide()
-  }
-
+export function useParadigmPurchaseModal() {
+  const m = _modal()
   return {
-    isRevealed,
-    paradigmToPurchase,
-    show,
-    hide,
-    confirm,
+    isRevealed: m.isRevealed,
+    paradigmToPurchase: m.payload,
+    show: m.show,
+    hide: m.hide,
+    confirm: m.confirm,
   }
-})
+}

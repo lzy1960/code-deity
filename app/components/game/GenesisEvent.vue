@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" ref="rootRef" class="fixed inset-0 bg-black z-[2000] flex items-center justify-center font-mono overflow-hidden opacity-0">
+  <div v-if="visible" ref="rootRef" data-genesis-event class="fixed inset-0 bg-black z-[2000] flex items-center justify-center font-mono overflow-hidden opacity-0">
     <!-- Cosmic Dust Canvas -->
     <canvas ref="canvasRef" class="absolute top-0 left-0 w-full h-full"></canvas>
 
@@ -8,7 +8,14 @@
 
     <!-- Text Content -->
     <div class="relative text-white text-center p-8">
-      <p ref="textRef" class="text-xl whitespace-pre-wrap"></p>
+      <p ref="textRef" class="text-sm whitespace-pre-wrap leading-relaxed"></p>
+      <button
+        v-if="showSkip"
+        @click="handleSkip"
+        class="mt-8 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-300 border border-gray-700 hover:border-gray-500 px-4 py-1 rounded font-mono"
+      >
+        {{ $t('common.skip') }}
+      </button>
     </div>
   </div>
 </template>
@@ -31,6 +38,9 @@ const { t } = useI18n()
 const visible = ref(false)
 const isTyping = ref(false)
 const isClosing = ref(false)
+const showSkip = ref(false)
+let skipTimer: ReturnType<typeof setTimeout> | null = null
+let animationAborted = false
 const textRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const rootRef = ref<HTMLElement | null>(null)
@@ -101,8 +111,10 @@ watch(() => props.narrative, (newNarrative) => {
 
 // V2.4 Enter Animation: "Data Stream Reassembly"
 async function animateInV24(textKey: string) {
+  animationAborted = false
   setupCanvas()
   isTyping.value = true
+  skipTimer = setTimeout(() => { showSkip.value = true }, 1000)
   if (!textRef.value || !rootRef.value) return
 
   // Initial fade in of the root element
@@ -133,18 +145,22 @@ async function animateInV24(textKey: string) {
   await new Promise(resolve => setTimeout(resolve, 500));
 
   while (charIndex < fullText.length) {
+    if (animationAborted) return
     if (fullText[charIndex] !== ' ' && fullText[charIndex] !== '\n') {
-      for (let i = 0; i < (isEpic.value ? 4 : 2); i++) { // More glitch iterations for epic events
+      for (let i = 0; i < (isEpic.value ? 4 : 2); i++) {
+        if (animationAborted) return
         const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
         textRef.value.innerHTML = fullText.substring(0, charIndex) + randomChar + '<span class="caret"></span>';
-        await new Promise(resolve => setTimeout(resolve, isEpic.value ? 15 : 25)); // Faster glitch for epic
+        await new Promise(resolve => setTimeout(resolve, isEpic.value ? 15 : 25));
       }
     }
+    if (animationAborted) return
     charIndex++;
     textRef.value.innerHTML = fullText.substring(0, charIndex) + '<span class="caret"></span>';
-    await new Promise(resolve => setTimeout(resolve, isEpic.value ? 30 : 50)); // Faster typing for epic
+    await new Promise(resolve => setTimeout(resolve, isEpic.value ? 30 : 50));
   }
   
+  if (animationAborted) return
   isTyping.value = false;
   textRef.value.innerHTML = fullText; // Final text without caret
   setTimeout(() => {
@@ -152,6 +168,24 @@ async function animateInV24(textKey: string) {
   }, 3000); // Auto-dismiss after 3 seconds
 }
 
+
+// Skip: simple fast fade, avoids SplitText race with still-running typewriter
+const handleSkip = () => {
+  if (isClosing.value || !rootRef.value) return
+  isClosing.value = true
+  animationAborted = true
+  if (skipTimer) clearTimeout(skipTimer)
+  showSkip.value = false
+  stopCanvas()
+  gsap.to(rootRef.value, {
+    opacity: 0, duration: 0.25, ease: 'power1.in',
+    onComplete: () => {
+      visible.value = false
+      emit('close')
+      isClosing.value = false
+    }
+  })
+}
 
 // V2.6 Exit Animation: "Shatter and Ascend"
 const handleClose = () => {

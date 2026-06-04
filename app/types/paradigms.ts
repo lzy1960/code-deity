@@ -5,4 +5,6 @@ export interface Paradigm {
   cost: number
   school: ParadigmSchool
   requires?: string[]
+  x: number
+  y: number
 }

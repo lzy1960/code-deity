@@ -1,16 +1,18 @@
 <template>
   <footer class="bg-[#0d151c] border-t border-[#21364a]">
     <nav class="flex justify-around items-center px-1 pt-1.5 pb-2">
-      <a
-        v-for="tab in tabs"
-        :key="tab.id"
-        @click="handleTabClick(tab)"
-        :class="getTabClass(tab)"
-        :title="tab.name"
-      >
-        <Icon :name="`mdi:${tab.icon}`" class="text-xl" />
-        <span class="text-[9px] leading-none mt-0.5">{{ tab.name }}</span>
-      </a>
+      <TransitionGroup name="tab-appear" tag="div" class="flex justify-around w-full">
+        <a
+          v-for="tab in unlockedTabs"
+          :key="tab.id"
+          @click="handleTabClick(tab)"
+          :class="getTabClass(tab)"
+          :title="tab.name"
+        >
+          <Icon :name="`mdi:${tab.icon}`" class="text-xl" />
+          <span class="text-[9px] leading-none mt-0.5">{{ tab.name }}</span>
+        </a>
+      </TransitionGroup>
     </nav>
   </footer>
 </template>
@@ -38,6 +40,8 @@ interface Tab {
   isExternal?: boolean;
   path?: string;
 }
+
+const unlockedTabs = computed(() => tabs.filter(t => t.isUnlocked()))
 
 const tabs: Tab[] = [
   { id: 'generators', name: $t('common.generators'), icon: 'dns', isUnlocked: () => true },
@@ -82,4 +86,7 @@ const getTabTitle = (tab: Tab): string => {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.tab-appear-enter-active { transition: all 0.3s ease; }
+.tab-appear-enter-from   { opacity: 0; transform: translateY(8px); }
+</style>

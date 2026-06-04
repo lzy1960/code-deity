@@ -1,15 +1,3 @@
-import { ref } from 'vue';
+import { createSimpleModal } from './createModal'
 
-const isRevealed = ref(false);
-
-export function useLanguageModal() {
-  return {
-    isRevealed,
-    show: () => {
-      isRevealed.value = true;
-    },
-    hide: () => {
-      isRevealed.value = false;
-    },
-  };
-}
+export const useLanguageModal = createSimpleModal()
