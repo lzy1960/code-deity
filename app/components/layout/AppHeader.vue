@@ -1,54 +1,33 @@
 <template>
-  <header class="sticky top-0 z-10 bg-[#101a23]/80 backdrop-blur-sm transition-all duration-500" :class="{ 'shadow-[0_0_15px_rgba(192,132,252,0.5)] border-b border-purple-400/50': canSingularity }">
-    <div class="flex items-center p-4 pb-2 justify-between">
-      <div class="w-auto">
-        <button v-if="canSingularity" @click="$emit('singularityClick')" class="px-3 h-10 rounded-lg bg-purple-600 text-white font-bold text-sm animate-pulse shadow-lg shadow-purple-500/50 flex items-center justify-center gap-2">
-          <Icon name="mdi:creation" class="text-xl" />
+  <header class="app-header" :class="{ charged: canSingularity }">
+    <div class="flex items-center px-3 py-2 gap-2">
+      <!-- 左：奇点按钮 -->
+      <div class="shrink-0">
+        <button v-if="canSingularity" @click="$emit('singularityClick')" class="singularity-button">
+          <Icon name="mdi:creation" class="text-base" />
           <span>{{ $t('common.singularity') }}</span>
         </button>
       </div>
-      <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">{{ title }}</h2>
-      <div class="flex w-auto items-center justify-end gap-1">
-        <button @click="genesisLogModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <Icon name="mdi:console-line" class="text-2xl" />
+      <!-- 中：页面标题 -->
+      <h2 class="text-white text-base font-bold leading-tight flex-1 text-center truncate">{{ title }}</h2>
+      <!-- 右：倍率选择器 + 功能按钮 -->
+      <div class="flex items-center gap-1 shrink-0">
+        <slot name="actions" />
+        <button @click="genesisLogModal.show()" class="icon-btn">
+          <Icon name="mdi:console-line" class="text-xl" />
         </button>
-        <button @click="helpModal.show()" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <Icon name="mdi:help-circle-outline" class="text-2xl" />
+        <button @click="helpModal.show()" class="icon-btn">
+          <Icon name="mdi:help-circle-outline" class="text-xl" />
         </button>
-        <NuxtLink to="/settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 w-8 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <Icon name="mdi:cog" class="text-2xl" />
+        <NuxtLink to="/settings" class="icon-btn">
+          <Icon name="mdi:cog" class="text-xl" />
         </NuxtLink>
-      </div>
-    </div>
-    <div class="flex flex-col gap-2 bg-[#101a23] px-4 py-2 border-b border-[#21364a]">
-      <!-- Row 1: Main Currencies -->
-      <div class="flex justify-between items-center">
-        <div class="flex items-baseline gap-4">
-          <p class="text-white text-lg font-bold leading-tight tracking-tighter">{{ formatNumber(gameStore.currency) }} <span class="text-[#8eadcc] text-sm">{{ $t('common.computingPowerShort') }}</span></p>
-          <div v-if="gameStore.refactorCount > 0 || gameStore.refactorPoints.gt(0)">
-            <p class="font-bold leading-tight tracking-tighter text-green-400 text-base">{{ formatNumber(gameStore.refactorPoints) }} <span class="text-xs text-green-400/80">{{ $t('common.refactorPointsShort') }}</span></p>
-          </div>
-        </div>
-      </div>
-      <!-- Row 2: Production Info & Actions -->
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <p class="text-green-400 text-xs font-medium leading-normal">+ {{ formatNumber(gameStore.cps) }} {{ $t('common.cpsShort') }}</p>
-          <div v-if="gameStore.architecturalOverheadPenalty < 1" class="flex items-center gap-1 text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold pulse-animation-slow" :title="$t('common.architecturalOverheadHint')">
-            <Icon name="mdi:alert-circle-outline" />
-            <span>{{ $t('common.efficiency') }} {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(1) }}%</span>
-          </div>
-        </div>
-        <!-- The BuyMultiplierSelector will be placed here via a slot -->
-        <slot name="actions"></slot>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { useGameStore } from '~/store/game';
-import { formatNumber } from '~/utils/format';
 import { useHelpModal } from '~/composables/useHelpModal';
 import { useGenesisLogModal } from '~/composables/useGenesisLogModal';
 
@@ -59,23 +38,62 @@ defineProps<{
 
 defineEmits(['singularityClick']);
 
-const gameStore = useGameStore();
 const helpModal = useHelpModal();
 const genesisLogModal = useGenesisLogModal();
 </script>
 
 <style scoped>
-@keyframes pulse-slow {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 0.9;
-    }
-    50% {
-        transform: scale(1.02);
-        opacity: 1;
-    }
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #21364a;
+  background: rgba(16, 26, 35, 0.9);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
 }
-.pulse-animation-slow {
-    animation: pulse-slow 2.5s infinite;
+
+.app-header.charged {
+  border-bottom-color: rgba(134, 239, 172, 0.36);
+  box-shadow: 0 0 15px rgba(76, 165, 255, 0.2);
+}
+
+.singularity-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  border: 1px solid rgba(134, 239, 172, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(22, 101, 52, 0.48), rgba(20, 83, 45, 0.4));
+  color: #dcfce7;
+  box-shadow: 0 0 14px rgba(134, 239, 172, 0.18);
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0 10px;
+  animation: singularity-ready 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes singularity-ready {
+  from { box-shadow: 0 0 10px rgba(134, 239, 172, 0.14); }
+  to { box-shadow: 0 0 18px rgba(134, 239, 172, 0.28); }
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(142, 173, 204, 0.14);
+  border-radius: 8px;
+  color: #8eadcc;
+  background: rgba(16, 26, 35, 0.42);
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.icon-btn:hover {
+  border-color: rgba(56, 153, 250, 0.34);
+  background: rgba(56, 153, 250, 0.12);
+  color: #e5f3ff;
 }
 </style>

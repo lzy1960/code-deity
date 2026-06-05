@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import Decimal from 'break_infinity.js'
-import { generatorConfigs, prestigeThresholds, type NarrativeMilestone, narrativeMilestones } from '~~/game/configs'
+import { generatorConfigs, prestigeThresholds, type GeneratorConfig, type NarrativeMilestone, narrativeMilestones } from '~~/game/configs'
 import { paradigmConfigs } from '~~/game/paradigms.configs'
+import { getGameEngine } from '~~/game/engine'
 
 // #region -------- Interfaces and Types --------
 
@@ -75,12 +76,43 @@ export interface GameState {
 
 // #endregion
 
-let _gameLoopInterval: ReturnType<typeof setInterval> | null = null;
+// Plain (serializable) shape of GameState — Decimal becomes string when persisted.
+// 用于 hydrate 的入参类型，强制编译期对齐字段，新增 state 字段时若忘记 hydrate 编译器会告警。
+type DecimalToString<T> = {
+  [K in keyof T]: T[K] extends Decimal
+    ? string
+    : T[K] extends Decimal | null
+      ? string | null
+      : T[K] extends Array<infer U>
+        ? Array<DecimalToString<U>>
+        : T[K] extends object | null
+          ? T[K] extends null ? DecimalToString<NonNullable<T[K]>> | null : DecimalToString<T[K]>
+          : T[K]
+}
+
+export type SerializableGameState = DecimalToString<GameState>
+
+const CURRENT_SAVE_VERSION = '1.0.5'
+
+const defaultChallengeCompletions = (): ChallengeCompletion => ({
+  challenge1: false,
+  challenge2: false,
+  challenge3: false,
+  challenge4: false,
+})
+
+const isBuyMultiplier = (value: unknown): value is BuyMultiplier => {
+  return value === 'x1' || value === 'x10' || value === 'x100' || value === 'max'
+}
+
+const isActiveChallenge = (value: unknown): value is GameState['activeChallenge'] => {
+  return value === 'none' || value === 'challenge1' || value === 'challenge2' || value === 'challenge3' || value === 'challenge4'
+}
 
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.5', // version up for state change
+    saveVersion: CURRENT_SAVE_VERSION, // version up for state change
     lastUpdateTime: Date.now(),
     lastCloudSync: null,
     currentTime: Date.now(), // Initialize with current time
@@ -128,16 +160,16 @@ export const useGameStore = defineStore('game', {
   getters: {
     // --- System Unlocks ---
     isGeneratorUnlocked: state => (id: number): boolean => {
-      if (id === 1) return state.currency.gte(10) || state.generators[0]!.bought > 0 || state.refactorCount > 0
-      const prevGenerator = state.generators.find(g => g.id === id - 1)
+      if (id === 1) return true
+      const prevGenerator = state.generators[id - 2]
       return prevGenerator ? prevGenerator.bought > 0 : false
     },
     isRefactorUnlocked: state => {
-      const aiCore = state.generators.find(g => g.id === 8)
+      const aiCore = state.generators[7]
       return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES || state.refactorCount > 0
     },
     canRefactor: state => {
-      const aiCore = state.generators.find(g => g.id === 8)
+      const aiCore = state.generators[7]
       return (aiCore?.bought ?? 0) >= prestigeThresholds.REFACTOR_UNLOCK_AI_CORES
     },
     isCompileUnlocked: state => state.refactorPoints.gte(prestigeThresholds.COMPILE_UNLOCK_RP) || state.version > 0,
@@ -149,15 +181,15 @@ export const useGameStore = defineStore('game', {
     },
     isChallengesUnlocked: state => state.version >= 2,
     isMultiplierUnlocked: state => {
-      const moduleGenerator = state.generators.find(g => g.id === 4)
+      const moduleGenerator = state.generators[3]
       return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
     },
     // --- Soft Cap: Architectural Overhead ---
     architecturalOverheadPenalty: state => {
-      const aiCores = state.generators.find(g => g.id === 8)!.bought
+      const aiCores = state.generators[7]!.bought
       if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
 
-      let penaltyFactor = 0.1
+      let penaltyFactor = 0.3
       if (state.paradigms.api_interface) {
         penaltyFactor *= 0.5 // Penalty effect is reduced by 50%
       }
@@ -170,30 +202,27 @@ export const useGameStore = defineStore('game', {
       return generatorConfigs.find(c => c.id === id)!
     },
 
-    effectiveGeneratorConfig() {
-      return (id: number) => {
-        const originalConfig = this.generatorConfig(id)
-        // Must be a new object to avoid mutation
-        const effectiveConfig = { ...originalConfig }
+    effectiveGeneratorConfig(): (id: number) => GeneratorConfig {
+      // 基于响应式依赖一次性预计算所有生成器的有效配置，Pinia 会按依赖（paradigms / challengeCompletions / activeChallenge）缓存。
+      // 取代了原本每次调用都 spread 创建对象的实现，游戏循环中调用 8+ 次/tick 的开销显著降低。
+      const memoryManagement = this.paradigms.memory_management
+      const challenge4Completed = this.challengeCompletions.challenge4
+      const challenge4Active = this.activeChallenge === 'challenge4'
 
-        // --- Apply Paradigm Bonuses ---
-        if (this.paradigms.memory_management) {
-          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.8)
-          effectiveConfig.costMultiplier = effectiveConfig.costMultiplier.plus(0.01)
-        }
-
-        // Apply permanent rewards first
-        if (this.challengeCompletions.challenge4) {
-          effectiveConfig.baseCost = effectiveConfig.baseCost.times(0.95)
-        }
-
-        // Apply temporary challenge restrictions
-        if (this.activeChallenge === 'challenge4') {
-          effectiveConfig.costMultiplier = effectiveConfig.costMultiplier.plus(0.02)
-        }
-
-        return effectiveConfig
+      const map = new Map<number, GeneratorConfig>()
+      for (const original of generatorConfigs) {
+        let baseCost = original.baseCost
+        let costMultiplier = original.costMultiplier
+        if (memoryManagement) baseCost = baseCost.times(0.8)
+        if (challenge4Completed) baseCost = baseCost.times(0.95)
+        if (challenge4Active) costMultiplier = costMultiplier.plus(0.02)
+        map.set(original.id, {
+          ...original,
+          baseCost,
+          costMultiplier,
+        })
       }
+      return (id: number) => map.get(id)!
     },
 
     // --- Cost & Amount Calculation for Multi-buy ---
@@ -204,7 +233,7 @@ export const useGameStore = defineStore('game', {
         }
         
         const config = this.effectiveGeneratorConfig(id)
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
         const r = config.costMultiplier
         const k = generator.bought
         const B = config.baseCost
@@ -221,7 +250,7 @@ export const useGameStore = defineStore('game', {
       return (id: number, amount: Decimal): Decimal => {
         if (amount.eq(0)) return new Decimal(0)
         const config = this.effectiveGeneratorConfig(id)
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
         const r = config.costMultiplier
         const k = generator.bought
         const B = config.baseCost
@@ -268,7 +297,7 @@ export const useGameStore = defineStore('game', {
           return new Decimal(1)
         }
 
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
         
         // Base bonus
         let bonusPerLevel = this.challengeCompletions.challenge1 ? 1.8 : 1.65
@@ -278,7 +307,7 @@ export const useGameStore = defineStore('game', {
 
         // ## Abstraction School: Polymorphism ##
         if (this.paradigms.polymorphism && id > 1) {
-          const prevGenerator = this.generators.find(g => g.id === id - 1)!
+          const prevGenerator = this.generators[id - 2]!
           const prevBonusLevels = this.getBuyBonus(prevGenerator.bought)
           const prevBonus = Decimal.pow(bonusPerLevel, prevBonusLevels)
           // Apply 20% of the previous generator's bonus
@@ -291,7 +320,7 @@ export const useGameStore = defineStore('game', {
 
     getProgressInfo() {
       return (id: number): { progress: number, nextBonus: number } => {
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
         const bought = generator.bought
         if (bought < 100) {
           return { progress: (bought % 10) / 10 * 100, nextBonus: 10 - (bought % 10) }
@@ -310,7 +339,7 @@ export const useGameStore = defineStore('game', {
       if (this.activeChallenge === 'challenge2') return new Decimal(1)
 
       let versionMultiplier = this.paradigms.enterprise_architecture ? 1.5 : 1
-      const versionBonus = new Decimal(1).plus(this.version * 0.2 * versionMultiplier)
+      const versionBonus = Decimal.pow(1.2, this.version * versionMultiplier)
       
       let baseBonus = this.refactorPoints.times(0.1)
 
@@ -353,7 +382,7 @@ export const useGameStore = defineStore('game', {
     generatorProduction() {
       return (id: number): Decimal => {
         const config = this.effectiveGeneratorConfig(id)
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
 
         let production = config.baseProduction
           .times(generator.amount)
@@ -380,7 +409,12 @@ export const useGameStore = defineStore('game', {
           production = production.times(1.5)
         }
         if (this.paradigms.assembly_instruction) {
-          production = production.times(Math.max(1, this.refactorCount * this.refactorCount))
+          production = production.times(Math.min(500, Math.max(1, this.refactorCount * 4)))
+        }
+
+        // ## Abstraction School: Design Patterns ##
+        if (this.paradigms.design_patterns) {
+          production = production.times(1.2)
         }
 
         return production
@@ -401,7 +435,7 @@ export const useGameStore = defineStore('game', {
     },
 
     manualClickPower(): Decimal {
-      let baseClickPower = this.cps.times(0.05);
+      let baseClickPower = this.cps.times(this.paradigms.code_generation ? 0.08 : 0.05);
       // Ensure baseClickPower is at least 1, even if CPS is very small
       if (baseClickPower.lt(1)) {
         baseClickPower = new Decimal(1);
@@ -442,7 +476,7 @@ export const useGameStore = defineStore('game', {
     refactorGain(): Decimal {
       if (this.currency.log10() < 20) return new Decimal(0)
       let gain = Decimal.floor(
-        Decimal.pow(this.currency.log10() / 20, 1.5)
+        Decimal.pow(this.currency.log10() / 20, 1.8)
       ).times(this.challenge2Bonus)
 
       // ## Agility School ##
@@ -465,13 +499,13 @@ export const useGameStore = defineStore('game', {
     },
 
     // --- Singularity ---
-    canSingularity: state => state.currency.gte('1e308'),
+    canSingularity: state => state.currency.gte('1e120'),
 
     singularityGain(): Decimal {
       if (!this.canSingularity) return new Decimal(0)
-      // New Formula: SP = floor(sqrt(log10(CP) - 308) * 1.5)
+      // SP = floor(sqrt(log10(CP) - 120) * 4)
       const gain = Decimal.floor(
-        Decimal.sqrt(this.currency.log10() - 308).times(1.5)
+        Decimal.sqrt(this.currency.log10() - 120).times(6)
       )
       return gain.max(0)
     },
@@ -526,150 +560,118 @@ export const useGameStore = defineStore('game', {
   actions: {
     /**
      * Hydrates the store from a plain JavaScript object (e.g., from a save file).
-     * This ensures all complex objects like Decimal are re-instantiated correctly.
+     * 显式列出每个字段，新增 GameState 字段时编译器会强制提醒在此处补充加载逻辑。
      */
-    hydrate(stateToLoad: any) {
-      this.currency = new Decimal(stateToLoad.currency)
-      this.refactorPoints = new Decimal(stateToLoad.refactorPoints)
-      
-      this.generators = stateToLoad.generators.map((g: any) => ({
-        id: g.id,
-        amount: new Decimal(g.amount),
-        bought: g.bought,
-      }))
+    hydrate(s: Partial<SerializableGameState>) {
+      this.saveVersion = CURRENT_SAVE_VERSION
+      this.lastUpdateTime = s.lastUpdateTime ?? Date.now()
+      this.lastCloudSync = s.lastCloudSync ?? null
+      this.currency = new Decimal(s.currency ?? 0)
+      this.refactorPoints = new Decimal(s.refactorPoints ?? 0)
+      this.refactorCount = s.refactorCount ?? 0
+      this.version = s.version ?? 0
+      this.buyMultiplier = isBuyMultiplier(s.buyMultiplier) ? s.buyMultiplier : 'x1'
 
-      // Copy over all other primitive properties
-      const primitiveKeys: (keyof GameState)[] = [
-        'saveVersion', 'lastUpdateTime', 'buyMultiplier', 'refactorCount', 'version',
-        'challengeCompletions', 'activeChallenge', 'automatorStates', 'unlockedNarratives',
-      ];
-      
-      for (const key of primitiveKeys) {
-        if (stateToLoad.hasOwnProperty(key)) {
-          (this as any)[key] = stateToLoad[key];
+      const savedGenerators = new Map((s.generators ?? []).map(g => [g.id, g]))
+      this.generators = generatorConfigs.map(config => {
+        const saved = savedGenerators.get(config.id)
+        return {
+          id: config.id,
+          amount: new Decimal(saved?.amount ?? 0),
+          bought: saved?.bought ?? 0,
         }
-      }
-      // Handle nullable fields separately
-      this.lastCloudSync = stateToLoad.lastCloudSync ?? null;
-      this.singularityPower = new Decimal(stateToLoad.singularityPower ?? 0)
-      this.unlockedSingularity = stateToLoad.unlockedSingularity ?? false
-      this.paradigms = stateToLoad.paradigms ?? {}
-      this.singularityCount = stateToLoad.singularityCount ?? 0
+      })
 
-      // Hydrate Code Rush state
-      this.codeRushCharge = stateToLoad.codeRushCharge ?? 0;
-      this.codeRushActiveExpiry = stateToLoad.codeRushActiveExpiry ?? null;
-      this.codeRushClickCount = stateToLoad.codeRushClickCount ?? 0;
+      this.singularityPower = new Decimal(s.singularityPower ?? 0)
+      this.unlockedSingularity = s.unlockedSingularity ?? false
+      this.paradigms = s.paradigms ?? {}
+      this.singularityCount = s.singularityCount ?? 0
 
-      // Hydrate Technical Debt state
-      if (stateToLoad.activeRefactoring) {
-        this.activeRefactoring = {
-          paradigmId: stateToLoad.activeRefactoring.paradigmId,
-          frozenParadigms: stateToLoad.activeRefactoring.frozenParadigms,
-          frozenSP: new Decimal(stateToLoad.activeRefactoring.frozenSP),
-          cpCost: new Decimal(stateToLoad.activeRefactoring.cpCost),
-        };
-      } else {
-        this.activeRefactoring = null;
+      this.challengeCompletions = {
+        ...defaultChallengeCompletions(),
+        ...(s.challengeCompletions ?? {}),
       }
+      this.activeChallenge = isActiveChallenge(s.activeChallenge) ? s.activeChallenge : 'none'
+
+      this.automatorStates = s.automatorStates ?? {}
+      this.pendingOfflineGains = s.pendingOfflineGains
+        ? { cp: new Decimal(s.pendingOfflineGains.cp), diff: s.pendingOfflineGains.diff }
+        : null
+
+      this.unlockedNarratives = s.unlockedNarratives ?? []
+      this.narrativeQueue = (s.narrativeQueue ?? []) as NarrativeMilestone[]
+
+      this.activeRefactoring = s.activeRefactoring
+        ? {
+            paradigmId: s.activeRefactoring.paradigmId,
+            frozenParadigms: s.activeRefactoring.frozenParadigms,
+            frozenSP: new Decimal(s.activeRefactoring.frozenSP),
+            cpCost: new Decimal(s.activeRefactoring.cpCost),
+          }
+        : null
+
+      this.codeRushCharge = s.codeRushCharge ?? 0
+      this.codeRushActiveExpiry = s.codeRushActiveExpiry ?? null
+      this.codeRushClickCount = s.codeRushClickCount ?? 0
+
+      // currentTime 不来自存档，每次重新启动时取当前时间
+      this.currentTime = Date.now()
     },
 
     /**
-     * Returns a plain JavaScript object representation of the state,
-     * suitable for serialization.
+     * Returns a serializable plain object — Decimal 字段直接 toString，避免双序列化。
      */
-    toJSON(): object {
-      const state = this.$state;
-      const replacer = (key: string, value: any) => {
-        if (value instanceof Decimal) {
-          return value.toString();
-        }
-        return value;
-      };
-      // A bit of a hack to force serialization of Decimals
-      return JSON.parse(JSON.stringify(state, replacer));
+    toJSON(): SerializableGameState {
+      const decToStr = (d: Decimal): string => d.toString()
+      return {
+        saveVersion: this.saveVersion,
+        lastUpdateTime: this.lastUpdateTime,
+        lastCloudSync: this.lastCloudSync,
+        currentTime: this.currentTime,
+        currency: decToStr(this.currency),
+        generators: this.generators.map(g => ({
+          id: g.id,
+          amount: decToStr(g.amount),
+          bought: g.bought,
+        })),
+        buyMultiplier: this.buyMultiplier,
+        refactorPoints: decToStr(this.refactorPoints),
+        refactorCount: this.refactorCount,
+        version: this.version,
+        singularityPower: decToStr(this.singularityPower),
+        unlockedSingularity: this.unlockedSingularity,
+        paradigms: { ...this.paradigms },
+        singularityCount: this.singularityCount,
+        challengeCompletions: { ...this.challengeCompletions },
+        activeChallenge: this.activeChallenge,
+        automatorStates: { ...this.automatorStates },
+        pendingOfflineGains: this.pendingOfflineGains
+          ? { cp: decToStr(this.pendingOfflineGains.cp), diff: this.pendingOfflineGains.diff }
+          : null,
+        unlockedNarratives: [...this.unlockedNarratives],
+        narrativeQueue: this.narrativeQueue.map(m => ({ ...m })) as any,
+        activeRefactoring: this.activeRefactoring
+          ? {
+              paradigmId: this.activeRefactoring.paradigmId,
+              frozenParadigms: [...this.activeRefactoring.frozenParadigms],
+              frozenSP: decToStr(this.activeRefactoring.frozenSP),
+              cpCost: decToStr(this.activeRefactoring.cpCost),
+            }
+          : null,
+        codeRushCharge: this.codeRushCharge,
+        codeRushActiveExpiry: this.codeRushActiveExpiry,
+        codeRushClickCount: this.codeRushClickCount,
+      }
     },
 
     gameLoop() {
-      const now = Date.now()
-      this.currentTime = now // Update reactive current time
-      const diff = new Decimal(now - this.lastUpdateTime).div(1000) // diff in seconds
-      this.simulateProgress(diff.toNumber() * 1000);
-
-      // Check Code Rush expiry
-      if (this.codeRushActiveExpiry !== null && this.codeRushActiveExpiry <= now) {
-        this.endCodeRush();
-      }
-      // Handle automators
-      if (this.isAutomationUnlocked) {
-        // ## Abstraction School: Continuous Integration ##
-        if (this.paradigms.continuous_integration) {
-          // Intelligent automator: find the cheapest generator that gives a buy 10 bonus
-          let bestTarget: { id: number, cost: Decimal } | null = null
-          for (let i = 8; i >= 1; i--) {
-            if (this.automatorStates[i]) {
-              const generator = this.generators.find(g => g.id === i)!
-              const progressInfo = this.getProgressInfo(i)
-              if (progressInfo.nextBonus > 0) {
-                const cost = this.costForAmount(i, new Decimal(progressInfo.nextBonus))
-                if (this.currency.gte(cost)) {
-                  if (!bestTarget || cost.lt(bestTarget.cost)) {
-                    bestTarget = { id: i, cost }
-                  }
-                }
-              }
-            }
-          }
-          if (bestTarget) {
-            this.buyGenerator(bestTarget.id)
-          }
-        } else {
-          // Default automator
-          for (let i = 8; i >= 1; i--) {
-            if (this.automatorStates[i]) {
-              const originalMultiplier = this.buyMultiplier
-              this.setBuyMultiplier('max')
-              this.buyGenerator(i)
-              this.setBuyMultiplier(originalMultiplier)
-            }
-          }
-        }
-      }
-
-      this.lastUpdateTime = now
-      this.checkNarrativeMilestones()
+      // 实际 tick 逻辑见 game/engine.ts。该方法保留是为了向后兼容（测试与历史调用点）。
+      getGameEngine(this as any).tick()
     },
 
     simulateProgress(durationInMs: number) {
-      const diff = new Decimal(durationInMs).div(1000); // diff in seconds
-      if (diff.lte(0)) {
-        return;
-      }
-
-      // Use a two-step loop to prevent cascading calculations within the same tick
-      const productions: Decimal[] = [];
-      for (let i = 8; i >= 1; i--) {
-          productions[i-1] = this.generatorProduction(i);
-      }
-
-      for (let i = 8; i > 1; i--) {
-          this.generators[i - 2]!.amount = this.generators[i - 2]!.amount.plus(productions[i-1]!.times(diff));
-      }
-      
-      // Apply Architectural Overhead penalty to final CP gain
-      let cpGain = productions[0]!
-      const penalty = this.architecturalOverheadPenalty
-      if (penalty < 1) {
-        cpGain = cpGain.times(penalty)
-      }
-      this.currency = this.currency.plus(cpGain.times(diff));
-
-      // ## Abstraction School: Supply Chain Optimization ##
-      if (this.paradigms.supply_chain_optimization) {
-        // productions[3] is the production rate of Module (id=4)
-        const bonusForClass = productions[3]!.times(0.05).times(diff);
-        this.generators[2]!.amount = this.generators[2]!.amount.plus(bonusForClass);
-      }
+      // 实际推进逻辑见 game/engine.ts。
+      getGameEngine(this as any).simulateProgress(durationInMs)
     },
 
     manualClick() {
@@ -680,7 +682,7 @@ export const useGameStore = defineStore('game', {
       // Code Rush charging logic
       if (!this.isCodeRushActive) {
         this.codeRushClickCount++;
-        const chargePerClick = 100 / prestigeThresholds.CODE_RUSH_CHARGE_CLICKS;
+        const chargePerClick = (100 / prestigeThresholds.CODE_RUSH_CHARGE_CLICKS) * (this.paradigms.code_generation ? 1.5 : 1);
         this.codeRushCharge = Math.min(100, this.codeRushCharge + chargePerClick);
       }
     },
@@ -693,13 +695,13 @@ export const useGameStore = defineStore('game', {
 
       if (this.currency.gte(cost)) {
         this.currency = this.currency.minus(cost)
-        const generator = this.generators.find(g => g.id === id)!
+        const generator = this.generators[id - 1]!
         generator.amount = generator.amount.plus(amountToBuy)
         generator.bought += amountToBuy.toNumber()
 
         // ## Agility School: Dynamic Typing ##
         if (this.paradigms.dynamic_typing && id > 1) {
-          const prevGenerator = this.generators.find(g => g.id === id - 1)!
+          const prevGenerator = this.generators[id - 2]!
           prevGenerator.amount = prevGenerator.amount.plus(amountToBuy)
         }
       }
@@ -846,7 +848,7 @@ export const useGameStore = defineStore('game', {
     hardReset() {
       // Manually reset all state properties to their initial values
       // This is more robust than this.$reset() and avoids potential issues.
-      this.saveVersion = '1.0.5'
+      this.saveVersion = CURRENT_SAVE_VERSION
       this.lastUpdateTime = Date.now()
       this.lastCloudSync = null
       this.currency = new Decimal(0)
@@ -863,12 +865,7 @@ export const useGameStore = defineStore('game', {
       this.unlockedSingularity = false
       this.paradigms = {}
       this.singularityCount = 0
-      this.challengeCompletions = {
-        challenge1: false,
-        challenge2: false,
-        challenge3: false,
-        challenge4: false
-      }
+      this.challengeCompletions = defaultChallengeCompletions()
       this.activeChallenge = 'none'
       this.automatorStates = {}
       this.pendingOfflineGains = null
@@ -885,45 +882,16 @@ export const useGameStore = defineStore('game', {
     },
 
     startGameLoop() {
-      if (_gameLoopInterval !== null) return;
-      _gameLoopInterval = setInterval(() => {
-        this.gameLoop()
-      }, 50)
+      // 委托给 engine 单例。重复调用安全。
+      getGameEngine(this as any).start()
     },
 
-    calculateOfflineProgress() {
-      const now = Date.now()
-      let diff = (now - this.lastUpdateTime) / 1000
+    stopGameLoop() {
+      getGameEngine(this as any).stop()
+    },
 
-      // Offline time is less than 10 seconds, do nothing.
-      if (diff < 10) {
-        this.lastUpdateTime = now // Still update time to prevent small gaps from accumulating
-        return false
-      }
-
-      // Per production.md, cap offline time to 1 hour (3600 seconds)
-      const effectiveDiff = Math.min(diff, 3600)
-
-      // Simplified simulation: use the current production rate (including all paradigm bonuses)
-      // and multiply by elapsed time. Generator chain growth is ignored for simplicity.
-      let cpPerSecond = this.generatorProduction(1)
-      const penalty = this.architecturalOverheadPenalty
-      if (penalty < 1) {
-        cpPerSecond = cpPerSecond.times(penalty)
-      }
-
-      const totalCpGained = cpPerSecond.times(effectiveDiff)
-
-      if (totalCpGained.gt(0)) {
-        this.pendingOfflineGains = {
-          cp: totalCpGained,
-          diff: effectiveDiff
-        }
-        // IMPORTANT: We do NOT update lastUpdateTime here. It will be updated when gains are applied.
-        return true
-      }
-
-      return false
+    calculateOfflineProgress(): boolean {
+      return getGameEngine(this as any).calculateOfflineProgress()
     },
 
     applyOfflineGains() {
@@ -936,10 +904,12 @@ export const useGameStore = defineStore('game', {
 
     // --- Narrative Actions ---
     checkNarrativeMilestones() {
+      // 全部解锁后直接 return，避免游戏循环每 50ms 都遍历整个里程碑列表
+      if (this.unlockedNarratives.length >= narrativeMilestones.length) return
+
+      const unlocked = new Set(this.unlockedNarratives)
       for (const milestone of narrativeMilestones) {
-        if (this.unlockedNarratives.includes(milestone.id)) {
-          continue
-        }
+        if (unlocked.has(milestone.id)) continue
 
         let conditionMet = false
         const { type, value, generatorId } = milestone.condition
@@ -957,7 +927,7 @@ export const useGameStore = defineStore('game', {
             break
           case 'generator_bought':
             if (generatorId) {
-              const generator = this.generators.find(g => g.id === generatorId)
+              const generator = this.generators[generatorId - 1]
               if (generator && generator.bought >= (value as number)) {
                 conditionMet = true
               }
@@ -983,6 +953,7 @@ export const useGameStore = defineStore('game', {
         if (conditionMet) {
           this.unlockedNarratives.push(milestone.id)
           this.narrativeQueue.push(milestone)
+          unlocked.add(milestone.id)
         }
       }
     },
@@ -1015,8 +986,8 @@ export const useGameStore = defineStore('game', {
           frozenSP = frozenSP.plus(config.cost)
         }
       }
-      // Cost formula: 10^(total_frozen_sp * 1.5 + 308)
-      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 308)
+      // Cost formula: 10^(total_frozen_sp * 1.5 + 120)
+      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 120)
 
       return { frozenParadigms, frozenSP, cpCost }
     },

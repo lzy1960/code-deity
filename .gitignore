@@ -26,3 +26,6 @@ logs
 # capacitor
 android
 ios
+
+# Playwright MCP temp files
+.playwright-mcp/

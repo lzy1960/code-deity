@@ -1,5 +1,4 @@
 import { db } from '~/utils/db'
-import type { GameState } from '~/store/game'
 
 const SAVE_KEY_LOCAL = 'local_save'
 
@@ -24,7 +23,16 @@ export const saveManager = {
     const localData = await db.saves.get(SAVE_KEY_LOCAL)
     if (localData) {
       console.log('Local save found!')
-      return { data: JSON.parse(localData.saveData), source: 'local' }
+      try {
+        const parsed = JSON.parse(localData.saveData)
+        if (parsed && typeof parsed === 'object') {
+          return { data: parsed, source: 'local' }
+        }
+        console.warn('Local save data is not an object. Ignoring save.')
+      } catch (error) {
+        console.warn('Failed to parse local save data. Ignoring save.', error)
+      }
+      return { data: null, source: 'none' }
     }
 
     // 2. If nothing found

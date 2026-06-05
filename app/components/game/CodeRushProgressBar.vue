@@ -17,15 +17,6 @@ const timeRemaining = computed(() => {
   return 0;
 });
 
-const progressBarClass = computed(() => {
-  if (isReady.value) {
-    return 'bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse'; // Added pulse for ready state
-  } else if (isActive.value) {
-    return 'bg-gradient-to-r from-red-500 to-orange-600 animate-code-rush-active'; // Enhanced active animation
-  }
-  return 'bg-gradient-to-r from-blue-400 to-cyan-500';
-});
-
 const progressText = computed(() => {
   if (isReady.value) {
     return 'Ready!';
@@ -37,13 +28,13 @@ const progressText = computed(() => {
 </script>
 
 <template>
-  <div class="w-full bg-gray-800 rounded-full h-4 mb-2 overflow-hidden relative">
+  <div class="rush-progress">
     <div
-      class="h-full rounded-full transition-all duration-1000 ease-linear"
-      :class="progressBarClass"
+      class="rush-fill"
+      :class="{ ready: isReady, active: isActive }"
       :style="{ width: `${progress}%` }"
     ></div>
-    <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+    <div class="rush-label">
       {{ progressText }}
     </div>
   </div>
@@ -59,5 +50,49 @@ const progressText = computed(() => {
 .animate-code-rush-active {
   background-size: 200% 200%;
   animation: code-rush-active 1.5s ease infinite;
+}
+
+.rush-progress {
+  position: relative;
+  width: 100%;
+  height: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(76, 165, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 15, 24, 0.76);
+}
+
+.rush-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(76, 165, 255, 0.72), rgba(154, 247, 189, 0.58));
+  transition: width 1s linear;
+}
+
+.rush-fill.ready {
+  background: linear-gradient(90deg, rgba(154, 247, 189, 0.84), rgba(76, 165, 255, 0.72));
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+.rush-fill.active {
+  background: linear-gradient(90deg, rgba(76, 165, 255, 0.86), rgba(154, 247, 189, 0.78));
+  background-size: 200% 200%;
+  animation: code-rush-active 1.5s ease infinite;
+}
+
+.rush-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+@keyframes pulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.22); }
 }
 </style>

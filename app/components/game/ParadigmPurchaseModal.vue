@@ -1,52 +1,47 @@
 <template>
-  <Transition name="modal-bounce">
+  <Transition name="modal-panel">
     <div
       v-if="modal.isRevealed.value"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      class="modal-backdrop"
       @click.self="modal.hide()"
     >
-      <div class="relative w-full max-w-md rounded-2xl bg-transparent shadow-2xl m-4 overflow-hidden border border-purple-500/20">
-        <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-800 m-[2px] p-6 text-center">
-          <h2 class="text-2xl font-bold text-purple-300 mb-3">
-            {{ $t('paradigmModal.title') }}
-          </h2>
-          
-          <div v-if="modal.paradigmToPurchase.value" class="my-5 p-4 bg-gray-900 rounded-lg">
-            <p class="text-xl font-semibold text-white">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.name') }}</p>
-            <p class="text-sm text-gray-400 mt-1">{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.description') }}</p>
-            <div class="mt-4 inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full font-bold">
-              {{ $t('common.cost') }}: {{ modal.paradigmToPurchase.value.cost }} SP
-            </div>
-          </div>
+      <section class="system-modal">
+        <header class="modal-header">
+          <p>PARADIGM UNLOCK</p>
+          <h2>{{ $t('paradigmModal.title') }}</h2>
+        </header>
 
-          <!-- Analysis Section -->
-          <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="mb-6 p-3 rounded-lg text-sm text-left space-y-2" :class="analysisClass">
-            <p class="font-bold text-base flex items-center"><Icon :name="analysisIcon" class="mr-2"/>{{ analysisTitle }}</p>
-            <p>{{ analysisText }}</p>
-          </div>
-
-          <p v-else class="text-gray-400 mb-6">
-            {{ $t('paradigmModal.info') }}
-          </p>
-
-          <div class="flex justify-center gap-4">
-            <button
-              @click="modal.hide()"
-              class="px-8 py-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
-              @click="modal.confirm()"
-              :disabled="!!(analysis && !analysis.purchasable)"
-              class="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-lg shadow-purple-600/30 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
-            >
-              {{ (analysis && !analysis.purchasable) ? $t('paradigmModal.cannotUnlock') : $t('paradigmModal.confirmUnlock') }}
-            </button>
-          </div>
+        <div v-if="modal.paradigmToPurchase.value" class="paradigm-readout">
+          <p>{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.name') }}</p>
+          <span>{{ $t('paradigms.' + modal.paradigmToPurchase.value.id + '.description') }}</span>
+          <b>{{ $t('common.cost') }}: {{ modal.paradigmToPurchase.value.cost }} SP</b>
         </div>
-      </div>
+
+        <div v-if="analysis && (!analysis.purchasable || analysis.conflictingParadigm)" class="analysis-box" :class="analysisTone">
+          <p>
+            <Icon :name="analysisIcon" />
+            {{ analysisTitle }}
+          </p>
+          <span>{{ analysisText }}</span>
+        </div>
+
+        <p v-else class="modal-copy">
+          {{ $t('paradigmModal.info') }}
+        </p>
+
+        <footer class="action-row">
+          <button class="secondary-action" @click="modal.hide()">
+            {{ $t('common.cancel') }}
+          </button>
+          <button
+            class="primary-action"
+            @click="modal.confirm()"
+            :disabled="!!(analysis && !analysis.purchasable)"
+          >
+            {{ (analysis && !analysis.purchasable) ? $t('paradigmModal.cannotUnlock') : $t('paradigmModal.confirmUnlock') }}
+          </button>
+        </footer>
+      </section>
     </div>
   </Transition>
 </template>
@@ -87,11 +82,11 @@ const analysisText = computed(() => {
   }
 })
 
-const analysisClass = computed(() => {
+const analysisTone = computed(() => {
   if (!analysis.value) return ''
   switch (analysis.value.reason) {
-    case 'school_limit': return 'bg-red-500/10 text-red-300'
-    case 'exclusive': return 'bg-yellow-500/10 text-yellow-300'
+    case 'school_limit': return 'danger'
+    case 'exclusive': return 'warning'
     default: return ''
   }
 })
@@ -107,46 +102,166 @@ const analysisIcon = computed(() => {
 </script>
 
 <style scoped>
-.modal-bounce-enter-active,
-.modal-bounce-leave-active {
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.modal-panel-enter-active,
+.modal-panel-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.modal-bounce-enter-from,
-.modal-bounce-leave-to {
+.modal-panel-enter-from,
+.modal-panel-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(8px);
 }
 
-.animated-border {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(
-    transparent,
-    rgba(192, 132, 252, 0.7), /* purple-300 */
-    transparent 35%
-  );
-  transform: translate(-50%, -50%);
-  animation: rotate 5s cubic-bezier(0.65, -0.5, 0.25, 1.5) infinite;
-  z-index: 0;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 16px;
 }
 
-@keyframes rotate {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1);
-    opacity: 0.7;
-  }
+.system-modal {
+  width: min(100%, 460px);
+  border: 1px solid rgba(76, 165, 255, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.98), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 12% 0%, rgba(76, 165, 255, 0.16), transparent 36%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42), inset 0 0 36px rgba(0, 0, 0, 0.26);
+  padding: 16px;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(76, 165, 255, 0.18);
+  padding-bottom: 12px;
+}
+
+.modal-header p {
+  color: #4ca5ff;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.modal-header h2 {
+  margin-top: 3px;
+  color: #f8fbff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.paradigm-readout,
+.analysis-box {
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.paradigm-readout {
+  border: 1px solid rgba(76, 165, 255, 0.18);
+  background: rgba(16, 26, 35, 0.72);
+}
+
+.paradigm-readout p {
+  color: #f8fbff;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.paradigm-readout span,
+.modal-copy,
+.analysis-box span {
+  color: #b9cde0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.paradigm-readout span {
+  display: block;
+  margin-top: 5px;
+}
+
+.paradigm-readout b {
+  display: inline-flex;
+  margin-top: 10px;
+  border: 1px solid rgba(134, 239, 172, 0.24);
+  border-radius: 999px;
+  background: rgba(4, 15, 18, 0.56);
+  color: #dcfce7;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.72rem;
+  padding: 5px 10px;
+}
+
+.modal-copy {
+  margin: 12px 0 0;
+}
+
+.analysis-box {
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  background: rgba(113, 63, 18, 0.18);
+}
+
+.analysis-box.danger {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.22);
+}
+
+.analysis-box p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.analysis-box.danger p {
+  color: #fecaca;
+}
+
+.analysis-box span {
+  display: block;
+  margin-top: 6px;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.secondary-action,
+.primary-action {
+  min-height: 40px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.secondary-action {
+  border: 1px solid rgba(142, 173, 204, 0.26);
+  background: rgba(15, 23, 42, 0.56);
+  color: #cfe3f5;
+}
+
+.primary-action {
+  border: 1px solid rgba(76, 165, 255, 0.44);
+  background: linear-gradient(180deg, rgba(56, 153, 250, 0.34), rgba(28, 112, 190, 0.3));
+  color: #fff;
+}
+
+.primary-action:disabled {
+  cursor: not-allowed;
+  border-color: rgba(142, 173, 204, 0.18);
+  background: rgba(15, 23, 42, 0.56);
+  color: #8ba2b7;
 }
 </style>

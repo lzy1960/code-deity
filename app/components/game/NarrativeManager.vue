@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useGameStore } from '~/store/game'
 import type { NarrativeMilestone } from '~~/game/configs'
-import GenesisEvent from './GenesisEvent.vue' // Import the new component
+import { defineAsyncComponent } from 'vue'
 
 const gameStore = useGameStore()
 const { t } = useI18n()
 const { $saveGameLocal } = useNuxtApp() as any // Get the save function
+const GenesisEvent = defineAsyncComponent(() => import('./GenesisEvent.vue'))
 
 // State for 'log' type narratives
 const currentLog = ref<NarrativeMilestone | null>(null)
@@ -50,9 +51,9 @@ function startTypewriter(textKey: string) {
       charIndex++
     } else {
       clearInterval(typingInterval)
-      setTimeout(hideLog, 3500)
+      setTimeout(hideLog, 1800)
     }
-  }, 50)
+  }, 22)
 }
 
 function hideLog() {
@@ -115,9 +116,9 @@ function hideEvent() {
   background-color: rgba(16, 26, 35, 0.85);
   backdrop-filter: blur(5px);
   color: #00ff89;
-  padding: 16px 24px;
-  border-radius: 8px;
-  margin-bottom: 10px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-bottom: 6px;
   box-shadow: 0 4px 20px rgba(0, 255, 137, 0.1), 0 0 30px rgba(0, 255, 137, 0.1) inset;
   border: 1px solid rgba(0, 255, 137, 0.3);
   width: 100%;
@@ -145,18 +146,18 @@ function hideEvent() {
 }
 
 .narrative-header {
-  margin: 0 0 12px 0;
-  font-size: 0.9rem;
+  margin: 0 0 6px 0;
+  font-size: 0.65rem;
   color: #00ff89;
   opacity: 0.7;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .header-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   color: #00ff89;
 }
 
@@ -171,19 +172,19 @@ function hideEvent() {
 
 .narrative-text {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.7rem;
   text-align: left;
   white-space: pre-wrap;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .caret {
   display: inline-block;
-  width: 9px;
-  height: 1.2em;
+  width: 6px;
+  height: 1em;
   background-color: #00ff89;
-  margin-left: 4px;
-  box-shadow: 0 0 5px rgba(0, 255, 137, 0.8);
+  margin-left: 3px;
+  box-shadow: 0 0 4px rgba(0, 255, 137, 0.8);
   animation: blink 0.9s steps(1) infinite;
 }
 

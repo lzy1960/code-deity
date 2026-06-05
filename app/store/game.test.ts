@@ -38,10 +38,10 @@ describe('Game Store - Core Mechanics', () => {
       expect(store.refactorGain.toString()).toBe('1')
     })
 
-    it('should return 2 RP when currency is 1e40', () => {
+    it('should return 3 RP when currency is 1e40', () => {
       store.currency = new Decimal('1e40')
-      // floor((40 / 20) ^ 1.5) = floor(2 ^ 1.5) = floor(2.828) = 2
-      expect(store.refactorGain.toString()).toBe('2')
+      // floor((40 / 20) ^ 1.8) = floor(2 ^ 1.8) = floor(3.482) = 3
+      expect(store.refactorGain.toString()).toBe('3')
     })
   })
 
@@ -70,8 +70,8 @@ describe('Game Store - Core Mechanics', () => {
     it('should calculate bonus correctly with both RP and Version bonus', () => {
       store.refactorPoints = new Decimal(100)
       store.version = 2
-      // 1 + (100 * 0.1) * (1 + 2 * 0.2) = 1 + 10 * 1.4 = 15
-      expect(store.rpBonus.toString()).toBe('15')
+      // 1 + (100 * 0.1) * 1.2^2 = 1 + 10 * 1.44 = 15.4
+      expect(store.rpBonus.toString()).toBe('15.4')
     })
   })
 
@@ -185,5 +185,314 @@ describe('Game Store - Singularity & Paradigms', () => {
     expect(store.singularityPower.toString()).toBe('9')
     store.purchaseParadigm('system_kernel') // try to buy again
     expect(store.singularityPower.toString()).toBe('9') // SP should not be deducted again
+  })
+})
+
+// 序列化往返一致性 — 防止重构 store 时丢档
+describe('Game Store - Serialization roundtrip', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  function roundtrip(s: ReturnType<typeof useGameStore>) {
+    const serialized = JSON.parse(JSON.stringify(s.toJSON()))
+    setActivePinia(createPinia())
+    const fresh = useGameStore()
+    fresh.hydrate(serialized)
+    return fresh
+  }
+
+  it('preserves a clean initial state', () => {
+    const out = roundtrip(store)
+    expect(out.currency.toString()).toBe('0')
+    expect(out.refactorPoints.toString()).toBe('0')
+    expect(out.singularityPower.toString()).toBe('0')
+    expect(out.version).toBe(0)
+    expect(out.refactorCount).toBe(0)
+    expect(out.singularityCount).toBe(0)
+    expect(out.activeChallenge).toBe('none')
+    expect(out.activeRefactoring).toBeNull()
+  })
+
+  it('preserves all Decimal fields with very large numbers', () => {
+    store.currency = new Decimal('1.234e308')
+    store.refactorPoints = new Decimal('9.87e150')
+    store.singularityPower = new Decimal('5e50')
+    store.generators[2]!.amount = new Decimal('3.14e80')
+    store.generators[2]!.bought = 1234
+
+    const out = roundtrip(store)
+    expect(out.currency.toString()).toBe(store.currency.toString())
+    expect(out.refactorPoints.toString()).toBe(store.refactorPoints.toString())
+    expect(out.singularityPower.toString()).toBe(store.singularityPower.toString())
+    expect(out.generators[2]!.amount.toString()).toBe('3.14e+80')
+    expect(out.generators[2]!.bought).toBe(1234)
+  })
+
+  it('preserves paradigms, challenge completions, and automator states', () => {
+    store.paradigms = { system_kernel: true, efficiency_starter: true, pointer_arithmetic: true }
+    store.challengeCompletions = { challenge1: true, challenge2: false, challenge3: true, challenge4: false }
+    store.automatorStates = { 1: true, 3: false, 5: true }
+    store.activeChallenge = 'challenge2'
+
+    const out = roundtrip(store)
+    expect(out.paradigms).toEqual(store.paradigms)
+    expect(out.challengeCompletions).toEqual(store.challengeCompletions)
+    expect(out.automatorStates).toEqual(store.automatorStates)
+    expect(out.activeChallenge).toBe('challenge2')
+  })
+
+  it('preserves activeRefactoring (technical debt) state', () => {
+    store.activeRefactoring = {
+      paradigmId: 'efficiency_starter',
+      frozenParadigms: ['efficiency_starter', 'pointer_arithmetic'],
+      frozenSP: new Decimal(6),
+      cpCost: new Decimal('1e132'),
+    }
+    const out = roundtrip(store)
+    expect(out.activeRefactoring).not.toBeNull()
+    expect(out.activeRefactoring!.paradigmId).toBe('efficiency_starter')
+    expect(out.activeRefactoring!.frozenParadigms).toEqual(['efficiency_starter', 'pointer_arithmetic'])
+    expect(out.activeRefactoring!.frozenSP.toString()).toBe('6')
+    expect(out.activeRefactoring!.cpCost.toString()).toBe('1e+132')
+  })
+
+  it('preserves Code Rush state', () => {
+    store.codeRushCharge = 73
+    store.codeRushActiveExpiry = 1234567890
+    store.codeRushClickCount = 42
+    const out = roundtrip(store)
+    expect(out.codeRushCharge).toBe(73)
+    expect(out.codeRushActiveExpiry).toBe(1234567890)
+    expect(out.codeRushClickCount).toBe(42)
+  })
+
+  it('preserves narrative unlock progress', () => {
+    store.unlockedNarratives = ['game_start', 'first_function', 'first_class']
+    const out = roundtrip(store)
+    expect(out.unlockedNarratives).toEqual(['game_start', 'first_function', 'first_class'])
+  })
+
+  it('preserves singularity unlock and counts', () => {
+    store.unlockedSingularity = true
+    store.singularityCount = 7
+    store.version = 5
+    store.refactorCount = 99
+    const out = roundtrip(store)
+    expect(out.unlockedSingularity).toBe(true)
+    expect(out.singularityCount).toBe(7)
+    expect(out.version).toBe(5)
+    expect(out.refactorCount).toBe(99)
+  })
+
+  it('hydrates old partial saves by filling missing generators and challenge flags', () => {
+    store.hydrate({
+      saveVersion: '0.9.0',
+      generators: [{ id: 1, amount: '12', bought: 3 }],
+      challengeCompletions: { challenge1: true } as any,
+      buyMultiplier: 'invalid' as any,
+      activeChallenge: 'missing' as any,
+    })
+
+    expect(store.saveVersion).toBe('1.0.5')
+    expect(store.generators).toHaveLength(8)
+    expect(store.generators[0]!.amount.toString()).toBe('12')
+    expect(store.generators[0]!.bought).toBe(3)
+    expect(store.generators[7]!.amount.toString()).toBe('0')
+    expect(store.challengeCompletions).toEqual({
+      challenge1: true,
+      challenge2: false,
+      challenge3: false,
+      challenge4: false,
+    })
+    expect(store.buyMultiplier).toBe('x1')
+    expect(store.activeChallenge).toBe('none')
+  })
+})
+
+describe('Game Store - simulateProgress', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('does nothing for non-positive durations', () => {
+    store.generators[0]!.amount = new Decimal(10)
+    const before = store.currency.toString()
+    store.simulateProgress(0)
+    expect(store.currency.toString()).toBe(before)
+  })
+
+  it('produces CP from owned generators over time', () => {
+    // 10 Variables (gen 1) at base production 1/sec → ~10 CP per second
+    store.generators[0]!.amount = new Decimal(10)
+    store.simulateProgress(1000) // 1 second
+    expect(store.currency.toNumber()).toBeGreaterThan(0)
+  })
+
+  it('cascades production from higher tiers down to lower tiers', () => {
+    // 1 Function (gen 2) should produce Variables (gen 1) over time
+    store.generators[1]!.amount = new Decimal(1)
+    expect(store.generators[0]!.amount.toString()).toBe('0')
+    store.simulateProgress(2000) // 2 seconds
+    expect(store.generators[0]!.amount.toNumber()).toBeGreaterThan(0)
+  })
+})
+
+describe('Game Store - architecturalOverheadPenalty', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('returns 1 when AI cores below threshold (no penalty)', () => {
+    store.generators[7]!.bought = 25 // exactly at ARCHITECTURAL_OVERHEAD_AI_CORES
+    expect(store.architecturalOverheadPenalty).toBe(1)
+  })
+
+  it('applies penalty when AI cores exceed threshold', () => {
+    store.generators[7]!.bought = 50
+    expect(store.architecturalOverheadPenalty).toBeLessThan(1)
+    expect(store.architecturalOverheadPenalty).toBeGreaterThan(0)
+  })
+
+  it('reduces penalty when api_interface paradigm is purchased', () => {
+    store.generators[7]!.bought = 50
+    const withoutParadigm = store.architecturalOverheadPenalty
+    store.paradigms.api_interface = true
+    const withParadigm = store.architecturalOverheadPenalty
+    expect(withParadigm).toBeGreaterThan(withoutParadigm)
+  })
+})
+
+describe('Game Store - calculateOfflineProgress', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('returns false and does nothing when offline less than 10 seconds', () => {
+    store.lastUpdateTime = Date.now() - 5_000 // 5 seconds ago
+    expect(store.calculateOfflineProgress()).toBe(false)
+    expect(store.pendingOfflineGains).toBeNull()
+  })
+
+  it('caps offline duration to 1 hour', () => {
+    store.generators[0]!.amount = new Decimal(100)
+    store.lastUpdateTime = Date.now() - 7200_000 // 2 hours ago
+    store.calculateOfflineProgress()
+    expect(store.pendingOfflineGains).not.toBeNull()
+    expect(store.pendingOfflineGains!.diff).toBe(3600)
+  })
+
+  it('updates lastUpdateTime when offline gains are snapshotted', () => {
+    store.generators[0]!.amount = new Decimal(100)
+    const old = Date.now() - 60_000
+    store.lastUpdateTime = old
+    store.calculateOfflineProgress()
+    expect(store.lastUpdateTime).toBeGreaterThan(old)
+  })
+})
+
+describe('Game Store - Technical Debt flow', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+    store.singularityPower = new Decimal(100)
+    // Build a chain: system_kernel → efficiency_starter → pointer_arithmetic
+    store.purchaseParadigm('system_kernel')
+    store.purchaseParadigm('efficiency_starter')
+    store.purchaseParadigm('pointer_arithmetic')
+  })
+
+  it('freezes the target paradigm and all downstream descendants', () => {
+    store.requestParadigmRefactor('efficiency_starter')
+    expect(store.activeRefactoring).not.toBeNull()
+    expect(store.activeRefactoring!.frozenParadigms).toContain('efficiency_starter')
+    expect(store.activeRefactoring!.frozenParadigms).toContain('pointer_arithmetic')
+    expect(store.paradigms.efficiency_starter).toBeUndefined()
+    expect(store.paradigms.pointer_arithmetic).toBeUndefined()
+    expect(store.paradigms.system_kernel).toBe(true) // upstream untouched
+  })
+
+  it('cancel restores frozen paradigms', () => {
+    store.requestParadigmRefactor('efficiency_starter')
+    store.cancelParadigmRefactor()
+    expect(store.activeRefactoring).toBeNull()
+    expect(store.paradigms.efficiency_starter).toBe(true)
+    expect(store.paradigms.pointer_arithmetic).toBe(true)
+  })
+
+  it('confirm refunds SP and pays CP cost', () => {
+    store.requestParadigmRefactor('efficiency_starter')
+    const cpCost = store.activeRefactoring!.cpCost
+    const frozenSP = store.activeRefactoring!.frozenSP
+    const spBefore = store.singularityPower
+    store.currency = cpCost.times(2) // ensure we can afford
+    store.confirmParadigmRefactor()
+    expect(store.activeRefactoring).toBeNull()
+    expect(store.singularityPower.eq(spBefore.plus(frozenSP))).toBe(true)
+  })
+
+  it('confirm refuses if currency is insufficient', () => {
+    store.requestParadigmRefactor('efficiency_starter')
+    store.currency = new Decimal(0)
+    store.confirmParadigmRefactor()
+    expect(store.activeRefactoring).not.toBeNull()
+  })
+})
+
+describe('Game Store - Code Rush', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('cannot activate before charge reaches 100', () => {
+    store.codeRushCharge = 99
+    store.activateCodeRush()
+    expect(store.codeRushActiveExpiry).toBeNull()
+  })
+
+  it('activates and resets charge when ready', () => {
+    store.codeRushCharge = 100
+    store.activateCodeRush()
+    expect(store.isCodeRushActive).toBe(true)
+    expect(store.codeRushCharge).toBe(0)
+  })
+
+  it('isCodeRushActive becomes false after expiry', () => {
+    store.codeRushCharge = 100
+    store.activateCodeRush()
+    // Simulate time passing
+    store.currentTime = (store.codeRushActiveExpiry ?? 0) + 1
+    expect(store.isCodeRushActive).toBe(false)
+  })
+
+  it('manual click charges Code Rush when not active', () => {
+    expect(store.codeRushCharge).toBe(0)
+    store.manualClick()
+    expect(store.codeRushCharge).toBeGreaterThan(0)
+  })
+
+  it('manual click does NOT charge while Code Rush is active', () => {
+    store.codeRushCharge = 100
+    store.activateCodeRush()
+    expect(store.codeRushCharge).toBe(0)
+    store.manualClick()
+    expect(store.codeRushCharge).toBe(0)
   })
 })

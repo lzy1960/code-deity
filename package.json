@@ -7,6 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
     "android:sync": "pnpm generate && npx capacitor sync android",
     "postinstall": "nuxt prepare"
   },
@@ -18,12 +20,12 @@
     "@vue-flow/core": "^1.46.4",
     "@vueuse/core": "^13.9.0",
     "break_infinity.js": "^2.2.0",
-    "dagre": "^0.8.5",
     "dexie": "^4.2.0",
     "gsap": "^3.13.0",
     "less": "^4.4.1",
     "nuxt": "^4.1.1",
     "pinia": "^3.0.3",
+    "v-onboarding": "^2.12.3",
     "vue": "^3.5.21",
     "vue-router": "^4.5.1"
   },
@@ -35,7 +37,6 @@
     "@nuxt/icon": "^2.0.0",
     "@nuxtjs/i18n": "^10.1.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
-    "@types/dagre": "^0.7.53",
     "@vitejs/plugin-vue": "^6.0.1",
     "jsdom": "^27.0.0",
     "vitest": "^3.2.4"
