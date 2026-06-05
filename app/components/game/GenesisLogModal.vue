@@ -1,28 +1,42 @@
 <template>
-  <Transition name="modal-fade">
-    <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm font-mono" @click.self="modal.hide()">
-      <!-- Header -->
-      <div class="flex-shrink-0 px-4 py-2 flex items-center justify-between border-b border-green-500/20">
-        <div class="text-green-400">[GENESIS_LOG]</div>
-        <button @click="modal.hide()" class="text-red-400 hover:text-red-300">
-          <Icon name="mdi:close-box" class="h-6 w-6" />
-        </button>
-      </div>
+  <Transition name="modal-panel">
+    <div v-if="modal.isRevealed.value" class="modal-backdrop" @click.self="modal.hide()">
+      <section class="system-modal">
+        <header class="modal-header">
+          <div>
+            <p>GENESIS LOG</p>
+            <h2>
+              <Icon name="mdi:console-line" />
+              {{ $t('common.genesisLog') }}
+            </h2>
+          </div>
+          <button class="icon-close" @click="modal.hide()">
+            <Icon name="mdi:close" />
+          </button>
+        </header>
 
-      <!-- Log Display -->
-      <div ref="logContainer" class="flex-1 p-4 overflow-y-auto space-y-2 text-green-400 text-sm">
-        <div v-for="(entry, index) in displayedLog" :key="entry.id">
-          <span class="text-gray-500 select-none">> </span>
-          <span v-if="index === displayedLog.length - 1 && isTyping">{{ typingBuffer }}</span>
-          <span v-else>{{ $t(entry.textKey) }}</span>
+        <div ref="logContainer" class="log-body">
+          <div v-for="(entry, index) in displayedLog" :key="entry.id" class="log-entry">
+            <span class="prompt">&gt;</span>
+            <span v-if="index === displayedLog.length - 1 && isTyping">{{ typingBuffer }}</span>
+            <span v-else>{{ $t(entry.textKey) }}</span>
+          </div>
+          <div v-if="displayedLog.length === 0" class="empty-log">
+            {{ $t('common.noGenesisLog') }}
+          </div>
         </div>
-      </div>
 
-      <!-- Footer / Command Bar -->
-      <div class="flex-shrink-0 px-4 py-2 flex items-center justify-center gap-4 border-t border-green-500/20">
-        <button @click="scrollToOrigin" class="border border-green-500/50 px-3 py-1 rounded text-green-400 hover:bg-green-500/20">[SCROLL_TO_ORIGIN]</button>
-        <button @click="scrollToLatest" class="border border-green-500/50 px-3 py-1 rounded text-green-400 hover:bg-green-500/20">[SCROLL_TO_LATEST]</button>
-      </div>
+        <footer class="modal-footer">
+          <button @click="scrollToOrigin">
+            <Icon name="mdi:arrow-up" />
+            {{ $t('common.scrollToOrigin') }}
+          </button>
+          <button @click="scrollToLatest">
+            <Icon name="mdi:arrow-down" />
+            {{ $t('common.scrollToLatest') }}
+          </button>
+        </footer>
+      </section>
     </div>
   </Transition>
 </template>
@@ -118,13 +132,152 @@ const scrollToLatest = () => {
 </script>
 
 <style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
+.modal-panel-enter-active,
+.modal-panel-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.modal-panel-enter-from,
+.modal-panel-leave-to {
   opacity: 0;
+  transform: translateY(8px);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 16px;
+}
+
+.system-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 720px);
+  height: min(82vh, 760px);
+  overflow: hidden;
+  border: 1px solid rgba(56, 153, 250, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(13, 26, 40, 0.96), rgba(8, 15, 24, 0.98)),
+    radial-gradient(circle at 12% 0%, rgba(74, 222, 128, 0.08), transparent 34%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42), inset 0 0 36px rgba(0, 0, 0, 0.32);
+}
+
+.modal-header,
+.modal-footer {
+  flex: 0 0 auto;
+  border-color: rgba(56, 153, 250, 0.14);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom-width: 1px;
+  padding: 14px;
+}
+
+.modal-header p {
+  color: #3899fa;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  color: #e5f3ff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.icon-close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(142, 173, 204, 0.18);
+  border-radius: 8px;
+  color: #8eadcc;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.icon-close:hover {
+  border-color: rgba(56, 153, 250, 0.34);
+  background: rgba(56, 153, 250, 0.12);
+  color: #e5f3ff;
+}
+
+.log-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  color: #d1fae5;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  border-bottom: 1px solid rgba(56, 153, 250, 0.08);
+  padding: 8px 0;
+  line-height: 1.55;
+}
+
+.prompt {
+  color: #3899fa;
+  user-select: none;
+}
+
+.empty-log {
+  border: 1px solid rgba(56, 153, 250, 0.12);
+  border-radius: 8px;
+  background: rgba(16, 26, 35, 0.68);
+  color: #8eadcc;
+  padding: 12px;
+  text-align: center;
+}
+
+.modal-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border-top-width: 1px;
+  padding: 12px 14px;
+}
+
+.modal-footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  border: 1px solid rgba(56, 153, 250, 0.28);
+  border-radius: 8px;
+  background: rgba(56, 153, 250, 0.12);
+  color: #e5f3ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.modal-footer button:hover {
+  border-color: rgba(125, 211, 252, 0.52);
+  background: rgba(56, 153, 250, 0.22);
 }
 </style>

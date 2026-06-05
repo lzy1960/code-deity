@@ -2,7 +2,6 @@
 import { onMounted, onUnmounted, computed, watch, ref } from 'vue'
 import { useGameStore } from '~/store/game'
 import { useOfflineProgressModal } from '~/composables/useOfflineProgressModal'
-import { formatNumber } from '~/utils/format';
 import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
 import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
@@ -127,26 +126,10 @@ watch(() => gameStore.automatorStates, () => {
     <GenesisLogModal />
     <AutoSaveNotifier />
 
-    <OfflineProgressModal :is-revealed="isRevealed">
-      <h2 class="text-base font-bold text-[#3899fa] flex items-center justify-center gap-2">
-        <Icon name="mdi:timer-sand" />
-        <span>{{ $t('common.welcomeBack') }}</span>
-      </h2>
-      <p class="mt-3 text-xs text-gray-300">{{ $t('common.offlineGainMessage') }}</p>
-
-      <div class="my-4 bg-black/30 rounded-lg p-3">
-        <p class="text-2xl font-bold text-green-400">+{{ formatNumber(gameStore.pendingOfflineGains?.cp) }}</p>
-        <p class="mt-1 text-xs text-gray-400">{{ $t('common.computingPower') }} (CP)</p>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <button
-          @click="confirm"
-          class="w-full rounded-lg bg-[#3899fa] text-white font-bold py-2 px-4 hover:bg-opacity-90 transition-colors text-sm shadow-lg shadow-[#3899fa]/30"
-        >
-          {{ $t('common.confirmGains') }}
-        </button>
-      </div>
-    </OfflineProgressModal>
+    <OfflineProgressModal
+      :is-revealed="isRevealed"
+      :cp="gameStore.pendingOfflineGains?.cp"
+      @confirm="confirm"
+    />
   </div>
 </template>

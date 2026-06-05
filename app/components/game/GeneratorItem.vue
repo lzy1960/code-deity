@@ -1,44 +1,50 @@
 <template>
-  <div v-if="generator" class="bg-[#182635] rounded-md overflow-hidden">
-    <div class="flex items-stretch">
-      <div class="flex-[2_2_0px] px-2.5 py-2 flex flex-col justify-between">
-        <div>
-          <h3 class="text-white text-xs font-bold leading-tight">{{ localizedName }}</h3>
-          <p class="text-[#8eadcc] text-[10px] font-normal leading-normal">
-            {{ $t('common.quantity') }}: {{ formattedAmount }}
-            <span v-if="buyAmount.gt(0)" class="text-cyan-400">(+{{ formatNumber(buyAmount) }})</span>
-          </p>
-        </div>
-        <div class="mt-1.5">
-          <p class="text-white text-[10px] font-medium leading-normal">x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</p>
-          <div class="rounded-full bg-[#2f4d6a] mt-0.5 h-1 w-full" :title="$t('generatorItem.nextBonusHint', { nextBonus: progressInfo.nextBonus })">
-            <div class="h-1 rounded-full bg-[#3899fa]" :style="{ width: `${progressInfo.progress}%` }"></div>
-          </div>
-        </div>
+  <article v-if="generator" class="generator-row" :class="{ affordable: canBuy }">
+    <div class="generator-main">
+      <div class="tier-badge">
+        <span>T{{ String(generatorId).padStart(2, '0') }}</span>
       </div>
-      <div class="relative flex-1">
-        <button
-          :data-onboarding="generatorId === 1 ? 'generator-buy' : undefined"
-          class="w-full h-full bg-[#21364a] transition-colors text-white flex flex-col items-center justify-center px-2 py-2 gap-0.5"
-          :class="{
-            'hover:bg-blue-500 cursor-pointer bg-blue-600 shadow-[0_0_6px_rgba(59,130,246,0.4)]': canBuy,
-            'bg-gray-700/50 cursor-not-allowed': !canBuy
-          }"
-          :disabled="!canBuy"
-          @click="buy"
-        >
-          <span class="absolute top-1 right-1 text-[10px] font-bold rounded-full bg-black/30 text-white px-1.5 py-0">
-            {{ gameStore.buyMultiplier === 'max' ? $t('common.max') : gameStore.buyMultiplier }}
+
+      <div class="generator-copy">
+        <div class="title-line">
+          <h3>{{ localizedName }}</h3>
+          <span class="amount-chip">
+            {{ $t('common.quantity') }}
+            <b>{{ formattedAmount }}</b>
+            <i v-if="buyAmount.gt(0)">+{{ formatNumber(buyAmount) }}</i>
           </span>
-          <div v-if="discountedCost">
-            <p class="text-[10px] font-bold text-gray-500 line-through text-center">{{ formattedCost }}</p>
-            <p class="text-xs font-bold text-green-400 text-center">{{ formatNumber(discountedCost) }}</p>
+        </div>
+
+        <div class="bonus-strip">
+          <div class="bonus-meta">
+            <span>x{{ formatNumber(gameStore.buy10Bonus(generatorId)) }}</span>
+            <small>{{ formattedProgress }}%</small>
           </div>
-          <p v-else class="text-xs font-bold">{{ formattedCost }}</p>
-        </button>
+          <div class="progress-track" :title="$t('generatorItem.nextBonusHint', { nextBonus: progressInfo.nextBonus })">
+            <div :style="{ width: `${progressWidth}%` }" />
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <button
+      :data-onboarding="generatorId === 1 ? 'generator-buy' : undefined"
+      class="buy-button"
+      :class="{ disabled: !canBuy }"
+      :disabled="!canBuy"
+      @click="buy"
+    >
+      <span class="multiplier-chip">
+        {{ gameStore.buyMultiplier === 'max' ? $t('common.max') : gameStore.buyMultiplier }}
+      </span>
+      <span v-if="discountedCost" class="cost-stack">
+        <s>{{ formattedCost }}</s>
+        <b>{{ formatNumber(discountedCost) }}</b>
+      </span>
+      <b v-else>{{ formattedCost }}</b>
+      <Icon name="mdi:cart-plus" />
+    </button>
+  </article>
 </template>
 
 <script setup lang="ts">
@@ -86,6 +92,17 @@ const progressInfo = computed(() => {
   return gameStore.getProgressInfo(props.generatorId);
 });
 
+const progressWidth = computed(() => {
+  const progress = Number(progressInfo.value.progress);
+  if (!Number.isFinite(progress)) return 0;
+  return Math.min(100, Math.max(0, Number(progress.toFixed(4))));
+});
+
+const formattedProgress = computed(() => {
+  const rounded = Number(progressWidth.value.toFixed(1));
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+});
+
 const localizedName = computed(() => getLocalizedGameName(config.value.name, locale.value));
 
 const buy = () => {
@@ -94,3 +111,230 @@ const buy = () => {
   }
 };
 </script>
+
+<style scoped>
+.generator-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(82px, 24%, 108px);
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(76, 165, 255, 0.26);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.98), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 0% 0%, rgba(76, 165, 255, 0.16), transparent 40%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, inset 0 0 22px rgba(0, 0, 0, 0.22);
+  padding: 9px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.generator-row.affordable {
+  border-color: rgba(134, 239, 172, 0.42);
+  box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.08), 0 0 18px rgba(56, 153, 250, 0.12), inset 0 0 22px rgba(0, 0, 0, 0.2);
+}
+
+.generator-main {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 9px;
+  min-width: 0;
+}
+
+.tier-badge {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  border: 1px solid rgba(76, 165, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(56, 153, 250, 0.16);
+  color: #bae6fd;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.generator-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.title-line {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title-line h3 {
+  flex: 1 1 5rem;
+  min-width: 0;
+  overflow: hidden;
+  color: #f8fbff;
+  font-size: 0.94rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 68%;
+  border: 1px solid rgba(142, 173, 204, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 15, 24, 0.66);
+  color: #b9cde0;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.25;
+  padding: 3px 6px;
+  white-space: nowrap;
+}
+
+.amount-chip b,
+.amount-chip i {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.amount-chip b {
+  color: #ffffff;
+}
+
+.amount-chip i {
+  color: #bbf7d0;
+}
+
+.bonus-strip {
+  min-width: 0;
+}
+
+.bonus-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: #b9cde0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.bonus-meta span {
+  color: #dcfce7;
+}
+
+.progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(8, 15, 24, 0.76);
+  outline: 1px solid rgba(142, 173, 204, 0.18);
+}
+
+.progress-track div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4ca5ff, #9af7bd);
+  box-shadow: 0 0 14px rgba(76, 165, 255, 0.42);
+  transition: width 0.22s ease;
+}
+
+.buy-button {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 58px;
+  border: 1px solid rgba(76, 165, 255, 0.44);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(56, 153, 250, 0.34), rgba(28, 112, 190, 0.3));
+  color: #ffffff;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.buy-button:not(.disabled):hover {
+  border-color: rgba(186, 230, 253, 0.72);
+  background: linear-gradient(180deg, rgba(76, 165, 255, 0.45), rgba(28, 112, 190, 0.38));
+  transform: translateY(-1px);
+}
+
+.buy-button.disabled {
+  cursor: not-allowed;
+  border-color: rgba(142, 173, 204, 0.22);
+  background: rgba(15, 23, 42, 0.64);
+  color: #8ba2b7;
+}
+
+.multiplier-chip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  color: #dbeafe;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.54rem;
+  font-weight: 900;
+  padding: 1px 4px;
+}
+
+.cost-stack {
+  display: grid;
+  gap: 1px;
+  text-align: center;
+}
+
+.cost-stack s {
+  color: #93a7ba;
+  font-size: 0.62rem;
+}
+
+.cost-stack b {
+  color: #bbf7d0;
+}
+
+.buy-button > .iconify {
+  color: #dbeafe;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 380px) {
+  .generator-row {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .generator-main {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .amount-chip {
+    padding-inline: 6px;
+  }
+
+  .buy-button {
+    min-height: 56px;
+    font-size: 0.7rem;
+  }
+}
+</style>

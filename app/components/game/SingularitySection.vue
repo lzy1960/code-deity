@@ -1,21 +1,24 @@
 <template>
-  <div>
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-4 px-4">
-      <h2 class="text-2xl font-bold text-purple-300" style="text-shadow: 0 0 5px rgba(192, 132, 252, 0.5);">{{ $t('common.programmingParadigms') }}</h2>
-      <div class="flex items-center gap-3 text-sm">
-        <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
-          <span class="text-gray-400">{{ $t('common.singularityPowerShort') }}: </span>
-          <span class="font-bold text-green-400">{{ formatNumber(gameStore.singularityPower) }}</span>
+  <div class="singularity-panel">
+    <header class="section-header">
+      <div>
+        <p>PARADIGM GRAPH</p>
+        <h2>{{ $t('common.programmingParadigms') }}</h2>
+      </div>
+      <div class="resource-strip">
+        <div>
+          <span>{{ $t('common.singularityPowerShort') }}</span>
+          <b>{{ formatNumber(gameStore.singularityPower) }}</b>
         </div>
-        <div class="bg-black/20 px-3 py-1 rounded-lg text-center">
-          <span class="text-gray-400">{{ $t('common.singularity') }}: </span>
-          <span class="font-bold text-purple-400">{{ formatNumber(gameStore.singularityCount) }}</span>
+        <div>
+          <span>{{ $t('common.singularity') }}</span>
+          <b>{{ formatNumber(gameStore.singularityCount) }}</b>
         </div>
       </div>
-    </div>
+    </header>
 
     <!-- School Limit Banner -->
-    <div v-if="lockedSchool" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-red-900/80 backdrop-blur-sm border border-red-500/50 text-red-300 px-4 py-2 rounded-lg text-sm shadow-lg flex items-center gap-2 w-[80vw] max-w-4xl">
+    <div v-if="lockedSchool" class="school-limit-banner">
       <Icon name="ph:scales-bold" />
       <span>{{ $t('common.youHaveChosenToDevelop') }} <b>{{ purchasedSchools.join(` ${$t('common.and')} `) }}</b> {{ $t('common.school') }}，<b>{{ lockedSchool }}</b> {{ $t('common.schoolSkillsLockedHint') }}</span>
     </div>
@@ -204,46 +207,112 @@ onMounted(() => {
 <style scoped>
 .flow-container {
   position: relative;
-  border-radius: 1rem; /* 16px */
+  border: 1px solid rgba(76, 165, 255, 0.24);
+  border-radius: 8px;
   overflow: hidden;
-  background-color: #0d151c; /* Match sidebar */
-  padding: 2px; /* Creates space for the animated border */
-  border: 1px solid rgba(192, 132, 252, 0.2);
-}
-
-.flow-container::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 250%; /* Make it larger to ensure the gradient is smooth */
-  height: 250%;
-  background: conic-gradient(
-    transparent,
-    rgba(192, 132, 252, 0.7), /* purple-400 */
-    transparent 15%
-  );
-  transform: translate(-50%, -50%);
-  animation: rotate 8s linear infinite;
-}
-
-@keyframes rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.94), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 0% 0%, rgba(76, 165, 255, 0.12), transparent 36%);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.26);
 }
 
 .flow-inner {
-  position: relative; /* Establish stacking context */
-  z-index: 1;         /* Sit on top of the ::before pseudo-element */
-  background-color: #0d151c; /* Match sidebar */
-  border-radius: 0.875rem; /* 14px, slightly smaller than container */
+  position: relative;
+  z-index: 1;
+  background: transparent;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* Crucial for VueFlow to respect the rounded corners */
+  overflow: hidden;
 }
 
 /* Override Vue Flow's default background */
 .paradigm-flow {
   background: transparent;
+}
+
+.singularity-panel {
+  position: relative;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-header p {
+  color: #4ca5ff;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.section-header h2 {
+  margin-top: 3px;
+  color: #f8fbff;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.resource-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resource-strip div {
+  min-width: 88px;
+  border: 1px solid rgba(76, 165, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(16, 26, 35, 0.72);
+  padding: 7px 10px;
+  text-align: right;
+}
+
+.resource-strip span {
+  display: block;
+  color: #b9cde0;
+  font-size: 0.64rem;
+}
+
+.resource-strip b {
+  display: block;
+  color: #dcfce7;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.86rem;
+}
+
+.school-limit-banner {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(80vw, 920px);
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 8px;
+  background: rgba(127, 29, 29, 0.82);
+  color: #fee2e2;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 640px) {
+  .section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .resource-strip div {
+    flex: 1 1 0;
+    text-align: left;
+  }
 }
 </style>

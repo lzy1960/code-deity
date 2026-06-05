@@ -7,6 +7,7 @@ import AppFooter from '~/components/layout/AppFooter.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
 import CompileSection from '~/components/game/CompileSection.vue';
+import CompileLockedPanel from '~/components/game/CompileLockedPanel.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
@@ -24,6 +25,7 @@ const gameStore = useGameStore();
 const SingularitySection = defineAsyncComponent(() => import('~/components/game/SingularitySection.vue'));
 const singularityModal = useSingularityModal();
 const toast = useToast();
+const { t } = useI18n();
 const { shouldShowTour, shouldShowCodeRushTour, completeTour, completeCodeRushTour } = useOnboarding();
 const { spotlightRect, update: updateSpotlightRect, clear: clearSpotlight, forwardClickIfInsideSpotlight } = useSpotlight();
 
@@ -184,12 +186,51 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateSpotlight);
+  stopSheetDrag();
 });
 
 const activeTab = ref('generators');
-const upgradesSubTab = ref('refactor');
 const hasShownRefactorMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
+const bottomSheetHeight = ref(65);
+const isDraggingSheet = ref(false);
+let sheetDragStartY = 0;
+let sheetDragStartHeight = 65;
+
+const bottomSheetStyle = computed(() => ({
+  '--sheet-height': `${bottomSheetHeight.value}vh`,
+}));
+
+function clampSheetHeight(height: number) {
+  return Math.min(86, Math.max(38, height));
+}
+
+function handleSheetPointerMove(event: PointerEvent) {
+  if (!isDraggingSheet.value) return;
+  const deltaY = sheetDragStartY - event.clientY;
+  bottomSheetHeight.value = clampSheetHeight(sheetDragStartHeight + (deltaY / window.innerHeight) * 100);
+}
+
+function stopSheetDrag() {
+  if (!isDraggingSheet.value) return;
+  isDraggingSheet.value = false;
+  window.removeEventListener('pointermove', handleSheetPointerMove);
+  window.removeEventListener('pointerup', stopSheetDrag);
+  window.removeEventListener('pointercancel', stopSheetDrag);
+}
+
+function startSheetDrag(event: PointerEvent) {
+  sheetDragStartY = event.clientY;
+  sheetDragStartHeight = bottomSheetHeight.value;
+  isDraggingSheet.value = true;
+  window.addEventListener('pointermove', handleSheetPointerMove);
+  window.addEventListener('pointerup', stopSheetDrag);
+  window.addEventListener('pointercancel', stopSheetDrag);
+}
+
+function toggleSheetHeight() {
+  bottomSheetHeight.value = bottomSheetHeight.value < 64 ? 65 : 42;
+}
 
 // Floating numbers state
 const floatingNumbers = ref<{ id: number; amount: string; left: string; top: string; drift: string; lift: string; tilt: string }[]>([]);
@@ -235,6 +276,15 @@ const handleSingularityReset = () => {
   });
 };
 
+const handleArchitecturalOverheadClick = () => {
+  activeTab.value = 'stats';
+  toast.addToast(t('common.architecturalOverheadToast', {
+    cores: formatNumber(gameStore.generators[7]?.bought ?? 0),
+    threshold: prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES,
+    efficiency: `${(gameStore.architecturalOverheadPenalty * 100).toFixed(1)}%`,
+  }), 'warning', 5000);
+};
+
 const isGeneratorSectionUnlocked = computed(() => {
   return gameStore.isGeneratorUnlocked(1);
 });
@@ -245,7 +295,7 @@ const unlockedGenerators = computed(() => {
 
 const tabTitleMap: Record<string, string> = {
   generators: $t('common.generators'),
-  upgrades:   $t('common.refactor'),
+  upgrades:   $t('common.progression'),
   challenges: $t('common.challenges'),
   automation: $t('common.automation'),
   singularity: $t('common.singularity'),
@@ -263,7 +313,7 @@ const buyGenerator = (id: number) => {
 
 const desktopNavItems = computed(() => [
   { id: 'generators', label: $t('common.generators'), short: 'GEN', icon: 'mdi:memory', unlocked: true },
-  { id: 'upgrades',   label: $t('common.refactor'),   short: 'RP',  icon: 'mdi:rocket-launch', unlocked: gameStore.isRefactorUnlocked },
+  { id: 'upgrades',   label: $t('common.progression'), short: 'ADV', icon: 'mdi:rocket-launch', unlocked: gameStore.isRefactorUnlocked },
   { id: 'challenges', label: $t('common.challenges'), short: 'CH',  icon: 'mdi:trophy-variant', unlocked: gameStore.isChallengesUnlocked },
   { id: 'automation', label: $t('common.automation'), short: 'AUTO',icon: 'mdi:robot', unlocked: gameStore.isAutomationUnlocked },
   { id: 'singularity',label: $t('common.singularity'),short: 'SP',  icon: 'mdi:creation', unlocked: gameStore.unlockedSingularity },
@@ -335,7 +385,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 <template>
   <div
-    class="flex h-dvh flex-col bg-[#101a23] text-white"
+    class="app-shell flex h-dvh flex-col text-white"
     style='font-family: "Space Grotesk", "Noto Sans", sans-serif; padding-top: env(safe-area-inset-top);'
   >
     <!-- ── Onboarding Overlay ─────────────────────────── -->
@@ -418,7 +468,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
          MOBILE LAYOUT  (hidden on lg+)
          CodeScene fills screen, bottom sheet overlays it
     ═══════════════════════════════════════════════════ -->
-    <div class="lg:hidden flex-1 relative overflow-hidden min-h-0">
+    <div class="mobile-stage lg:hidden flex-1 relative overflow-hidden min-h-0">
 
       <!-- Floating click numbers -->
       <div class="floating-numbers-container pointer-events-none">
@@ -434,6 +484,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
       <CodeScene
         class="absolute inset-0"
         @manual-click="handleManualClick"
+        @overhead-click="handleArchitecturalOverheadClick"
       />
 
       <!-- Click guidance hint, pinned to top of terminal area -->
@@ -442,7 +493,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
           v-if="gameStore.generators[0]!.bought === 0 && !isTourActive"
           class="absolute inset-x-0 top-4 z-[25] flex justify-center pointer-events-none"
         >
-          <div class="flex flex-col items-center gap-0.5 bg-black/60 px-3 py-1.5 rounded-md backdrop-blur-sm border border-green-900/40">
+          <div class="click-guidance flex flex-col items-center gap-0.5 px-3 py-1.5">
             <p class="text-green-400 text-[10px] animate-pulse font-mono">{{ $t('common.clickToAccumulate') }}</p>
             <p class="text-gray-500 text-[9px]">{{ $t('common.goalHint') }}</p>
           </div>
@@ -453,11 +504,19 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
       <div
         v-if="isGeneratorSectionUnlocked"
         class="bottom-sheet absolute bottom-0 inset-x-0 z-20 flex flex-col"
+        :class="{ dragging: isDraggingSheet }"
+        :style="bottomSheetStyle"
       >
         <!-- Handle -->
-        <div class="flex justify-center py-1.5 shrink-0">
-          <div class="w-8 h-0.5 rounded-full bg-gray-600 opacity-40" />
-        </div>
+        <button
+          class="sheet-resize-handle flex justify-center py-1.5 shrink-0"
+          type="button"
+          aria-label="调整下方面板高度"
+          @pointerdown.prevent="startSheetDrag"
+          @dblclick.prevent="toggleSheetHeight"
+        >
+          <span class="sheet-handle w-8 h-0.5 rounded-full" />
+        </button>
 
         <!-- Code Rush + 倍率选择器（合并为一行，generators tab only） -->
         <div v-if="activeTab === 'generators'" class="px-3 pb-1.5 shrink-0 flex items-center gap-2">
@@ -483,61 +542,25 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
           </div>
 
           <!-- Upgrades -->
-          <div v-show="activeTab === 'upgrades'">
-            <div class="border-b border-gray-700 mb-3">
-              <div class="flex">
-                <a
-                  @click="upgradesSubTab = 'refactor'"
-                  class="flex flex-col items-center justify-center py-2 px-4 w-1/2 text-center cursor-pointer text-sm font-bold"
-                  :class="upgradesSubTab === 'refactor'
-                    ? 'border-b-2 border-[#3899fa] text-white'
-                    : 'border-b-2 border-transparent text-gray-500'"
-                >{{ $t('common.refactor') }}</a>
-                <a
-                  v-if="gameStore.isRefactorUnlocked"
-                  @click="gameStore.isCompileUnlocked ? upgradesSubTab = 'deploy' : null"
-                  class="flex flex-col items-center justify-center py-2 px-4 w-1/2 text-center text-sm font-bold"
-                  :class="{
-                    'cursor-pointer': gameStore.isCompileUnlocked,
-                    'cursor-not-allowed': !gameStore.isCompileUnlocked,
-                    'border-b-2 border-[#3899fa] text-white': upgradesSubTab === 'deploy',
-                    'border-b-2 border-transparent text-gray-500': upgradesSubTab !== 'deploy',
-                  }"
-                >
-                  <span class="flex items-center gap-1">
-                    {{ $t('common.deploy') }}
-                    <Icon v-if="!gameStore.isCompileUnlocked" name="mdi:lock" class="text-gray-500 text-xs" />
-                  </span>
-                </a>
-              </div>
-            </div>
-            <div v-show="upgradesSubTab === 'refactor'">
-              <RefactorSection
-                :potential-rp-gain="gameStore.refactorGain"
-                :can-refactor="gameStore.canRefactor"
-                :current-rp-bonus="gameStore.rpBonus"
-                :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
-                @refactor="gameStore.refactor"
-              />
-            </div>
-            <div v-if="gameStore.isRefactorUnlocked" v-show="upgradesSubTab === 'deploy'">
-              <CompileSection
-                v-if="gameStore.isCompileUnlocked"
-                :version="gameStore.version"
-                :cost="gameStore.compileCost"
-                :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
-                @compile-and-release="gameStore.compileAndRelease"
-              />
-              <div v-else class="text-center text-gray-400 py-6">
-                <Icon name="mdi:lock-outline" class="text-4xl mb-3" />
-                <h3 class="text-sm font-bold mb-1">{{ $t('common.unlockCondition') }}</h3>
-                <p class="text-xs">
-                  {{ $t('common.youNeedToHave') }}
-                  <span class="font-bold text-green-400">{{ prestigeThresholds.COMPILE_UNLOCK_RP }}</span>
-                  {{ $t('common.refactorPoints') }} {{ $t('common.unlockThisFeature') }}.
-                </p>
-              </div>
-            </div>
+          <div v-show="activeTab === 'upgrades'" class="space-y-3 pt-2">
+            <RefactorSection
+              :potential-rp-gain="gameStore.refactorGain"
+              :can-refactor="gameStore.canRefactor"
+              :current-rp-bonus="gameStore.rpBonus"
+              :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
+              @refactor="gameStore.refactor"
+            />
+            <CompileSection
+              v-if="gameStore.isCompileUnlocked"
+              :version="gameStore.version"
+              :cost="gameStore.compileCost"
+              :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
+              @compile-and-release="gameStore.compileAndRelease"
+            />
+            <CompileLockedPanel
+              v-else
+              :unlock-requirement="prestigeThresholds.COMPILE_UNLOCK_RP"
+            />
           </div>
 
           <!-- Stats -->
@@ -567,10 +590,10 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
          DESKTOP LAYOUT  (hidden on mobile, shown on lg+)
          Left: CodeScene (full height) │ Right: tab nav + content
     ═══════════════════════════════════════════════════ -->
-    <div class="hidden lg:flex flex-1 overflow-hidden min-h-0">
+    <div class="desktop-stage hidden lg:flex flex-1 overflow-hidden min-h-0">
 
       <!-- ── Left: CodeScene panel (full height) ─────── -->
-      <div class="relative shrink-0 w-[360px] xl:w-[420px] p-3 flex flex-col" data-onboarding="code-area">
+      <div class="code-panel-shell relative shrink-0 w-[360px] xl:w-[420px] p-3 flex flex-col" data-onboarding="code-area">
         <!-- Floating click numbers -->
         <div class="floating-numbers-container pointer-events-none">
           <span
@@ -582,8 +605,9 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
         </div>
         <!-- Scene fills all available height -->
         <CodeScene
-          class="rounded-xl overflow-hidden flex-1"
+          class="code-scene-frame rounded-xl overflow-hidden flex-1"
           @manual-click="handleManualClick"
+          @overhead-click="handleArchitecturalOverheadClick"
         />
         <div v-if="gameStore.generators[0]!.bought === 0 && !isTourActive" class="text-center mt-2">
           <p class="text-green-500/70 text-xs animate-pulse">{{ $t('common.clickToAccumulate') }}</p>
@@ -592,33 +616,34 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
       </div>
 
       <!-- ── Right: tab nav + scrollable content ──────── -->
-      <div class="flex-1 flex flex-col overflow-hidden border-l border-gray-800/50">
+      <div class="desktop-content-shell flex-1 flex flex-col overflow-hidden">
 
         <!-- Horizontal tab navigation bar -->
-        <nav class="shrink-0 flex items-end gap-0.5 px-4 pt-3 bg-[#0a1520] border-b border-gray-800/60 overflow-x-auto">
-          <TransitionGroup name="tab-appear" tag="div" class="flex items-end gap-0.5">
+        <nav class="desktop-tabs">
+          <TransitionGroup name="tab-appear" tag="div" class="desktop-tab-list">
           <a
             v-for="item in desktopNavItems.filter(t => t.unlocked)"
             :key="item.id"
             @click="handleDesktopNavClick(item)"
-            class="relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-sm font-medium whitespace-nowrap shrink-0 transition-colors"
+            class="desktop-tab"
             :class="[
               activeTab === item.id
-                ? 'bg-[#101a23] text-[#3899fa] border border-b-0 border-gray-700/80'
+                ? 'active'
                 : item.unlocked
-                  ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                  : 'text-gray-600 cursor-not-allowed',
+                  ? ''
+                  : 'locked',
             ]"
           >
-            <Icon :name="item.icon" class="text-base" />
+            <Icon :name="item.icon" />
             <span>{{ item.label }}</span>
-            <Icon v-if="!item.unlocked" name="mdi:lock-outline" class="text-xs opacity-60" />
+            <small>{{ item.short }}</small>
+            <Icon v-if="!item.unlocked" name="mdi:lock-outline" class="lock-icon" />
           </a>
           </TransitionGroup>
         </nav>
 
         <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-5">
+        <div class="content-scroll flex-1 overflow-y-auto p-5">
           <div :class="{ 'mx-auto max-w-2xl': activeTab !== 'singularity' }" class="space-y-4 pb-6">
 
             <!-- Code Rush + multiplier row (generators tab) -->
@@ -640,7 +665,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
               />
             </div>
 
-            <div v-if="activeTab === 'upgrades'">
+            <div v-if="activeTab === 'upgrades'" class="space-y-4">
               <RefactorSection
                 :potential-rp-gain="gameStore.refactorGain"
                 :can-refactor="gameStore.canRefactor"
@@ -648,13 +673,16 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
                 :unlock-requirement="prestigeThresholds.REFACTOR_UNLOCK_AI_CORES"
                 @refactor="gameStore.refactor"
               />
-              <div class="my-6 border-t border-gray-700" />
               <CompileSection
                 v-if="gameStore.isCompileUnlocked"
                 :version="gameStore.version"
                 :cost="gameStore.compileCost"
                 :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
                 @compile-and-release="gameStore.compileAndRelease"
+              />
+              <CompileLockedPanel
+                v-else
+                :unlock-requirement="prestigeThresholds.COMPILE_UNLOCK_RP"
               />
             </div>
 
@@ -670,8 +698,140 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 </template>
 
 <style scoped>
-.tab-appear-enter-active { transition: all 0.3s ease; }
+.app-shell {
+  overflow: hidden;
+  background: #101a23;
+}
+
+.app-shell::before,
+.app-shell::after {
+  display: none;
+}
+
+.mobile-stage,
+.desktop-stage {
+  position: relative;
+}
+
+.mobile-stage::after {
+  display: none;
+}
+
+.click-guidance {
+  border: 1px solid #1f5137;
+  border-radius: 8px;
+  background: #0d1f1a;
+}
+
+.code-panel-shell {
+  border-right: 1px solid #1f3448;
+  background: #0c1721;
+}
+
+.code-scene-frame {
+  border: 1px solid #253f56;
+  box-shadow: none;
+}
+
+.desktop-content-shell {
+  border-left: 1px solid #1f3448;
+  background: #101a23;
+  box-shadow: none;
+}
+
+.content-scroll {
+  scrollbar-color: rgba(155, 210, 255, 0.28) transparent;
+}
+
+.tab-appear-enter-active { transition: all 0.22s ease; }
 .tab-appear-enter-from   { opacity: 0; transform: translateY(8px); }
+
+.desktop-tabs {
+  flex-shrink: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid #253f56;
+  background: #0d1823;
+  box-shadow: none;
+  padding: 10px 14px;
+}
+
+.desktop-tab-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktop-tab {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid #253f56;
+  border-radius: 8px;
+  background: #102033;
+  color: #8ba2b7;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0 10px;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.desktop-tab:hover {
+  border-color: #3d6f92;
+  background: #173047;
+  color: #cfe3f5;
+}
+
+.desktop-tab.active {
+  border-color: #4f9c70;
+  background: #10291f;
+  color: #f8fbff;
+  box-shadow: none;
+}
+
+.desktop-tab.active::before {
+  content: '';
+  position: absolute;
+  inset: auto 10px 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: #9af7bd;
+  box-shadow: none;
+}
+
+.desktop-tab .iconify {
+  font-size: 1rem;
+}
+
+.desktop-tab small {
+  border: 1px solid #253f56;
+  border-radius: 999px;
+  color: #b9cde0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 1px 5px;
+}
+
+.desktop-tab.active small {
+  border-color: #2d6042;
+  color: #dcfce7;
+}
+
+.desktop-tab.locked {
+  cursor: not-allowed;
+  color: #425568;
+}
+
+.desktop-tab .lock-icon {
+  font-size: 0.76rem;
+  opacity: 0.7;
+}
 
 /* ── Floating click numbers ─────────────────────────── */
 .floating-numbers-container {
@@ -685,16 +845,11 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
   position: absolute;
   min-width: 3.25rem;
   padding: 0.18rem 0.52rem 0.2rem;
-  border: 1px solid rgba(110, 231, 183, 0.42);
+  border: 1px solid #4f9c70;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(11, 31, 31, 0.92), rgba(4, 15, 18, 0.42)),
-    radial-gradient(circle at 50% 0%, rgba(110, 231, 183, 0.26), transparent 62%);
+  background: #10291f;
   color: #d1fae5;
-  box-shadow:
-    0 0 0 1px rgba(74, 222, 128, 0.08) inset,
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 18px rgba(74, 222, 128, 0.24);
+  box-shadow: none;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
   font-size: 13px;
   font-weight: 800;
@@ -708,15 +863,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 }
 
 .floating-number::after {
-  content: '';
-  position: absolute;
-  inset: -0.35rem -0.45rem;
-  z-index: -1;
-  border-radius: inherit;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.36), transparent 68%);
-  filter: blur(8px);
-  opacity: 0.65;
-  animation: float-glow 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  display: none;
 }
 
 @keyframes float-up {
@@ -753,11 +900,44 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 /* ── Bottom Sheet ───────────────────────────────────── */
 .bottom-sheet {
-  background: #0d151c;
+  overflow: hidden;
+  border: 1px solid #253f56;
+  border-bottom: 0;
   border-radius: 1.25rem 1.25rem 0 0;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.7);
-  height: 65vh;
+  background: #101a23;
+  box-shadow: none;
+  height: var(--sheet-height, 65vh);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: height 0.18s ease;
+}
+
+.bottom-sheet.dragging {
+  transition: none;
+}
+
+.bottom-sheet::before {
+  display: none;
+}
+
+.bottom-sheet > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sheet-resize-handle {
+  width: 100%;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.sheet-handle {
+  background: #5f7589;
+  box-shadow: none;
+}
+
+.sheet-resize-handle:active .sheet-handle,
+.sheet-resize-handle:hover .sheet-handle {
+  background: #8eadcc;
 }
 
 /* ── Code Rush button styles moved to CodeRushButton.vue ── */
@@ -767,12 +947,12 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 /* ── Onboarding tooltip ───────────────────────────── */
 .onboarding-tooltip {
-  background: #182635;
-  border: 1px solid #2a4a66;
+  background: #142331;
+  border: 1px solid #29465f;
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   width: 17rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
 }
 
 .onboarding-fade-enter-active { transition: opacity 0.4s ease; }

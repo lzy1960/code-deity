@@ -1,25 +1,30 @@
 <template>
-  <Transition name="modal-bounce">
-    <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
-      <div class="relative m-4 w-full max-w-sm rounded-2xl bg-transparent p-0 shadow-2xl overflow-hidden border border-purple-500/20">
-        <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-4">
-          <h2 class="mb-4 text-center text-base font-bold text-purple-300">
-            {{ $t('common.selectLanguage') }}
-          </h2>
-          <div class="space-y-2">
-            <button
-              v-for="locale in locales"
-              :key="locale.code"
-              @click="switchLanguage(locale.code)"
-              class="w-full rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-200"
-              :class="currentLocale === locale.code ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
-            >
-              {{ locale.name }}
-            </button>
+  <Transition name="modal-panel">
+    <div v-if="modal.isRevealed.value" class="modal-backdrop" @click.self="modal.hide()">
+      <section class="system-modal">
+        <header class="modal-header">
+          <div>
+            <p>LOCALE ROUTER</p>
+            <h2>{{ $t('common.selectLanguage') }}</h2>
           </div>
+          <button class="icon-close" @click="modal.hide()">
+            <Icon name="mdi:close" />
+          </button>
+        </header>
+
+        <div class="language-list">
+          <button
+            v-for="locale in locales"
+            :key="locale.code"
+            @click="switchLanguage(locale.code)"
+            class="language-option"
+            :class="{ active: currentLocale === locale.code }"
+          >
+            <span>{{ locale.name }}</span>
+            <Icon v-if="currentLocale === locale.code" name="mdi:check" />
+          </button>
         </div>
-      </div>
+      </section>
     </div>
   </Transition>
 </template>
@@ -37,27 +42,107 @@ const switchLanguage = (code: string) => {
 </script>
 
 <style scoped>
-.modal-bounce-enter-active,
-.modal-bounce-leave-active {
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.modal-panel-enter-active,
+.modal-panel-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
-.modal-bounce-enter-from,
-.modal-bounce-leave-to {
+
+.modal-panel-enter-from,
+.modal-panel-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(8px);
 }
-.animated-border {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 200%; height: 200%;
-  background: conic-gradient(transparent, rgba(192, 132, 252, 0.7), transparent 35%);
-  transform: translate(-50%, -50%);
-  animation: rotate 5s cubic-bezier(0.65, -0.5, 0.25, 1.5) infinite;
-  z-index: 0;
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 16px;
 }
-@keyframes rotate {
-  0%   { transform: translate(-50%, -50%) rotate(0deg)   scale(1);   opacity: 0.7; }
-  50%  { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) rotate(360deg) scale(1);   opacity: 0.7; }
+
+.system-modal {
+  width: min(100%, 380px);
+  overflow: hidden;
+  border: 1px solid rgba(56, 153, 250, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(13, 26, 40, 0.96), rgba(8, 15, 24, 0.98)),
+    radial-gradient(circle at 12% 0%, rgba(56, 153, 250, 0.11), transparent 34%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42), inset 0 0 36px rgba(0, 0, 0, 0.32);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(56, 153, 250, 0.14);
+  padding: 14px;
+}
+
+.modal-header p {
+  color: #3899fa;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.modal-header h2 {
+  margin-top: 3px;
+  color: #e5f3ff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.icon-close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(142, 173, 204, 0.18);
+  border-radius: 8px;
+  color: #8eadcc;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.icon-close:hover {
+  border-color: rgba(56, 153, 250, 0.34);
+  background: rgba(56, 153, 250, 0.12);
+  color: #e5f3ff;
+}
+
+.language-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  border: 1px solid rgba(56, 153, 250, 0.12);
+  border-radius: 8px;
+  background: rgba(16, 26, 35, 0.68);
+  color: #8eadcc;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 0 12px;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.language-option:hover,
+.language-option.active {
+  border-color: rgba(56, 153, 250, 0.38);
+  background: rgba(56, 153, 250, 0.16);
+  color: #e5f3ff;
 }
 </style>

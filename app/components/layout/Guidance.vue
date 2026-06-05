@@ -1,5 +1,5 @@
 <template>
-  <Transition name="modal-bounce">
+  <Transition name="modal-panel">
     <div v-if="isVisible" class="fixed inset-0 z-[1000] flex items-center justify-center" @click="dismiss">
       <!-- Spotlight effect backdrops -->
       <div v-if="rect" class="backdrop" :style="{ top: 0, left: 0, width: '100%', height: `${rect.top}px` }"></div>
@@ -8,10 +8,10 @@
       <div v-if="rect" class="backdrop" :style="{ top: `${rect.top}px`, right: 0, width: `${windowWidth - rect.right}px`, height: `${rect.height}px` }"></div>
 
       <div class="relative">
-        <div class="p-4 bg-gray-800 border border-cyan-500 rounded-lg shadow-2xl text-center space-y-3" style="width: 80vw;">
-          <p class="text-cyan-300 font-bold text-lg">{{ title }}</p>
-          <p class="text-gray-300 text-sm">{{ text }}</p>
-          <button @click.stop="dismiss" class="mt-2 px-4 py-2 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-500 transition-colors">
+        <div class="guidance-panel" style="width: 80vw;">
+          <p>{{ title }}</p>
+          <span>{{ text }}</span>
+          <button @click.stop="dismiss">
             知道了
           </button>
         </div>
@@ -63,15 +63,51 @@ const dismiss = () => {
   backdrop-filter: blur(2px);
 }
 
-.modal-bounce-enter-active,
-.modal-bounce-leave-active {
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.modal-panel-enter-active,
+.modal-panel-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.modal-bounce-enter-from,
-.modal-bounce-leave-to {
+.modal-panel-enter-from,
+.modal-panel-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(8px);
+}
+
+.guidance-panel {
+  display: grid;
+  gap: 10px;
+  max-width: 440px;
+  border: 1px solid rgba(76, 165, 255, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.98), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 12% 0%, rgba(76, 165, 255, 0.16), transparent 36%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42), inset 0 0 36px rgba(0, 0, 0, 0.26);
+  padding: 16px;
+  text-align: center;
+}
+
+.guidance-panel p {
+  color: #f8fbff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.guidance-panel span {
+  color: #b9cde0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.guidance-panel button {
+  min-height: 38px;
+  border: 1px solid rgba(76, 165, 255, 0.44);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(56, 153, 250, 0.34), rgba(28, 112, 190, 0.3));
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 900;
 }
 
 .arrow {
@@ -83,7 +119,7 @@ const dismiss = () => {
 
 .arrow-down {
   border-width: 10px 10px 0 10px;
-  border-color: #0e7490 transparent transparent transparent; /* cyan-700 for better contrast */
+  border-color: rgba(76, 165, 255, 0.52) transparent transparent transparent;
   top: 100%;
   left: 50%;
   transform: translateX(-50%);

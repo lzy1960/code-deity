@@ -31,10 +31,17 @@
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <!-- 效率警告 -->
-        <span v-if="gameStore.architecturalOverheadPenalty < 1" class="efficiency-warn">
+        <button
+          v-if="gameStore.architecturalOverheadPenalty < 1"
+          class="efficiency-warn"
+          type="button"
+          :title="$t('common.architecturalOverheadHint')"
+          @click.stop="emit('overheadClick')"
+        >
           <Icon name="mdi:alert-circle-outline" class="text-xs" />
-          {{ (gameStore.architecturalOverheadPenalty * 100).toFixed(0) }}%
-        </span>
+          <span class="warn-label">{{ $t('common.efficiency') }}</span>
+          <strong>{{ architectureEfficiency }}</strong>
+        </button>
         <!-- CPS -->
         <span class="data-cps">
           +{{ formatNumber(gameStore.cps) }}<span class="data-unit"> {{ $t('common.cpsShort') }}</span>
@@ -45,7 +52,7 @@
     <!-- ── 代码流区域 ── -->
     <div
       ref="codeAreaEl"
-      class="relative flex-1 overflow-hidden cursor-crosshair"
+      class="code-area relative flex-1 overflow-hidden cursor-crosshair"
       data-onboarding="code-area"
       @click="handleClick"
     >
@@ -103,8 +110,12 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useGameStore } from '~/store/game'
 import { formatNumber } from '~/utils/format'
 
-const emit = defineEmits<{ manualClick: [e: MouseEvent] }>()
+const emit = defineEmits<{
+  manualClick: [e: MouseEvent]
+  overheadClick: []
+}>()
 const gameStore = useGameStore()
+const architectureEfficiency = computed(() => `${(gameStore.architecturalOverheadPenalty * 100).toFixed(0)}%`)
 
 // ── Code pool (pre-highlighted HTML, tiered by generator id) ──────────────
 const POOL: { html: string; gen: number }[] = [
@@ -347,12 +358,34 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   border: 1px solid rgba(56, 153, 250, 0.2);
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
   box-shadow: 0 0 20px rgba(56, 153, 250, 0.06), inset 0 0 40px rgba(0,0,0,0.4);
+  overflow: hidden;
+  contain: paint;
+  isolation: isolate;
+  transition:
+    background-color 0.7s ease,
+    border-color 0.7s ease,
+    box-shadow 0.7s ease;
+}
+
+.code-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, transparent 0%, rgba(251, 191, 36, 0.18) 42%, rgba(254, 243, 199, 0.28) 50%, rgba(251, 191, 36, 0.12) 58%, transparent 100%);
+  opacity: 0;
+  transform: translateX(-120%);
 }
 
 /* ── Data Bar ───────────────────────────────────────── */
 .data-bar {
   background: rgba(6, 12, 20, 0.95);
   border-bottom: 1px solid rgba(56, 153, 250, 0.1);
+  transition:
+    background-color 0.65s ease,
+    border-color 0.65s ease;
 }
 
 .data-cp {
@@ -360,6 +393,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.85rem;
   font-weight: 700;
   text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+  transition: color 0.65s ease, text-shadow 0.65s ease;
 }
 
 .data-rp {
@@ -367,6 +401,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.72rem;
   font-weight: 600;
   text-shadow: 0 0 6px rgba(167, 139, 250, 0.3);
+  transition: color 0.65s ease, text-shadow 0.65s ease;
 }
 
 .data-cps {
@@ -374,6 +409,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.72rem;
   font-weight: 600;
   opacity: 0.75;
+  transition: color 0.65s ease;
 }
 
 .data-unit {
@@ -383,25 +419,55 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 }
 
 .efficiency-warn {
+  appearance: none;
   color: #fb923c;
   font-size: 0.65rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.15rem;
+  cursor: pointer;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 999px;
+  background: rgba(67, 20, 7, 0.34);
+  padding: 2px 6px;
   text-shadow: 0 0 5px rgba(251, 146, 60, 0.4);
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.efficiency-warn:hover {
+  border-color: rgba(253, 186, 116, 0.58);
+  background: rgba(92, 34, 12, 0.5);
+}
+
+.efficiency-warn:focus-visible {
+  outline: 2px solid rgba(253, 186, 116, 0.78);
+  outline-offset: 2px;
+}
+
+.efficiency-warn strong {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-weight: 900;
+}
+
+@media (max-width: 420px) {
+  .warn-label {
+    display: none;
+  }
 }
 
 /* ── Header ─────────────────────────────────────────── */
 .scene-header {
   background: linear-gradient(90deg, #0d1a28 0%, #0a1520 100%);
   border-bottom: 1px solid rgba(56, 153, 250, 0.15);
+  transition: border-color 0.65s ease;
 }
 
 .header-icon {
   color: #3899fa;
   font-size: 0.9rem;
   text-shadow: 0 0 8px rgba(56, 153, 250, 0.8);
+  transition: color 0.65s ease, text-shadow 0.65s ease;
 }
 
 .header-title {
@@ -409,6 +475,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.12em;
+  transition: color 0.65s ease;
 }
 
 .header-dot {
@@ -418,6 +485,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   background: #4ade80;
   box-shadow: 0 0 6px #4ade80;
   animation: dot-pulse 2s ease-in-out infinite;
+  transition: background-color 0.65s ease, box-shadow 0.65s ease;
 }
 
 @keyframes dot-pulse {
@@ -430,6 +498,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   opacity: 0.8;
+  transition: color 0.65s ease;
 }
 
 .cps-text {
@@ -467,6 +536,11 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 }
 
 /* ── Code area background effects ───────────────────── */
+.code-area {
+  clip-path: inset(0);
+  contain: paint;
+}
+
 .scanlines {
   background: repeating-linear-gradient(
     0deg,
@@ -483,6 +557,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   height: 32px;
   background: linear-gradient(to bottom, #080f18, transparent);
   z-index: 2;
+  transition: background 0.65s ease;
 }
 
 /* ── Lines ──────────────────────────────────────────── */
@@ -490,14 +565,19 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   scrollbar-width: none;
   -ms-overflow-style: none;
   z-index: 0;
+  clip-path: inset(0);
+  contain: paint;
 }
 .lines-scroll::-webkit-scrollbar { display: none; }
 
 .line-row {
   line-height: 1.5;
   min-height: 1.5em;
+  max-width: 100%;
+  overflow: hidden;
   opacity: 0;
   animation: line-in 0.18s ease-out forwards;
+  backface-visibility: hidden;
 }
 
 @keyframes line-in {
@@ -510,17 +590,22 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.65rem;
   min-width: 1.8rem;
   text-align: right;
+  transition: color 0.65s ease;
 }
 
 .line-prompt {
   color: #166534;
   font-size: 0.72rem;
+  transition: color 0.65s ease;
 }
 
 .code-text {
+  min-width: 0;
+  overflow: hidden;
   color: #4ade80;
   font-size: 0.72rem;
   text-shadow: 0 0 6px rgba(74, 222, 128, 0.35);
+  transition: color 0.65s ease, text-shadow 0.65s ease;
 }
 
 .cursor-char {
@@ -528,6 +613,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   font-size: 0.72rem;
   text-shadow: 0 0 8px rgba(74, 222, 128, 0.9);
   animation: blink 1.06s step-end infinite;
+  transition: color 0.65s ease, text-shadow 0.65s ease;
 }
 
 @keyframes blink {
@@ -536,12 +622,12 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 }
 
 /* ── Syntax colours (monochrome green palette) ──────── */
-:deep(.ck) { color: #6ee7b7; text-shadow: 0 0 5px rgba(110,231,183,0.4); } /* keyword — brighter */
-:deep(.cf) { color: #a7f3d0; }                                               /* fn name — lightest */
-:deep(.cs) { color: #34d399; }                                               /* string — emerald */
-:deep(.cn) { color: #6ee7b7; }                                               /* number */
-:deep(.cc) { color: #166534; text-shadow: none; }                           /* comment — dimmest */
-:deep(.cw) { color: #fb923c; text-shadow: 0 0 5px rgba(251,146,60,0.4); }  /* warning — amber */
+:deep(.ck) { color: #6ee7b7; text-shadow: 0 0 5px rgba(110,231,183,0.4); transition: color 0.65s ease, text-shadow 0.65s ease; } /* keyword — brighter */
+:deep(.cf) { color: #a7f3d0; transition: color 0.65s ease; }                                               /* fn name — lightest */
+:deep(.cs) { color: #34d399; transition: color 0.65s ease; }                                               /* string — emerald */
+:deep(.cn) { color: #6ee7b7; transition: color 0.65s ease; }                                               /* number */
+:deep(.cc) { color: #166534; text-shadow: none; transition: color 0.65s ease; }                           /* comment — dimmest */
+:deep(.cw) { color: #fb923c; text-shadow: 0 0 5px rgba(251,146,60,0.4); transition: color 0.65s ease, text-shadow 0.65s ease; }  /* warning — amber */
 
 /* ── Click light ─────────────────────────────────────── */
 .click-glow {
@@ -591,6 +677,9 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   background: #0a1520;
   border-top: 1px solid rgba(56, 153, 250, 0.1);
   font-size: 0.6rem;
+  transition:
+    background-color 0.65s ease,
+    border-color 0.65s ease;
 }
 
 .footer-left {
@@ -607,8 +696,27 @@ watch(() => gameStore.isCodeRushActive, (active) => {
    CODE RUSH MODE — amber / gold theme
 ═══════════════════════════════════════════════════════ */
 .rush-mode {
+  background: #141006;
   border-color: rgba(251, 191, 36, 0.35);
   box-shadow: 0 0 24px rgba(251, 191, 36, 0.1), inset 0 0 40px rgba(0,0,0,0.4);
+}
+
+.rush-mode::before {
+  animation: rush-warmup-sweep 0.72s ease-out;
+}
+
+@keyframes rush-warmup-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
 }
 
 .rush-mode .scene-header {
@@ -631,6 +739,7 @@ watch(() => gameStore.isCodeRushActive, (active) => {
   text-shadow: 0 0 6px rgba(253, 230, 138, 0.4);
 }
 .rush-mode .line-prompt { color: #92400e; }
+.rush-mode .ln-num { color: #78350f; }
 .rush-mode .cursor-char { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,1); }
 
 .rush-mode :deep(.ck) { color: #fb923c; text-shadow: 0 0 5px rgba(251,146,60,0.5); }
@@ -639,7 +748,10 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 .rush-mode :deep(.cn) { color: #fb923c; }
 .rush-mode :deep(.cc) { color: #78350f; text-shadow: none; }
 
-.rush-mode .data-bar { border-bottom-color: rgba(251, 191, 36, 0.1); }
+.rush-mode .data-bar {
+  background: rgba(18, 15, 0, 0.95);
+  border-bottom-color: rgba(251, 191, 36, 0.1);
+}
 .rush-mode .data-cp { color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.6); }
 .rush-mode .data-cps { color: #fbbf24; }
 .rush-mode .data-rp { color: #fcd34d; }
@@ -652,7 +764,10 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 .rush-mode .click-flash {
   background: radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);
 }
-.rush-mode .scene-footer { border-top-color: rgba(251,191,36,0.15); }
+.rush-mode .scene-footer {
+  background: #120f00;
+  border-top-color: rgba(251,191,36,0.15);
+}
 
 /* ═══════════════════════════════════════════════════════
    CHALLENGE MODE — amber / orange warning (not red)

@@ -1,9 +1,9 @@
 <template>
-  <header class="sticky top-0 z-10 bg-[#101a23]/90 backdrop-blur-sm transition-all duration-500 border-b border-[#21364a]" :class="{ 'shadow-[0_0_15px_rgba(192,132,252,0.5)] border-b border-purple-400/50': canSingularity }">
+  <header class="app-header" :class="{ charged: canSingularity }">
     <div class="flex items-center px-3 py-2 gap-2">
       <!-- 左：奇点按钮 -->
       <div class="shrink-0">
-        <button v-if="canSingularity" @click="$emit('singularityClick')" class="px-3 h-8 rounded-lg bg-purple-600 text-white font-bold text-xs animate-pulse shadow-lg shadow-purple-500/50 flex items-center gap-1.5">
+        <button v-if="canSingularity" @click="$emit('singularityClick')" class="singularity-button">
           <Icon name="mdi:creation" class="text-base" />
           <span>{{ $t('common.singularity') }}</span>
         </button>
@@ -43,16 +43,57 @@ const genesisLogModal = useGenesisLogModal();
 </script>
 
 <style scoped>
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #21364a;
+  background: rgba(16, 26, 35, 0.9);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.app-header.charged {
+  border-bottom-color: rgba(134, 239, 172, 0.36);
+  box-shadow: 0 0 15px rgba(76, 165, 255, 0.2);
+}
+
+.singularity-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  border: 1px solid rgba(134, 239, 172, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(22, 101, 52, 0.48), rgba(20, 83, 45, 0.4));
+  color: #dcfce7;
+  box-shadow: 0 0 14px rgba(134, 239, 172, 0.18);
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0 10px;
+  animation: singularity-ready 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes singularity-ready {
+  from { box-shadow: 0 0 10px rgba(134, 239, 172, 0.14); }
+  to { box-shadow: 0 0 18px rgba(134, 239, 172, 0.28); }
+}
+
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 9999px;
-  color: white;
-  background: transparent;
-  transition: background 0.15s;
+  border: 1px solid rgba(142, 173, 204, 0.14);
+  border-radius: 8px;
+  color: #8eadcc;
+  background: rgba(16, 26, 35, 0.42);
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
-.icon-btn:hover { background: rgba(255,255,255,0.1); }
+.icon-btn:hover {
+  border-color: rgba(56, 153, 250, 0.34);
+  background: rgba(56, 153, 250, 0.12);
+  color: #e5f3ff;
+}
 </style>

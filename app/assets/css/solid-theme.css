@@ -1,0 +1,303 @@
+:root {
+  --glass-surface: #101c27;
+  --glass-surface-strong: #142331;
+  --glass-surface-soft: #0c1721;
+  --glass-highlight: #1c3448;
+  --glass-edge: #29465f;
+  --glass-edge-strong: #3d6f92;
+  --glass-accent: #4ca5ff;
+  --glass-accent-2: #7ee2a8;
+  --glass-warm: #e6b864;
+  --glass-text: #f4f8fc;
+  --glass-muted: #9fb4c8;
+  --glass-dim: #6c8194;
+  --glass-shadow: none;
+  --glass-inner: inset 0 1px 0 #1d3448;
+}
+
+html,
+body {
+  background: #08131d !important;
+}
+
+body {
+  color: var(--glass-text);
+}
+
+body *,
+body *::before,
+body *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+body::before,
+body::after {
+  display: none !important;
+}
+
+body .app-header,
+body .app-footer,
+body .settings-header,
+body .bottom-sheet,
+body .desktop-tabs,
+body .system-panel,
+body .stats-panel,
+body .overhead-detail,
+body .singularity-panel,
+body .locked-panel,
+body .generator-row,
+body .challenge-card,
+body .section-header,
+body .automator-row,
+body .system-modal,
+body .settings-row,
+body .danger-panel,
+body .danger-header,
+body .flow-container,
+body .paradigm-node,
+body .toast-item,
+body .save-toast,
+body .guidance-panel,
+body .select-menu {
+  border-color: var(--glass-edge) !important;
+  background: var(--glass-surface) !important;
+  box-shadow: var(--glass-inner) !important;
+}
+
+body .app-header::before,
+body .app-header::after,
+body .app-footer::before,
+body .app-footer::after,
+body .bottom-sheet::before,
+body .bottom-sheet::after,
+body .desktop-tabs::before,
+body .desktop-tabs::after,
+body .system-panel::before,
+body .system-panel::after,
+body .stats-panel::before,
+body .stats-panel::after,
+body .overhead-detail::before,
+body .overhead-detail::after,
+body .singularity-panel::before,
+body .singularity-panel::after,
+body .locked-panel::before,
+body .locked-panel::after,
+body .generator-row::before,
+body .generator-row::after,
+body .challenge-card::before,
+body .challenge-card::after,
+body .section-header::before,
+body .section-header::after,
+body .automator-row::before,
+body .automator-row::after,
+body .system-modal::before,
+body .system-modal::after,
+body .settings-row::before,
+body .settings-row::after,
+body .danger-panel::before,
+body .danger-panel::after,
+body .flow-container::before,
+body .flow-container::after,
+body .paradigm-node::before,
+body .paradigm-node::after,
+body .toast-item::before,
+body .toast-item::after,
+body .save-toast::before,
+body .save-toast::after,
+body .guidance-panel::before,
+body .guidance-panel::after {
+  display: none !important;
+}
+
+body .modal-backdrop {
+  background: #02070c !important;
+}
+
+body .system-modal,
+body .bottom-sheet,
+body .select-menu {
+  background: #111f2c !important;
+}
+
+body .generator-row,
+body .challenge-card,
+body .automator-row,
+body .settings-row,
+body .paradigm-node,
+body .metric-tile,
+body .signal-tile,
+body .detail-grid > div,
+body .deploy-meta > div,
+body .help-item,
+body .language-option,
+body .log-entry,
+body .choice-card,
+body .readout,
+body .release-readout,
+body .gain-readout,
+body .debt-readout,
+body .paradigm-readout,
+body .metric-grid > div,
+body .stat-card,
+body .warning-box,
+body .warning-copy,
+body .summary-row,
+body .impact-row {
+  border-color: #253f56 !important;
+  background: #0d1924 !important;
+  box-shadow: none !important;
+}
+
+body .tab-item,
+body .desktop-tab,
+body .icon-btn,
+body .back-button,
+body .select-trigger,
+body .code-rush-button,
+body .challenge-button,
+body .singularity-button,
+body .toast-close,
+body .efficiency-warn,
+body .buy-button,
+body .panel-button,
+body .primary-action,
+body .secondary-action,
+body .danger-action,
+body .language-option,
+body .panel-action,
+body .option-button {
+  border-color: #29465f !important;
+  background: #102033 !important;
+  box-shadow: none !important;
+}
+
+body .efficiency-warn {
+  border-color: #9a6a31 !important;
+  background: #241a0e !important;
+  color: #fdba74 !important;
+}
+
+body .buy-button:not(.disabled),
+body .primary-action,
+body .panel-button:not(.disabled) {
+  border-color: #3d78a7 !important;
+  background: #12304a !important;
+}
+
+body .buy-button:not(.disabled):hover,
+body .primary-action:hover,
+body .panel-button:not(.disabled):hover,
+body .icon-btn:hover,
+body .tab-item:hover,
+body .desktop-tab:hover,
+body .panel-action:hover {
+  border-color: #5896c4 !important;
+  background: #173a55 !important;
+}
+
+body .generator-row.affordable,
+body .paradigm-node.purchasable,
+body .overhead-detail.active,
+body .desktop-tab.active,
+body .tab-item.active {
+  border-color: #4f9c70 !important;
+  background: #10291f !important;
+  box-shadow: inset 0 0 0 1px #1b4731 !important;
+}
+
+body .overhead-detail.active {
+  border-color: #9a6a31 !important;
+  background: #241a0e !important;
+  box-shadow: inset 0 0 0 1px #5f3c17 !important;
+}
+
+body .tab-item.active,
+body .desktop-tab.active {
+  color: var(--glass-text) !important;
+}
+
+body .tier-badge,
+body .metric-icon,
+body .generator-mark,
+body .amount-chip,
+body .multiplier-chip,
+body .toast-icon,
+body .status-chip,
+body .select-menu button,
+body .terminal-switch span {
+  border-color: #29465f !important;
+  background: #142638 !important;
+  box-shadow: none !important;
+}
+
+body .code-rush-animated-border-wrapper,
+body .code-rush-active-shadow {
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+body .code-rush-fill,
+body .code-rush-ready-fill,
+body .code-rush-active-zebra {
+  box-shadow: none !important;
+}
+
+body .code-rush-active-zebra {
+  animation: none !important;
+}
+
+body .progress-track,
+body .rush-progress {
+  background: #07111b !important;
+  outline-color: #253f56 !important;
+}
+
+body .progress-track div,
+body .rush-fill,
+body .code-rush-fill {
+  background: linear-gradient(90deg, var(--glass-accent), var(--glass-accent-2)) !important;
+}
+
+body .desktop-tab.active::before,
+body .tab-item.active::before {
+  background: var(--glass-accent-2) !important;
+  box-shadow: none !important;
+}
+
+body .title-line h3,
+body .modal-header h2,
+body .section-header h2,
+body .panel-header h2,
+body .stats-header h2,
+body .node-copy h3,
+body .generator-copy h3,
+body .automator-copy strong {
+  color: var(--glass-text) !important;
+}
+
+body .modal-copy,
+body .help-item dd,
+body .section-hint,
+body .generator-row .amount-chip,
+body .bonus-meta,
+body .toast-message,
+body .metric-copy p,
+body .signal-tile p,
+body .detail-grid span,
+body .overhead-detail > p,
+body .release-readout p,
+body .release-readout span,
+body .readout p,
+body .readout span,
+body .unlock-hint {
+  color: var(--glass-muted) !important;
+}
+
+body .stats-kicker,
+body .panel-kicker,
+body .section-header p,
+body .modal-kicker {
+  color: var(--glass-accent) !important;
+}

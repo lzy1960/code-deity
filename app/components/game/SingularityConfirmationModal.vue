@@ -1,38 +1,32 @@
 <template>
-  <Transition name="modal-bounce">
-    <div v-if="modal.isRevealed.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" @click.self="modal.hide()">
-      <div class="relative m-4 w-full max-w-md rounded-2xl bg-transparent p-0 shadow-2xl shadow-purple-500/20 overflow-hidden border border-purple-500/20">
-        <div class="animated-border"></div>
-        <div class="relative z-10 rounded-[14px] bg-gray-900 m-[2px] p-4">
-          <h2 class="mb-3 text-center text-base font-bold text-purple-300">
-            <Icon name="mdi:creation" class="mr-1" />
+  <Transition name="modal-panel">
+    <div
+      v-if="modal.isRevealed.value"
+      class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+      @click.self="modal.hide()"
+    >
+      <section class="system-modal w-full max-w-[440px] rounded-lg border border-[#4ca5ff]/30 bg-[#132536] p-4 shadow-2xl">
+        <header class="modal-header border-b border-[#4ca5ff]/20 pb-3">
+          <p class="font-mono text-[0.62rem] font-black tracking-[0.12em] text-[#4ca5ff]">SINGULARITY RESET</p>
+          <h2 class="mt-1 flex items-center gap-2 text-base font-black text-[#f8fbff]">
+            <Icon name="mdi:creation" />
             {{ $t('singularity.confirmTitle') }}
           </h2>
-          <p class="mb-4 text-center text-xs text-gray-300">
-            <i18n-t keypath="singularity.description" tag="span">
-              <template #keep><b class="text-green-400">{{ $t('singularity.keepText') }}</b></template>
-              <template #sp><span class="font-bold text-green-400">{{ $t('singularity.spText') }}</span></template>
-            </i18n-t>
-          </p>
-          <p class="mb-4 text-center text-xs font-bold text-yellow-400">
-            {{ $t('singularity.irreversible') }}
-          </p>
-          <div class="flex justify-between gap-3">
-            <button
-              class="flex-1 rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:border-gray-400 hover:bg-gray-700"
-              @click="modal.hide()"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
-              class="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-purple-600/30 transition-colors hover:bg-purple-700"
-              @click="modal.confirm()"
-            >
-              {{ $t('common.confirm') }}
-            </button>
-          </div>
-        </div>
-      </div>
+        </header>
+
+        <p class="modal-copy my-3 text-[0.78rem] leading-relaxed text-[#b9cde0]">
+          <i18n-t keypath="singularity.description" tag="span">
+            <template #keep><b class="keep font-black text-[#bbf7d0]">{{ $t('singularity.keepText') }}</b></template>
+            <template #sp><span class="keep font-black text-[#bbf7d0]">{{ $t('singularity.spText') }}</span></template>
+          </i18n-t>
+        </p>
+        <p class="warning-copy rounded-lg border border-yellow-300/25 bg-yellow-950/20 p-2.5 text-center text-[0.76rem] font-extrabold text-yellow-200">{{ $t('singularity.irreversible') }}</p>
+
+        <footer class="action-row mt-3.5 grid grid-cols-2 gap-2.5">
+          <button class="secondary-action min-h-10 rounded-lg border border-slate-300/25 bg-slate-950/50 text-sm font-black text-[#cfe3f5]" @click="modal.hide()">{{ $t('common.cancel') }}</button>
+          <button class="primary-action min-h-10 rounded-lg border border-[#4ca5ff]/45 bg-[#3899fa]/30 text-sm font-black text-white" @click="modal.confirm()">{{ $t('common.confirm') }}</button>
+        </footer>
+      </section>
     </div>
   </Transition>
 </template>
@@ -44,46 +38,110 @@ const modal = useSingularityModal()
 </script>
 
 <style scoped>
-.modal-bounce-enter-active,
-.modal-bounce-leave-active {
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.modal-panel-enter-active,
+.modal-panel-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.modal-bounce-enter-from,
-.modal-bounce-leave-to {
+.modal-panel-enter-from,
+.modal-panel-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(8px);
 }
 
-.animated-border {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(
-    transparent,
-    rgba(192, 132, 252, 0.7),
-    transparent 35%
-  );
-  transform: translate(-50%, -50%);
-  animation: rotate 5s cubic-bezier(0.65, -0.5, 0.25, 1.5) infinite;
-  z-index: 0;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 16px;
 }
 
-@keyframes rotate {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1);
-    opacity: 0.7;
-  }
+.system-modal {
+  width: min(100%, 440px);
+  border: 1px solid rgba(76, 165, 255, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.98), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 12% 0%, rgba(76, 165, 255, 0.16), transparent 36%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42), inset 0 0 36px rgba(0, 0, 0, 0.26);
+  padding: 16px;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(76, 165, 255, 0.18);
+  padding-bottom: 12px;
+}
+
+.modal-header p {
+  color: #4ca5ff;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  color: #f8fbff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.modal-copy {
+  margin: 12px 0;
+  color: #b9cde0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.keep {
+  color: #bbf7d0;
+  font-weight: 900;
+}
+
+.warning-copy {
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  border-radius: 8px;
+  background: rgba(113, 63, 18, 0.18);
+  color: #fde68a;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 10px;
+  text-align: center;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.secondary-action,
+.primary-action {
+  min-height: 40px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.secondary-action {
+  border: 1px solid rgba(142, 173, 204, 0.26);
+  background: rgba(15, 23, 42, 0.56);
+  color: #cfe3f5;
+}
+
+.primary-action {
+  border: 1px solid rgba(76, 165, 255, 0.44);
+  background: linear-gradient(180deg, rgba(56, 153, 250, 0.34), rgba(28, 112, 190, 0.3));
+  color: #fff;
 }
 </style>

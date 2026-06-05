@@ -12,7 +12,7 @@
       <div
         v-if="!gameStore.isCodeRushActive"
         class="code-rush-fill absolute inset-0 transition-all duration-500 ease-out"
-        :class="isCodeRushChargedAndReady ? 'bg-gradient-to-r from-purple-600 to-purple-500' : 'bg-gradient-to-r from-purple-600 to-blue-500'"
+        :class="{ 'code-rush-ready-fill': isCodeRushChargedAndReady }"
         :style="{ width: codeRushFillWidth }"
       />
       <div
@@ -74,32 +74,37 @@ function onClick() {
 
 <style scoped>
 .code-rush-button {
-  background-color: #1e2a38;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(56, 153, 250, 0.22);
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.98), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 0% 0%, rgba(76, 165, 255, 0.18), transparent 42%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, inset 0 0 22px rgba(0, 0, 0, 0.22);
 }
 
 .code-rush-fill {
+  background: linear-gradient(90deg, rgba(76, 165, 255, 0.62), rgba(154, 247, 189, 0.52));
+  box-shadow: 0 0 16px rgba(76, 165, 255, 0.34);
   transition: width 0.5s ease-out;
 }
 
-.code-rush-active-zebra {
-  background-image: linear-gradient(
-    -45deg,
-    rgba(139, 92, 246, 0.8) 25%,
-    rgba(59, 130, 246, 0.8) 25.1%,
-    rgba(59, 130, 246, 0.8) 50%,
-    rgba(139, 92, 246, 0.8) 50.1%,
-    rgba(139, 92, 246, 0.8) 75%,
-    rgba(59, 130, 246, 0.8) 75.1%
-  );
-  background-size: 80px 80px;
-  animation: zebra-stripe-move 0.5s linear infinite;
+.code-rush-ready-fill {
+  background: linear-gradient(90deg, rgba(76, 165, 255, 0.86), rgba(154, 247, 189, 0.78));
+  box-shadow: 0 0 18px rgba(154, 247, 189, 0.46);
 }
 
-@keyframes zebra-stripe-move {
-  0%   { background-position: 0 0; }
-  100% { background-position: 80px 0; }
+.code-rush-active-zebra {
+  background:
+    linear-gradient(90deg, rgba(76, 165, 255, 0.82), rgba(154, 247, 189, 0.72)),
+    repeating-linear-gradient(100deg, transparent 0 16px, rgba(255, 255, 255, 0.12) 16px 18px);
+  background-size: 100% 100%, 72px 100%;
+  animation: energy-scan 0.7s linear infinite;
+}
+
+@keyframes energy-scan {
+  0%   { background-position: 0 0, 0 0; }
+  100% { background-position: 0 0, 72px 0; }
 }
 
 .code-rush-animated-border-wrapper {
@@ -108,13 +113,13 @@ function onClick() {
 }
 
 .code-rush-active-shadow {
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 12px rgba(56, 153, 250, 0.24), 0 0 20px rgba(134, 239, 172, 0.18);
   animation: pulseShadow 1s infinite alternate;
 }
 
 @keyframes pulseShadow {
-  0%   { box-shadow: 0 0 8px rgba(139, 92, 246, 0.7), 0 0 15px rgba(139, 92, 246, 0.5); }
-  100% { box-shadow: 0 0 12px rgba(139, 92, 246, 0.9), 0 0 25px rgba(139, 92, 246, 0.7); }
+  0%   { box-shadow: 0 0 10px rgba(56, 153, 250, 0.22), 0 0 18px rgba(134, 239, 172, 0.16); }
+  100% { box-shadow: 0 0 16px rgba(56, 153, 250, 0.34), 0 0 26px rgba(134, 239, 172, 0.24); }
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }

@@ -1,8 +1,8 @@
 <template>
   <Transition name="save-toast-fade">
-    <div v-if="notifier.isVisible.value" class="fixed top-5 left-5 z-[9999] bg-gray-900/80 backdrop-blur-md text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg border border-green-500/30">
+    <div v-if="notifier.isVisible.value" class="save-toast">
       <div class="flex items-center gap-2">
-        <Icon name="mdi:content-save-check" class="text-green-400" />
+        <Icon name="mdi:content-save-check" />
         <span>{{ notifier.message.value }}</span>
       </div>
     </div>
@@ -25,5 +25,26 @@ const notifier = useAutoSaveNotifier()
 .save-toast-fade-leave-to {
   opacity: 0;
   transform: translateY(-20px);
+}
+
+.save-toast {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+  border: 1px solid rgba(134, 239, 172, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(19, 37, 54, 0.94), rgba(12, 23, 34, 0.98)),
+    radial-gradient(circle at 0% 0%, rgba(134, 239, 172, 0.16), transparent 36%);
+  color: #f8fbff;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 9px 12px;
+}
+
+.save-toast .iconify {
+  color: #bbf7d0;
 }
 </style>
