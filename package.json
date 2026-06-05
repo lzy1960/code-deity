@@ -7,6 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
     "android:sync": "pnpm generate && npx capacitor sync android",
     "postinstall": "nuxt prepare"
   },

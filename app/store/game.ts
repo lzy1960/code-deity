@@ -92,10 +92,27 @@ type DecimalToString<T> = {
 
 export type SerializableGameState = DecimalToString<GameState>
 
+const CURRENT_SAVE_VERSION = '1.0.5'
+
+const defaultChallengeCompletions = (): ChallengeCompletion => ({
+  challenge1: false,
+  challenge2: false,
+  challenge3: false,
+  challenge4: false,
+})
+
+const isBuyMultiplier = (value: unknown): value is BuyMultiplier => {
+  return value === 'x1' || value === 'x10' || value === 'x100' || value === 'max'
+}
+
+const isActiveChallenge = (value: unknown): value is GameState['activeChallenge'] => {
+  return value === 'none' || value === 'challenge1' || value === 'challenge2' || value === 'challenge3' || value === 'challenge4'
+}
+
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
-    saveVersion: '1.0.5', // version up for state change
+    saveVersion: CURRENT_SAVE_VERSION, // version up for state change
     lastUpdateTime: Date.now(),
     lastCloudSync: null,
     currentTime: Date.now(), // Initialize with current time
@@ -546,31 +563,35 @@ export const useGameStore = defineStore('game', {
      * 显式列出每个字段，新增 GameState 字段时编译器会强制提醒在此处补充加载逻辑。
      */
     hydrate(s: Partial<SerializableGameState>) {
-      this.saveVersion = s.saveVersion ?? '1.0.5'
+      this.saveVersion = CURRENT_SAVE_VERSION
       this.lastUpdateTime = s.lastUpdateTime ?? Date.now()
       this.lastCloudSync = s.lastCloudSync ?? null
       this.currency = new Decimal(s.currency ?? 0)
       this.refactorPoints = new Decimal(s.refactorPoints ?? 0)
       this.refactorCount = s.refactorCount ?? 0
       this.version = s.version ?? 0
-      this.buyMultiplier = s.buyMultiplier ?? 'x1'
+      this.buyMultiplier = isBuyMultiplier(s.buyMultiplier) ? s.buyMultiplier : 'x1'
 
-      this.generators = (s.generators ?? generatorConfigs.map(c => ({ id: c.id, amount: '0', bought: 0 })))
-        .map(g => ({
-          id: g.id,
-          amount: new Decimal(g.amount),
-          bought: g.bought,
-        }))
+      const savedGenerators = new Map((s.generators ?? []).map(g => [g.id, g]))
+      this.generators = generatorConfigs.map(config => {
+        const saved = savedGenerators.get(config.id)
+        return {
+          id: config.id,
+          amount: new Decimal(saved?.amount ?? 0),
+          bought: saved?.bought ?? 0,
+        }
+      })
 
       this.singularityPower = new Decimal(s.singularityPower ?? 0)
       this.unlockedSingularity = s.unlockedSingularity ?? false
       this.paradigms = s.paradigms ?? {}
       this.singularityCount = s.singularityCount ?? 0
 
-      this.challengeCompletions = s.challengeCompletions ?? {
-        challenge1: false, challenge2: false, challenge3: false, challenge4: false,
+      this.challengeCompletions = {
+        ...defaultChallengeCompletions(),
+        ...(s.challengeCompletions ?? {}),
       }
-      this.activeChallenge = s.activeChallenge ?? 'none'
+      this.activeChallenge = isActiveChallenge(s.activeChallenge) ? s.activeChallenge : 'none'
 
       this.automatorStates = s.automatorStates ?? {}
       this.pendingOfflineGains = s.pendingOfflineGains
@@ -827,7 +848,7 @@ export const useGameStore = defineStore('game', {
     hardReset() {
       // Manually reset all state properties to their initial values
       // This is more robust than this.$reset() and avoids potential issues.
-      this.saveVersion = '1.0.5'
+      this.saveVersion = CURRENT_SAVE_VERSION
       this.lastUpdateTime = Date.now()
       this.lastCloudSync = null
       this.currency = new Decimal(0)
@@ -844,12 +865,7 @@ export const useGameStore = defineStore('game', {
       this.unlockedSingularity = false
       this.paradigms = {}
       this.singularityCount = 0
-      this.challengeCompletions = {
-        challenge1: false,
-        challenge2: false,
-        challenge3: false,
-        challenge4: false
-      }
+      this.challengeCompletions = defaultChallengeCompletions()
       this.activeChallenge = 'none'
       this.automatorStates = {}
       this.pendingOfflineGains = null
@@ -868,6 +884,10 @@ export const useGameStore = defineStore('game', {
     startGameLoop() {
       // 委托给 engine 单例。重复调用安全。
       getGameEngine(this as any).start()
+    },
+
+    stopGameLoop() {
+      getGameEngine(this as any).stop()
     },
 
     calculateOfflineProgress(): boolean {

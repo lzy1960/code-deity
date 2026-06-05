@@ -69,8 +69,13 @@
         </div>
       </div>
 
-      <!-- 粒子层 -->
-      <div ref="particlesEl" class="absolute inset-0 pointer-events-none overflow-hidden" />
+      <!-- 点击光晕 -->
+      <span
+        v-for="g in clickGlows"
+        :key="g.id"
+        class="click-glow absolute pointer-events-none"
+        :style="g.style"
+      />
 
       <!-- Ripple -->
       <span
@@ -162,11 +167,8 @@ const POOL: { html: string; gen: number }[] = [
   { html: `<span class="cc">// running under restriction...</span>`, gen: -1 },
 ]
 
-const CODE_CHARS = ['{}', '<>', '=>', '//', '[ ]', '()', '/*', '*/', '01', ';;']
-
 // ── Refs ──────────────────────────────────────────────────────────────────
 const codeAreaEl = ref<HTMLElement>()
-const particlesEl = ref<HTMLElement>()
 
 interface Line { id: number; lineNum: number; html: string; isCursor: boolean }
 
@@ -184,6 +186,8 @@ let cursorTimer: ReturnType<typeof setInterval> | null = null
 interface Ripple { id: number; style: string }
 const ripples = ref<Ripple[]>([])
 let rippleCounter = 0
+const clickGlows = ref<Ripple[]>([])
+let glowCounter = 0
 
 // flash overlay
 const flashing = ref(false)
@@ -274,7 +278,7 @@ function handleClick(event: MouseEvent) {
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
 
-  spawnParticles(x, y)
+  spawnClickGlow(x, y)
   spawnRipple(x, y)
 
   // Burst: add lines immediately
@@ -288,34 +292,16 @@ function handleClick(event: MouseEvent) {
   emit('manualClick', event)
 }
 
-function spawnParticles(x: number, y: number) {
-  if (!particlesEl.value) return
-  const count = gameStore.isCodeRushActive ? 14 : 9
-  const color = gameStore.isCodeRushActive ? '#fbbf24' : '#4ade80'
-  const shadow = `${color}99`
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement('span')
-    el.textContent = CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)] ?? '{}'
-    const sx = x + (Math.random() - 0.5) * 16
-    const sy = y + (Math.random() - 0.5) * 10
-    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.7
-    const dist = 45 + Math.random() * 65
-    const dx = Math.cos(angle) * dist
-    const dy = Math.sin(angle) * dist - 35
-    const duration = 0.65 + Math.random() * 0.45
-    el.className = 'click-particle'
-    el.style.left = `${sx}px`
-    el.style.top = `${sy}px`
-    el.style.color = color
-    el.style.fontSize = `${9 + Math.random() * 7}px`
-    el.style.textShadow = `0 0 6px ${shadow}`
-    el.style.setProperty('--px', `${dx}px`)
-    el.style.setProperty('--py', `${dy}px`)
-    el.style.animation = `particle-fly ${duration}s cubic-bezier(0.22, 1, 0.36, 1) forwards`
-    particlesEl.value.appendChild(el)
-    const node = el
-    setTimeout(() => node.remove(), duration * 1000 + 50)
-  }
+function spawnClickGlow(x: number, y: number) {
+  const id = glowCounter++
+  const size = gameStore.isCodeRushActive ? 190 : 150
+  clickGlows.value.push({
+    id,
+    style: `left:${x}px;top:${y}px;width:${size}px;height:${size}px;transform:translate(-50%,-50%);`,
+  })
+  setTimeout(() => {
+    clickGlows.value = clickGlows.value.filter(g => g.id !== id)
+  }, 520)
 }
 
 function spawnRipple(x: number, y: number) {
@@ -557,25 +543,28 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 :deep(.cc) { color: #166534; text-shadow: none; }                           /* comment — dimmest */
 :deep(.cw) { color: #fb923c; text-shadow: 0 0 5px rgba(251,146,60,0.4); }  /* warning — amber */
 
-/* ── Click particles ─────────────────────────────────── */
-:deep(.click-particle) {
-  position: absolute;
-  font-family: monospace;
-  pointer-events: none;
-  z-index: 50;
-  white-space: nowrap;
-  transform: translate(-50%, -50%);
+/* ── Click light ─────────────────────────────────────── */
+.click-glow {
+  z-index: 45;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(209, 250, 229, 0.28) 0%, rgba(74, 222, 128, 0.2) 24%, rgba(74, 222, 128, 0.07) 46%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: click-glow-out 0.52s ease-out forwards;
   will-change: transform, opacity;
 }
 
-@keyframes particle-fly {
+@keyframes click-glow-out {
   from {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1);
-    opacity: 1;
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.22);
+  }
+  58% {
+    opacity: 0.52;
   }
   to {
-    transform: translate(-50%, -50%) translate(var(--px), var(--py)) scale(0.4);
     opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -656,6 +645,10 @@ watch(() => gameStore.isCodeRushActive, (active) => {
 .rush-mode .data-rp { color: #fcd34d; }
 
 .rush-mode .ripple-ring { border-color: rgba(251, 191, 36, 0.7); }
+.rush-mode .click-glow {
+  background:
+    radial-gradient(circle, rgba(254, 243, 199, 0.3) 0%, rgba(251, 191, 36, 0.22) 24%, rgba(251, 191, 36, 0.08) 46%, transparent 72%);
+}
 .rush-mode .click-flash {
   background: radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue';
 import { useGameStore } from '~/store/game';
 import { prestigeThresholds } from '~~/game/configs';
 import AppHeader from '~/components/layout/AppHeader.vue';
@@ -10,7 +10,6 @@ import CompileSection from '~/components/game/CompileSection.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
-import SingularitySection from '~/components/game/SingularitySection.vue';
 import BuyMultiplierSelector from '~/components/game/BuyMultiplierSelector.vue';
 import CodeScene from '~/components/game/CodeScene.vue';
 import CodeRushButton from '~/components/game/CodeRushButton.vue';
@@ -22,6 +21,7 @@ import { useSpotlight } from '~/composables/useSpotlight';
 import { formatNumber } from '~/utils/format';
 
 const gameStore = useGameStore();
+const SingularitySection = defineAsyncComponent(() => import('~/components/game/SingularitySection.vue'));
 const singularityModal = useSingularityModal();
 const toast = useToast();
 const { shouldShowTour, shouldShowCodeRushTour, completeTour, completeCodeRushTour } = useOnboarding();
@@ -192,7 +192,7 @@ const hasShownRefactorMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
 
 // Floating numbers state
-const floatingNumbers = ref<{ id: number; amount: string; left: string; top: string }[]>([]);
+const floatingNumbers = ref<{ id: number; amount: string; left: string; top: string; drift: string; lift: string; tilt: string }[]>([]);
 let floatingNumberId = 0;
 
 const handleManualClick = (event?: MouseEvent) => {
@@ -211,6 +211,9 @@ const handleManualClick = (event?: MouseEvent) => {
     amount: `+${formatNumber(clickPower)}`,
     left: leftPct,
     top: topPct,
+    drift: `${(Math.random() - 0.5) * 44}px`,
+    lift: `${92 + Math.random() * 38}px`,
+    tilt: `${(Math.random() - 0.5) * 10}deg`,
   });
 
   setTimeout(() => {
@@ -423,7 +426,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
           v-for="num in floatingNumbers"
           :key="num.id"
           class="floating-number"
-          :style="{ left: num.left, top: num.top }"
+          :style="{ left: num.left, top: num.top, '--drift': num.drift, '--lift': num.lift, '--tilt': num.tilt }"
         >{{ num.amount }}</span>
       </div>
 
@@ -574,7 +577,7 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
             v-for="num in floatingNumbers"
             :key="num.id"
             class="floating-number"
-            :style="{ left: num.left, top: num.top }"
+            :style="{ left: num.left, top: num.top, '--drift': num.drift, '--lift': num.lift, '--tilt': num.tilt }"
           >{{ num.amount }}</span>
         </div>
         <!-- Scene fills all available height -->
@@ -680,18 +683,72 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 .floating-number {
   position: absolute;
-  font-size: 15px;
-  font-weight: bold;
-  color: #4ade80;
-  text-shadow: 0 0 5px rgba(74, 222, 128, 0.7);
-  animation: float-up 1.5s ease-out forwards;
+  min-width: 3.25rem;
+  padding: 0.18rem 0.52rem 0.2rem;
+  border: 1px solid rgba(110, 231, 183, 0.42);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(11, 31, 31, 0.92), rgba(4, 15, 18, 0.42)),
+    radial-gradient(circle at 50% 0%, rgba(110, 231, 183, 0.26), transparent 62%);
+  color: #d1fae5;
+  box-shadow:
+    0 0 0 1px rgba(74, 222, 128, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 18px rgba(74, 222, 128, 0.24);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(110, 231, 183, 0.64);
+  animation: float-up 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   white-space: nowrap;
   transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+.floating-number::after {
+  content: '';
+  position: absolute;
+  inset: -0.35rem -0.45rem;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.36), transparent 68%);
+  filter: blur(8px);
+  opacity: 0.65;
+  animation: float-glow 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes float-up {
-  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  to   { transform: translate(-50%, -120%) scale(0.8); opacity: 0; }
+  0% {
+    transform: translate(-50%, -50%) translateY(8px) rotate(0deg) scale(0.86);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  62% {
+    transform: translate(calc(-50% + var(--drift) * 0.45), calc(-50% - var(--lift) * 0.62)) rotate(var(--tilt)) scale(1.02);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--drift)), calc(-50% - var(--lift))) rotate(var(--tilt)) scale(0.78);
+    opacity: 0;
+  }
+}
+
+@keyframes float-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  18% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
 }
 
 /* ── Bottom Sheet ───────────────────────────────────── */

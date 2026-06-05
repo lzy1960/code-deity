@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useGameStore } from '~/store/game'
 import type { NarrativeMilestone } from '~~/game/configs'
-import GenesisEvent from './GenesisEvent.vue' // Import the new component
+import { defineAsyncComponent } from 'vue'
 
 const gameStore = useGameStore()
 const { t } = useI18n()
 const { $saveGameLocal } = useNuxtApp() as any // Get the save function
+const GenesisEvent = defineAsyncComponent(() => import('./GenesisEvent.vue'))
 
 // State for 'log' type narratives
 const currentLog = ref<NarrativeMilestone | null>(null)

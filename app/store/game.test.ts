@@ -287,6 +287,30 @@ describe('Game Store - Serialization roundtrip', () => {
     expect(out.version).toBe(5)
     expect(out.refactorCount).toBe(99)
   })
+
+  it('hydrates old partial saves by filling missing generators and challenge flags', () => {
+    store.hydrate({
+      saveVersion: '0.9.0',
+      generators: [{ id: 1, amount: '12', bought: 3 }],
+      challengeCompletions: { challenge1: true } as any,
+      buyMultiplier: 'invalid' as any,
+      activeChallenge: 'missing' as any,
+    })
+
+    expect(store.saveVersion).toBe('1.0.5')
+    expect(store.generators).toHaveLength(8)
+    expect(store.generators[0]!.amount.toString()).toBe('12')
+    expect(store.generators[0]!.bought).toBe(3)
+    expect(store.generators[7]!.amount.toString()).toBe('0')
+    expect(store.challengeCompletions).toEqual({
+      challenge1: true,
+      challenge2: false,
+      challenge3: false,
+      challenge4: false,
+    })
+    expect(store.buyMultiplier).toBe('x1')
+    expect(store.activeChallenge).toBe('none')
+  })
 })
 
 describe('Game Store - simulateProgress', () => {
@@ -370,12 +394,12 @@ describe('Game Store - calculateOfflineProgress', () => {
     expect(store.pendingOfflineGains!.diff).toBe(3600)
   })
 
-  it('does NOT update lastUpdateTime — that happens on applyOfflineGains', () => {
+  it('updates lastUpdateTime when offline gains are snapshotted', () => {
     store.generators[0]!.amount = new Decimal(100)
     const old = Date.now() - 60_000
     store.lastUpdateTime = old
     store.calculateOfflineProgress()
-    expect(store.lastUpdateTime).toBe(old)
+    expect(store.lastUpdateTime).toBeGreaterThan(old)
   })
 })
 

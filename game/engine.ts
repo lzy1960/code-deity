@@ -91,7 +91,7 @@ export class GameEngine {
 
   /**
    * 计算离线收益并存入 store.pendingOfflineGains。
-   * 不更新 lastUpdateTime——applyOfflineGains 才会。
+   * 生成离线收益快照后立即推进 lastUpdateTime，避免弹窗打开期间游戏循环再次补同一段时间。
    */
   calculateOfflineProgress(): boolean {
     const store = this.store
@@ -112,8 +112,10 @@ export class GameEngine {
     const totalCpGained = cpPerSecond.times(effectiveDiff)
     if (totalCpGained.gt(0)) {
       store.pendingOfflineGains = { cp: totalCpGained, diff: effectiveDiff }
+      store.lastUpdateTime = now
       return true
     }
+    store.lastUpdateTime = now
     return false
   }
 
