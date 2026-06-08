@@ -27,11 +27,12 @@
 
 ## 任务 1.3: 实现带反作弊考量的游戏循环 (无变更)
 
-- **动作**: 在 `app.vue` 中创建 `gameLoop` 函数，由 `setInterval` 驱动。
+- **动作**: 在 `game/engine.ts` 中实现 `GameEngine.tick()`，由 `app.vue` 启停循环。
 - **动作**: 实现 Tier 1 反时间欺骗:
-  - 在 `gameLoop` 中，计算 `diff = (Date.now() - lastUpdateTime) / 1000`。
-  - 设置一个上限，例如 `const effectiveDiff = Math.min(diff, 3600)`，这意味着离线收益最多计算 1 小时。
-  - 基于 `effectiveDiff` 来计算资源增长。
+  - 在线 tick 对单帧 `delta` 设置上限，避免后台挂起恢复后一次性结算超长时间。
+  - 离线收益通过 `calculateOfflineProgress()` 单独结算，并设置 1 小时上限。
+  - 小于离线弹窗阈值的刷新/切页间隔会静默补算，不展示弹窗也不丢失收益。
+  - 离线收益快照包含 CP 与生成器瀑布生产的低阶生成器增量，玩家确认后统一应用。
 - **产出**: 一个能安全计算在线和离线收益的核心游戏循环。
 
 ## 任务 1.4: 实现配置驱动的购买逻辑 (无变更)
@@ -69,12 +70,14 @@
   ```
 - **动作 2**: 创建 `services/saveManager.ts`。
 - **动作 3**: 在 `saveManager.ts` 中实现 `save(state)` 函数。
-  - 此函数接收 Pinia 的 state 对象。
-  - **关键步骤**: 在序列化之前，需要一个辅助函数将 `Decimal` 对象转换为可存储的字符串。检查 `break_infinity.js` 是否提供 `.toString()` 或 `.toJSON()` 方法。如果 `state` 包含 `Decimal` 实例，`JSON.stringify` 会产生不完整的结果。正确的做法是先遍历 state，将所有 `Decimal` 实例转换为字符串表示。
-  - 调用 `db.saves.put({ id: 1, saveData: JSON.stringify(serializableState), timestamp: Date.now() })` 将其存入数据库（使用固定 ID `1` 来覆盖存档）。
+  - 此函数接收 `gameStore.toJSON()` 返回的可序列化对象。
+  - `Decimal` 到字符串的转换由 `store/game.ts` 的 `toJSON()` 负责，避免存档层理解业务字段。
+  - 调用 `db.saves.put({ id: 'local_save', saveData: JSON.stringify(serializableState), timestamp: Date.now() })` 覆盖本地存档。
+  - 同时写入一份同步 `localStorage` 镜像，用于刷新、关闭页面等场景下的兜底恢复。
 - **动作 4**: 在 `saveManager.ts` 中实现 `load()` 函数。
-  - 调用 `db.saves.get(1)` 来获取存档。
-  - **关键步骤**: 如果获取到存档，解析 `saveData` JSON 字符串，并使用一个辅助函数将字符串反序列化回 `new Decimal()` 对象，然后再更新 Pinia store。
+  - 调用 `db.saves.get('local_save')` 来获取存档。
+  - 如果 `localStorage` 镜像比 IndexedDB 更新，则优先使用镜像恢复。
+  - 解析 JSON 后交给 `gameStore.hydrate()`，由 store 负责把字符串反序列化回 `Decimal` 并兼容旧字段。
 - **动作 5**: 添加手动的“保存”和“加载”按钮进行测试，确保刷新后数据可恢复。
 - **产出**: 一个独立的、可测试的、基于 Dexie.js 的本地存档模块，并解决了大数序列化问题。
 
@@ -126,8 +129,9 @@
 ## 任务 3.3: 实现自动化存档 (实现细节明确)
 
 - 动作: 移除手动的存档按钮。
-- 动作: 在 `app.vue` 中，`onMounted` 时自动调用 `saveManager.load()`。
-- 动作: 使用 `setInterval` 每 15 秒自动调用一次 `saveManager.save(gameState)`。
+- 动作: 在 `app.vue` 中，`onMounted` 时通过 `$loadGame()` 加载存档，结算离线收益，再启动 `GameEngine`。
+- 动作: 使用 `setInterval` 每 15 秒自动调用一次 `$saveGameLocal()`。
+- 动作: 在页面隐藏、`pagehide`、Capacitor 进入后台时先停止游戏循环再保存；恢复前先等待保存完成、重新加载存档并结算离线收益。
 - 产出: 一个对玩家无感的、可靠的自动存档系统。
 
 ==================================================

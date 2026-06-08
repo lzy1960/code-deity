@@ -1,4 +1,4 @@
-# code-deity－AI 协作配置
+# code-deity - AI 协作配置
 
 ## 项目概览
 

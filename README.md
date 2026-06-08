@@ -77,7 +77,7 @@ Code Deity 是一款独特的放置游戏，玩家将从零开始，通过“写
     ~~请参考 `docs/android-debugging-guide.md` 进行原生应用调试。~~
 
 > [!TIP]
-> 更详细的开发理念和设计文档，请参阅 [GEMINI.md](GEMINI.md)。
+> 更详细的开发理念和设计文档，请参阅 [AGENTS.md](AGENTS.md)。
 
 ## 📜 开源许可 (License)
 

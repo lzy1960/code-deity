@@ -46,7 +46,7 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 4,
     name: '模块 (Module)',
-    baseCost: new Decimal(5e7),      // Increased x10
+    baseCost: new Decimal(1e9),
     costMultiplier: new Decimal(1.35),
     baseProduction: new Decimal(1)
   },
@@ -54,14 +54,14 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 5,
     name: '库 (Library)',
-    baseCost: new Decimal(5e12),     // Rebalanced from 1e14
+    baseCost: new Decimal(1e15),
     costMultiplier: new Decimal(1.40),
     baseProduction: new Decimal(1)
   },
   {
     id: 6,
     name: '框架 (Framework)',
-    baseCost: new Decimal(5e20),     // Rebalanced from 1e22
+    baseCost: new Decimal(1e24),
     costMultiplier: new Decimal(1.45),
     baseProduction: new Decimal(1)
   },
@@ -69,7 +69,7 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 7,
     name: '编译器 (Compiler)',
-    baseCost: new Decimal(1e31),     // Rebalanced from 1e32
+    baseCost: new Decimal(1e36),
     costMultiplier: new Decimal(1.50),
     baseProduction: new Decimal(1),
     globalMultiplierBonus: 0.003
@@ -77,7 +77,7 @@ export const generatorConfigs: GeneratorConfig[] = [
   {
     id: 8,
     name: 'AI 核心 (A.I. Core)',
-    baseCost: new Decimal(1e42),     // Rebalanced from 1e44
+    baseCost: new Decimal(1e49),
     costMultiplier: new Decimal(1.55),
     baseProduction: new Decimal(1),
     globalMultiplierBonus: 0.010
@@ -88,6 +88,13 @@ export const prestigeThresholds = {
   REFACTOR_UNLOCK_AI_CORES: 10,
   COMPILE_UNLOCK_RP: 25,
   ARCHITECTURAL_OVERHEAD_AI_CORES: 25,
+  BREAKTHROUGH_READINESS_REQUIRED: 100,
+  BREAKTHROUGH_REFACTOR_GAIN_THRESHOLD: 10,
+  BREAKTHROUGH_REFACTOR_REWARD: 8,
+  BREAKTHROUGH_COMPILE_REWARD: 20,
+  BREAKTHROUGH_CHALLENGE_REWARD: 25,
+  BREAKTHROUGH_PRESSURE_AI_CORES: 25,
+  BREAKTHROUGH_PRESSURE_RATE_PER_CORE_SECOND: 0.0008,
 
   // Code Rush
   CODE_RUSH_CHARGE_CLICKS: 50, // Clicks needed to charge Code Rush

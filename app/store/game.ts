@@ -24,6 +24,10 @@ export interface ChallengeCompletion {
 export interface OfflineGains {
   cp: Decimal; // 离线期间获得的总CP
   diff: number; // 离线了多少秒
+  generatorGains: {
+    id: number;
+    amount: Decimal;
+  }[];
 }
 
 export interface GameState {
@@ -45,6 +49,7 @@ export interface GameState {
   unlockedSingularity: boolean
   paradigms: Record<string, boolean>
   singularityCount: number
+  breakthroughReadiness: number
 
   // Challenges
   challengeCompletions: ChallengeCompletion
@@ -92,7 +97,7 @@ type DecimalToString<T> = {
 
 export type SerializableGameState = DecimalToString<GameState>
 
-const CURRENT_SAVE_VERSION = '1.0.5'
+const CURRENT_SAVE_VERSION = '1.0.6'
 
 const defaultChallengeCompletions = (): ChallengeCompletion => ({
   challenge1: false,
@@ -132,6 +137,7 @@ export const useGameStore = defineStore('game', {
     unlockedSingularity: false,
     paradigms: {},
     singularityCount: 0,
+    breakthroughReadiness: 0,
 
     challengeCompletions: {
       challenge1: false,
@@ -180,6 +186,9 @@ export const useGameStore = defineStore('game', {
       return state.version > 0
     },
     isChallengesUnlocked: state => state.version >= 2,
+    isBreakthroughReadinessUnlocked(): boolean {
+      return this.version > 0 || this.effectiveBreakthroughReadiness > 0 || this.singularityCount > 0
+    },
     isMultiplierUnlocked: state => {
       const moduleGenerator = state.generators[3]
       return (moduleGenerator?.bought ?? 0) > 0 || state.refactorCount > 0
@@ -215,7 +224,7 @@ export const useGameStore = defineStore('game', {
         let costMultiplier = original.costMultiplier
         if (memoryManagement) baseCost = baseCost.times(0.8)
         if (challenge4Completed) baseCost = baseCost.times(0.95)
-        if (challenge4Active) costMultiplier = costMultiplier.plus(0.02)
+        if (challenge4Active) costMultiplier = costMultiplier.plus(0.08)
         map.set(original.id, {
           ...original,
           baseCost,
@@ -289,14 +298,6 @@ export const useGameStore = defineStore('game', {
 
     buy10Bonus() {
       return (id: number): Decimal => {
-        // Apply challenge restrictions first
-        if (this.activeChallenge === 'challenge1' && id <= 7) {
-          return new Decimal(1)
-        }
-        if (this.activeChallenge === 'challenge3') {
-          return new Decimal(1)
-        }
-
         const generator = this.generators[id - 1]!
         
         // Base bonus
@@ -305,13 +306,20 @@ export const useGameStore = defineStore('game', {
         const bonusLevels = this.getBuyBonus(generator.bought)
         let bonus = Decimal.pow(bonusPerLevel, bonusLevels)
 
+        if (this.activeChallenge === 'challenge1' && id <= 7) {
+          bonus = bonus.pow(0.5)
+        }
+        if (this.activeChallenge === 'challenge3') {
+          bonus = bonus.pow(0.4)
+        }
+
         // ## Abstraction School: Polymorphism ##
         if (this.paradigms.polymorphism && id > 1) {
           const prevGenerator = this.generators[id - 2]!
           const prevBonusLevels = this.getBuyBonus(prevGenerator.bought)
           const prevBonus = Decimal.pow(bonusPerLevel, prevBonusLevels)
-          // Apply 20% of the previous generator's bonus
-          bonus = bonus.times(prevBonus.minus(1).times(0.2).plus(1))
+          const inheritedBonus = prevBonus.minus(1).times(0.05).plus(1).min(3)
+          bonus = bonus.times(inheritedBonus)
         }
         
         return bonus
@@ -379,13 +387,12 @@ export const useGameStore = defineStore('game', {
         return this.challengeCompletions.challenge2 ? new Decimal(1.5) : new Decimal(1)
     },
 
-    generatorProduction() {
-      return (id: number): Decimal => {
+    generatorProductionForAmount() {
+      return (id: number, amount: Decimal): Decimal => {
         const config = this.effectiveGeneratorConfig(id)
-        const generator = this.generators[id - 1]!
 
         let production = config.baseProduction
-          .times(generator.amount)
+          .times(amount)
           .times(this.buy10Bonus(id))
           .times(this.rpBonus)
           .times(this.globalMultiplier)
@@ -418,6 +425,13 @@ export const useGameStore = defineStore('game', {
         }
 
         return production
+      }
+    },
+
+    generatorProduction() {
+      return (id: number): Decimal => {
+        const generator = this.generators[id - 1]!
+        return this.generatorProductionForAmount(id, generator.amount)
       }
     },
     
@@ -499,15 +513,34 @@ export const useGameStore = defineStore('game', {
     },
 
     // --- Singularity ---
-    canSingularity: state => state.currency.gte('1e120'),
+    earnedBreakthroughReadiness: state => {
+      const completedChallenges = Object.values(state.challengeCompletions).filter(Boolean).length
+      return Math.min(
+        prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED,
+        state.version * prestigeThresholds.BREAKTHROUGH_COMPILE_REWARD +
+          completedChallenges * prestigeThresholds.BREAKTHROUGH_CHALLENGE_REWARD
+      )
+    },
+
+    effectiveBreakthroughReadiness(): number {
+      return Math.min(
+        prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED,
+        Math.max(this.breakthroughReadiness, this.earnedBreakthroughReadiness)
+      )
+    },
+
+    canSingularity(): boolean {
+      if (this.singularityCount > 0) return this.currency.gte('1e120')
+      return this.currency.gte('1e120') && this.effectiveBreakthroughReadiness >= prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED
+    },
 
     singularityGain(): Decimal {
       if (!this.canSingularity) return new Decimal(0)
-      // SP = floor(sqrt(log10(CP) - 120) * 4)
+      // SP = floor(sqrt(log10(CP) - 120) * 6). The first breakthrough needs to feel transformative.
       const gain = Decimal.floor(
         Decimal.sqrt(this.currency.log10() - 120).times(6)
       )
-      return gain.max(0)
+      return gain.max(this.singularityCount === 0 ? 3 : 1)
     },
 
     paradigmPurchaseAnalysis() {
@@ -586,16 +619,25 @@ export const useGameStore = defineStore('game', {
       this.unlockedSingularity = s.unlockedSingularity ?? false
       this.paradigms = s.paradigms ?? {}
       this.singularityCount = s.singularityCount ?? 0
+      this.breakthroughReadiness = Math.min(prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED, Math.max(0, s.breakthroughReadiness ?? 0))
 
       this.challengeCompletions = {
         ...defaultChallengeCompletions(),
         ...(s.challengeCompletions ?? {}),
       }
       this.activeChallenge = isActiveChallenge(s.activeChallenge) ? s.activeChallenge : 'none'
+      this.reconcileBreakthroughReadiness()
 
       this.automatorStates = s.automatorStates ?? {}
       this.pendingOfflineGains = s.pendingOfflineGains
-        ? { cp: new Decimal(s.pendingOfflineGains.cp), diff: s.pendingOfflineGains.diff }
+        ? {
+            cp: new Decimal(s.pendingOfflineGains.cp),
+            diff: s.pendingOfflineGains.diff,
+            generatorGains: (s.pendingOfflineGains.generatorGains ?? []).map(gain => ({
+              id: gain.id,
+              amount: new Decimal(gain.amount),
+            })),
+          }
         : null
 
       this.unlockedNarratives = s.unlockedNarratives ?? []
@@ -642,11 +684,19 @@ export const useGameStore = defineStore('game', {
         unlockedSingularity: this.unlockedSingularity,
         paradigms: { ...this.paradigms },
         singularityCount: this.singularityCount,
+        breakthroughReadiness: this.breakthroughReadiness,
         challengeCompletions: { ...this.challengeCompletions },
         activeChallenge: this.activeChallenge,
         automatorStates: { ...this.automatorStates },
         pendingOfflineGains: this.pendingOfflineGains
-          ? { cp: decToStr(this.pendingOfflineGains.cp), diff: this.pendingOfflineGains.diff }
+          ? {
+              cp: decToStr(this.pendingOfflineGains.cp),
+              diff: this.pendingOfflineGains.diff,
+              generatorGains: this.pendingOfflineGains.generatorGains.map(gain => ({
+                id: gain.id,
+                amount: decToStr(gain.amount),
+              })),
+            }
           : null,
         unlockedNarratives: [...this.unlockedNarratives],
         narrativeQueue: this.narrativeQueue.map(m => ({ ...m })) as any,
@@ -745,6 +795,7 @@ export const useGameStore = defineStore('game', {
 
       const gain = this.refactorGain
       if (gain.lte(0)) return
+      const completedChallenge = this.activeChallenge !== 'none'
 
       // --- Challenge Completion Check ---
       if (this.activeChallenge === 'challenge1') {
@@ -765,6 +816,11 @@ export const useGameStore = defineStore('game', {
         this.refactorPoints = this.refactorPoints.plus(gain)
         this.refactorCount += 1
       }
+      if (completedChallenge) {
+        this.addBreakthroughReadiness(prestigeThresholds.BREAKTHROUGH_CHALLENGE_REWARD)
+      } else if (gain.gte(prestigeThresholds.BREAKTHROUGH_REFACTOR_GAIN_THRESHOLD)) {
+        this.addBreakthroughReadiness(prestigeThresholds.BREAKTHROUGH_REFACTOR_REWARD)
+      }
 
       this._resetForPrestige()
       this.checkNarrativeMilestones()
@@ -780,6 +836,7 @@ export const useGameStore = defineStore('game', {
 
       // A "Compile & Release" is a type of refactor, so we increment the count.
       this.refactorCount += 1
+      this.addBreakthroughReadiness(prestigeThresholds.BREAKTHROUGH_COMPILE_REWARD)
       // Then, we perform the reset, but without generating new RP.
       this._resetForPrestige()
 
@@ -865,6 +922,7 @@ export const useGameStore = defineStore('game', {
       this.unlockedSingularity = false
       this.paradigms = {}
       this.singularityCount = 0
+      this.breakthroughReadiness = 0
       this.challengeCompletions = defaultChallengeCompletions()
       this.activeChallenge = 'none'
       this.automatorStates = {}
@@ -883,6 +941,7 @@ export const useGameStore = defineStore('game', {
 
     startGameLoop() {
       // 委托给 engine 单例。重复调用安全。
+      this.reconcileBreakthroughReadiness()
       getGameEngine(this as any).start()
     },
 
@@ -891,13 +950,37 @@ export const useGameStore = defineStore('game', {
     },
 
     calculateOfflineProgress(): boolean {
+      this.reconcileBreakthroughReadiness()
       return getGameEngine(this as any).calculateOfflineProgress()
+    },
+
+    addBreakthroughReadiness(amount: number) {
+      if (amount <= 0 || this.singularityCount > 0) return
+      this.breakthroughReadiness = Math.min(
+        prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED,
+        Math.max(0, this.breakthroughReadiness + amount)
+      )
+    },
+
+    reconcileBreakthroughReadiness() {
+      if (this.singularityCount > 0) return
+
+      this.breakthroughReadiness = Math.min(
+        prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED,
+        Math.max(this.breakthroughReadiness, this.earnedBreakthroughReadiness)
+      )
     },
 
     applyOfflineGains() {
       if (!this.pendingOfflineGains) return
 
       this.currency = this.currency.plus(this.pendingOfflineGains.cp)
+      for (const gain of this.pendingOfflineGains.generatorGains ?? []) {
+        const generator = this.generators[gain.id - 1]
+        if (generator) {
+          generator.amount = generator.amount.plus(gain.amount)
+        }
+      }
       this.lastUpdateTime = Date.now()
       this.pendingOfflineGains = null
     },

@@ -30,6 +30,8 @@ const isDev = computed(() => process.env.NODE_ENV === 'development')
 const { isRevealed, reveal, onConfirm, confirm } = useOfflineProgressModal()
 let autoSaveIntervalId: ReturnType<typeof setInterval> | null = null
 const capacitorListeners: PluginListenerHandle[] = []
+let savePromise: Promise<void> = Promise.resolve()
+let resumePromise: Promise<void> | null = null
 
 onConfirm(async () => {
   gameStore.applyOfflineGains()
@@ -44,30 +46,56 @@ function revealOfflineProgressIfNeeded() {
   }
 }
 
-// Save on page hide
+function pauseAndSaveGame() {
+  gameStore.stopGameLoop()
+  savePromise = Promise.resolve($saveGameLocal({ notify: false })).catch((error) => {
+    console.warn('Failed to save game while pausing.', error)
+  })
+  return savePromise
+}
+
+async function resumeGameFromStorage() {
+  if (resumePromise) return resumePromise
+
+  gameStore.stopGameLoop()
+  resumePromise = (async () => {
+    await savePromise
+    try {
+      await $loadGame()
+    } catch (error) {
+      console.warn('Failed to load game while resuming.', error)
+    }
+    revealOfflineProgressIfNeeded()
+    gameStore.startGameLoop()
+  })().finally(() => {
+    resumePromise = null
+  })
+
+  return resumePromise
+}
+
+// Save on page hide and reconcile offline progress when the page returns.
 useEventListener(document, 'visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
-    $saveGameLocal()
+    pauseAndSaveGame()
+  } else if (document.visibilityState === 'visible') {
+    void resumeGameFromStorage()
   }
 })
 useEventListener(window, 'pagehide', () => {
-  $saveGameLocal()
+  pauseAndSaveGame()
+})
+useEventListener(window, 'beforeunload', () => {
+  pauseAndSaveGame()
 })
 
 onMounted(async () => {
-  // Load game data
-  await $loadGame()
+  await resumeGameFromStorage()
 
-  // Check for offline progress
-  revealOfflineProgressIfNeeded()
-
-  // Start the game loop
-  gameStore.startGameLoop()
-
-  // Auto-save every 15 seconds
+  // Auto-save frequently; saveManager also keeps a synchronous refresh-safe mirror.
   autoSaveIntervalId = setInterval(() => {
-    $saveGameLocal()
-  }, 15000)
+    $saveGameLocal({ notify: false })
+  }, 5000)
 
   // Listen for the hardware back button on Android
   capacitorListeners.push(
@@ -84,10 +112,9 @@ onMounted(async () => {
   capacitorListeners.push(
     await App.addListener('appStateChange', async (state) => {
       if (state.isActive) {
-        await $loadGame();
-        revealOfflineProgressIfNeeded();
+        await resumeGameFromStorage();
       } else {
-        $saveGameLocal();
+        pauseAndSaveGame();
       }
     })
   )
@@ -106,7 +133,7 @@ onUnmounted(() => {
 
 // Save immediately when automator states change (fixes the known auto-save bug)
 watch(() => gameStore.automatorStates, () => {
-  $saveGameLocal()
+  $saveGameLocal({ notify: false })
 }, { deep: true })
 </script>
 

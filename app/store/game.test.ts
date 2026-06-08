@@ -1,7 +1,7 @@
 
 import { setActivePinia, createPinia } from 'pinia'
 import { useGameStore } from './game'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import Decimal from 'break_infinity.js'
 
 describe('Game Store - Core Mechanics', () => {
@@ -96,9 +96,40 @@ describe('Game Store - Core Mechanics', () => {
       expect(store.getBuyBonus(120)).toBe(11)
     })
 
-    it('should return 55 bonus levels for 1000 items bought', () => {
+  it('should return 55 bonus levels for 1000 items bought', () => {
       // 10 levels from first 100 + 45 levels from next 900 (900/20)
       expect(store.getBuyBonus(1000)).toBe(55)
+    })
+  })
+
+  describe('challenge and paradigm buy bonus tuning', () => {
+    let store: ReturnType<typeof useGameStore>
+
+    beforeEach(() => {
+      store = useGameStore()
+    })
+
+    it('challenge1 weakens but does not remove buy bonuses for generators 1-7', () => {
+      store.generators[0]!.bought = 10
+      store.activeChallenge = 'challenge1'
+
+      expect(store.buy10Bonus(1).toNumber()).toBeCloseTo(Math.sqrt(1.65), 6)
+    })
+
+    it('challenge3 keeps a heavily weakened buy bonus instead of hard-disabling it', () => {
+      store.generators[0]!.bought = 10
+      store.activeChallenge = 'challenge3'
+
+      expect(store.buy10Bonus(1).toNumber()).toBeCloseTo(Math.pow(1.65, 0.4), 6)
+    })
+
+    it('polymorphism inherits a capped portion of the previous generator buy bonus', () => {
+      store.paradigms.polymorphism = true
+      store.generators[0]!.bought = 1000
+      store.generators[1]!.bought = 10
+
+      const baseBonus = Decimal.pow(1.65, 1)
+      expect(store.buy10Bonus(2).toString()).toBe(baseBonus.times(3).toString())
     })
   })
 
@@ -185,6 +216,14 @@ describe('Game Store - Singularity & Paradigms', () => {
     expect(store.singularityPower.toString()).toBe('9')
     store.purchaseParadigm('system_kernel') // try to buy again
     expect(store.singularityPower.toString()).toBe('9') // SP should not be deducted again
+  })
+
+  it('requires breakthrough readiness and grants at least 3 SP for the first singularity', () => {
+    store.currency = new Decimal('1e120')
+    expect(store.canSingularity).toBe(false)
+    store.breakthroughReadiness = 100
+    expect(store.canSingularity).toBe(true)
+    expect(store.singularityGain.toString()).toBe('3')
   })
 })
 
@@ -276,14 +315,34 @@ describe('Game Store - Serialization roundtrip', () => {
     expect(out.unlockedNarratives).toEqual(['game_start', 'first_function', 'first_class'])
   })
 
+  it('preserves pending offline generator gains', () => {
+    store.pendingOfflineGains = {
+      cp: new Decimal('1e12'),
+      diff: 3600,
+      generatorGains: [
+        { id: 1, amount: new Decimal(120) },
+        { id: 2, amount: new Decimal('3.5e4') },
+      ],
+    }
+
+    const out = roundtrip(store)
+    expect(out.pendingOfflineGains).not.toBeNull()
+    expect(out.pendingOfflineGains!.cp.toString()).toBe('1000000000000')
+    expect(out.pendingOfflineGains!.diff).toBe(3600)
+    expect(out.pendingOfflineGains!.generatorGains[0]!.amount.toString()).toBe('120')
+    expect(out.pendingOfflineGains!.generatorGains[1]!.amount.toString()).toBe('35000')
+  })
+
   it('preserves singularity unlock and counts', () => {
     store.unlockedSingularity = true
     store.singularityCount = 7
+    store.breakthroughReadiness = 88
     store.version = 5
     store.refactorCount = 99
     const out = roundtrip(store)
     expect(out.unlockedSingularity).toBe(true)
     expect(out.singularityCount).toBe(7)
+    expect(out.breakthroughReadiness).toBe(88)
     expect(out.version).toBe(5)
     expect(out.refactorCount).toBe(99)
   })
@@ -297,7 +356,7 @@ describe('Game Store - Serialization roundtrip', () => {
       activeChallenge: 'missing' as any,
     })
 
-    expect(store.saveVersion).toBe('1.0.5')
+    expect(store.saveVersion).toBe('1.0.6')
     expect(store.generators).toHaveLength(8)
     expect(store.generators[0]!.amount.toString()).toBe('12')
     expect(store.generators[0]!.bought).toBe(3)
@@ -380,10 +439,12 @@ describe('Game Store - calculateOfflineProgress', () => {
     store = useGameStore()
   })
 
-  it('returns false and does nothing when offline less than 10 seconds', () => {
+  it('silently catches up progress when the gap is less than the offline modal threshold', () => {
+    store.generators[0]!.amount = new Decimal(10)
     store.lastUpdateTime = Date.now() - 5_000 // 5 seconds ago
     expect(store.calculateOfflineProgress()).toBe(false)
     expect(store.pendingOfflineGains).toBeNull()
+    expect(store.currency.toString()).toBe('50')
   })
 
   it('caps offline duration to 1 hour', () => {
@@ -400,6 +461,124 @@ describe('Game Store - calculateOfflineProgress', () => {
     store.lastUpdateTime = old
     store.calculateOfflineProgress()
     expect(store.lastUpdateTime).toBeGreaterThan(old)
+  })
+
+  it('snapshots generator gains from the offline production cascade', () => {
+    store.generators[1]!.amount = new Decimal(1)
+    store.lastUpdateTime = Date.now() - 12_000
+    store.calculateOfflineProgress()
+    expect(store.pendingOfflineGains).not.toBeNull()
+    expect(store.pendingOfflineGains!.generatorGains.some(gain => gain.id === 1 && gain.amount.gt(0))).toBe(true)
+  })
+
+  it('applies pending offline CP and generator gains together', () => {
+    store.pendingOfflineGains = {
+      cp: new Decimal(50),
+      diff: 30,
+      generatorGains: [
+        { id: 1, amount: new Decimal(10) },
+        { id: 3, amount: new Decimal(2) },
+      ],
+    }
+
+    store.applyOfflineGains()
+    expect(store.currency.toString()).toBe('50')
+    expect(store.generators[0]!.amount.toString()).toBe('10')
+    expect(store.generators[2]!.amount.toString()).toBe('2')
+    expect(store.pendingOfflineGains).toBeNull()
+  })
+})
+
+describe('Game Store - gameLoop', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+    vi.restoreAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('caps a single tick to the offline threshold instead of simulating an arbitrary long gap', () => {
+    const now = 1_000_000
+    vi.spyOn(Date, 'now').mockReturnValue(now)
+    store.lastUpdateTime = now - 60_000
+    store.generators[0]!.amount = new Decimal(1)
+
+    store.gameLoop()
+
+    expect(store.currency.toString()).toBe('10')
+    expect(store.lastUpdateTime).toBe(now)
+  })
+})
+
+describe('Game Store - Breakthrough readiness', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('compile and high-value refactors advance breakthrough readiness', () => {
+    store.refactorPoints = new Decimal(100)
+
+    store.compileAndRelease()
+    expect(store.breakthroughReadiness).toBe(20)
+
+    store.generators[7]!.bought = 10
+    store.currency = new Decimal('1e80')
+    store.refactor()
+    expect(store.breakthroughReadiness).toBe(28)
+  })
+
+  it('completed challenges add breakthrough readiness', () => {
+    store.version = 2
+    store.activeChallenge = 'challenge2'
+    store.generators[7]!.bought = 10
+    store.currency = new Decimal('1e20')
+
+    store.refactor()
+
+    expect(store.challengeCompletions.challenge2).toBe(true)
+    expect(store.breakthroughReadiness).toBe(25)
+  })
+
+  it('AI core pressure slowly advances readiness after the first compile', () => {
+    store.version = 1
+    store.generators[7]!.bought = 50
+
+    store.simulateProgress(1000)
+
+    expect(store.breakthroughReadiness).toBeCloseTo(0.02, 6)
+  })
+
+  it('reconciles readiness from already completed releases and challenges', () => {
+    store.hydrate({
+      version: 2,
+      challengeCompletions: {
+        challenge1: true,
+        challenge2: false,
+        challenge3: true,
+        challenge4: false,
+      },
+      breakthroughReadiness: 0,
+    })
+
+    expect(store.breakthroughReadiness).toBe(90)
+    expect(store.effectiveBreakthroughReadiness).toBe(90)
+  })
+
+  it('uses earned readiness for UI and singularity checks even if stored progress is stale', () => {
+    store.version = 5
+    store.breakthroughReadiness = 0
+    store.currency = new Decimal('1e120')
+
+    expect(store.effectiveBreakthroughReadiness).toBe(100)
+    expect(store.canSingularity).toBe(true)
   })
 })
 

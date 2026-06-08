@@ -9,9 +9,11 @@ export default defineNuxtPlugin((nuxtApp) => {
   const autoSaveNotifier = useAutoSaveNotifier()
   const { $i18n } = useNuxtApp()
 
-  const saveGameLocal = async () => {
+  const saveGameLocal = async (options: { notify?: boolean } = {}) => {
     await saveManager.save(gameStore.toJSON())
-    autoSaveNotifier.show($i18n.t('toast.autoSaveSuccess'))
+    if (options.notify ?? true) {
+      autoSaveNotifier.show($i18n.t('toast.autoSaveSuccess'))
+    }
     console.log('Game saved locally!')
   }
 

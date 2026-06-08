@@ -43,10 +43,14 @@
     <p v-if="!canRefactor" class="unlock-hint relative z-[1] mt-2.5 text-center text-[0.72rem] text-[#8eadcc]">
       {{ $t('common.refactorUnlockHint', { unlockRequirement: unlockRequirement }) }}
     </p>
+    <p v-else-if="isLowValueRefactor" class="unlock-hint warning relative z-[1] mt-2.5 text-center text-[0.72rem]">
+      {{ $t('common.refactorEfficiencyHint') }}
+    </p>
   </section>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import Decimal from 'break_infinity.js'
 import { formatNumber } from '~/utils/format'
 import { useGameStore } from '~/store/game'
@@ -63,6 +67,10 @@ const emit = defineEmits(['refactor'])
 
 const gameStore = useGameStore()
 const modal = useRefactorConfirmationModal()
+
+const isLowValueRefactor = computed(() => {
+  return props.potentialRpGain.gt(0) && props.potentialRpGain.lt(10)
+})
 
 const requestRefactor = () => {
   if (!props.canRefactor) return
@@ -227,5 +235,9 @@ const requestRefactor = () => {
 .unlock-hint {
   margin-top: 10px;
   text-align: center;
+}
+
+.unlock-hint.warning {
+  color: #fbbf24;
 }
 </style>

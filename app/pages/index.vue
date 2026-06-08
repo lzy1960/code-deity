@@ -8,6 +8,7 @@ import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
 import CompileSection from '~/components/game/CompileSection.vue';
 import CompileLockedPanel from '~/components/game/CompileLockedPanel.vue';
+import BreakthroughReadinessPanel from '~/components/game/BreakthroughReadinessPanel.vue';
 import AutomationSection from '~/components/game/AutomationSection.vue';
 import ChallengesSection from '~/components/game/ChallengesSection.vue';
 import StatsSection from '~/components/game/StatsSection.vue';
@@ -274,6 +275,11 @@ const handleSingularityReset = () => {
     gameStore.performSingularityReset();
     activeTab.value = 'singularity';
   });
+};
+
+const handleCompileAndRelease = () => {
+  gameStore.compileAndRelease();
+  gameStore.reconcileBreakthroughReadiness();
 };
 
 const handleArchitecturalOverheadClick = () => {
@@ -555,12 +561,13 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
               :version="gameStore.version"
               :cost="gameStore.compileCost"
               :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
-              @compile-and-release="gameStore.compileAndRelease"
+              @compile-and-release="handleCompileAndRelease"
             />
             <CompileLockedPanel
               v-else
               :unlock-requirement="prestigeThresholds.COMPILE_UNLOCK_RP"
             />
+            <BreakthroughReadinessPanel v-if="gameStore.isBreakthroughReadinessUnlocked" />
           </div>
 
           <!-- Stats -->
@@ -678,12 +685,13 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
                 :version="gameStore.version"
                 :cost="gameStore.compileCost"
                 :can-compile="gameStore.refactorPoints.gte(gameStore.compileCost)"
-                @compile-and-release="gameStore.compileAndRelease"
+                @compile-and-release="handleCompileAndRelease"
               />
               <CompileLockedPanel
                 v-else
                 :unlock-requirement="prestigeThresholds.COMPILE_UNLOCK_RP"
               />
+              <BreakthroughReadinessPanel v-if="gameStore.isBreakthroughReadinessUnlocked" />
             </div>
 
             <div v-if="activeTab === 'challenges'"><ChallengesSection /></div>

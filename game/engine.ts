@@ -1,5 +1,6 @@
 import Decimal from 'break_infinity.js'
 import type { useGameStore } from '~/store/game'
+import { prestigeThresholds } from './configs'
 
 /**
  * GameEngine 把"时间推进 + 自动化 + 离线收益"等纯逻辑从 Pinia store 中剥离出来。
@@ -16,6 +17,8 @@ type GameStore = ReturnType<typeof useGameStore>
 const TICK_INTERVAL_MS = 50
 const OFFLINE_THRESHOLD_SECONDS = 10
 const OFFLINE_CAP_SECONDS = 3600
+const MAX_TICK_DELTA_MS = OFFLINE_THRESHOLD_SECONDS * 1000
+const OFFLINE_SIMULATION_STEP_MS = 1000
 
 export class GameEngine {
   private intervalId: ReturnType<typeof setInterval> | null = null
@@ -40,7 +43,8 @@ export class GameEngine {
     const store = this.store
     const now = Date.now()
     store.currentTime = now
-    const deltaMs = now - store.lastUpdateTime
+    const rawDeltaMs = now - store.lastUpdateTime
+    const deltaMs = Math.min(rawDeltaMs, MAX_TICK_DELTA_MS)
     this.simulateProgress(deltaMs)
 
     // Code Rush 过期检查
@@ -87,6 +91,8 @@ export class GameEngine {
       const bonusForClass = productions[3]!.times(0.05).times(diff)
       store.generators[2]!.amount = store.generators[2]!.amount.plus(bonusForClass)
     }
+
+    this.accumulateBreakthroughPressure(durationMs)
   }
 
   /**
@@ -99,24 +105,84 @@ export class GameEngine {
     const diffSeconds = (now - store.lastUpdateTime) / 1000
 
     if (diffSeconds < OFFLINE_THRESHOLD_SECONDS) {
+      this.simulateProgress(diffSeconds * 1000)
       store.lastUpdateTime = now
       return false
     }
 
     const effectiveDiff = Math.min(diffSeconds, OFFLINE_CAP_SECONDS)
 
-    let cpPerSecond = store.generatorProduction(1)
-    const penalty = store.architecturalOverheadPenalty
-    if (penalty < 1) cpPerSecond = cpPerSecond.times(penalty)
-
-    const totalCpGained = cpPerSecond.times(effectiveDiff)
+    const { cp: totalCpGained, generatorGains } = this.simulateOfflineGains(effectiveDiff * 1000)
     if (totalCpGained.gt(0)) {
-      store.pendingOfflineGains = { cp: totalCpGained, diff: effectiveDiff }
+      store.pendingOfflineGains = {
+        cp: totalCpGained,
+        diff: effectiveDiff,
+        generatorGains,
+      }
+      this.accumulateBreakthroughPressure(effectiveDiff * 1000)
       store.lastUpdateTime = now
       return true
     }
     store.lastUpdateTime = now
     return false
+  }
+
+  private simulateOfflineGains(durationMs: number) {
+    const store = this.store
+    const initialAmounts = store.generators.map(g => g.amount)
+    const amounts = initialAmounts.map(amount => amount.plus(0))
+    let totalCp = new Decimal(0)
+    let remainingMs = durationMs
+
+    while (remainingMs > 0) {
+      const stepMs = Math.min(OFFLINE_SIMULATION_STEP_MS, remainingMs)
+      const diff = new Decimal(stepMs).div(1000)
+      const productions: Decimal[] = []
+
+      for (let i = 8; i >= 1; i--) {
+        productions[i - 1] = store.generatorProductionForAmount(i, amounts[i - 1]!)
+      }
+
+      for (let i = 8; i > 1; i--) {
+        amounts[i - 2] = amounts[i - 2]!.plus(productions[i - 1]!.times(diff))
+      }
+
+      let cpGain = productions[0]!
+      const penalty = store.architecturalOverheadPenalty
+      if (penalty < 1) cpGain = cpGain.times(penalty)
+      totalCp = totalCp.plus(cpGain.times(diff))
+
+      if (store.paradigms.supply_chain_optimization) {
+        const bonusForClass = productions[3]!.times(0.05).times(diff)
+        amounts[2] = amounts[2]!.plus(bonusForClass)
+      }
+
+      remainingMs -= stepMs
+    }
+
+    const generatorGains = amounts
+      .map((amount, index) => ({
+        id: index + 1,
+        amount: amount.minus(initialAmounts[index]!),
+      }))
+      .filter(gain => gain.amount.gt(0))
+
+    return { cp: totalCp, generatorGains }
+  }
+
+  private accumulateBreakthroughPressure(durationMs: number) {
+    const store = this.store
+    if (store.version <= 0 || store.singularityCount > 0) return
+
+    const aiCores = store.generators[7]?.bought ?? 0
+    const excessCores = aiCores - prestigeThresholds.BREAKTHROUGH_PRESSURE_AI_CORES
+    if (excessCores <= 0) return
+
+    store.addBreakthroughReadiness(
+      excessCores *
+        prestigeThresholds.BREAKTHROUGH_PRESSURE_RATE_PER_CORE_SECOND *
+        (durationMs / 1000)
+    )
   }
 
   // --- Automation ---
