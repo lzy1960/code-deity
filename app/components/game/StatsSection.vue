@@ -74,6 +74,10 @@
       </div>
 
       <p>{{ $t('common.architecturalOverheadDescription') }}</p>
+      <div v-if="!isArchitectureEfficient" class="overhead-guidance">
+        <span>{{ $t('common.overheadGuidanceTitle') }}</span>
+        <p>{{ overheadStatusDetail }}</p>
+      </div>
     </article>
   </section>
 </template>
@@ -97,6 +101,17 @@ const overheadStatus = computed(() =>
 const apiMitigation = computed(() =>
   gameStore.paradigms.api_interface ? t('common.apiMitigationActive') : t('common.apiMitigationInactive')
 )
+const overheadStatusDetail = computed(() => {
+  if (gameStore.canSingularity) {
+    return t('common.overheadGuidanceSingularity')
+  }
+
+  if (gameStore.version > 0) {
+    return t('common.overheadGuidancePrestige')
+  }
+
+  return t('common.overheadGuidanceRefactor')
+})
 
 const metrics = computed(() => [
   {
@@ -351,6 +366,28 @@ const metrics = computed(() => [
 
 .overhead-detail > p {
   margin-top: 10px;
+}
+
+.overhead-guidance {
+  margin-top: 10px;
+  border: 1px solid rgba(251, 146, 60, 0.18);
+  border-radius: 8px;
+  background: rgba(67, 20, 7, 0.28);
+  padding: 10px;
+}
+
+.overhead-guidance span {
+  display: block;
+  color: #fdba74;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.overhead-guidance p {
+  margin-top: 6px;
+  color: #fed7aa;
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
 .signal-tile {

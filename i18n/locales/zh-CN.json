@@ -68,6 +68,18 @@
     "breakthroughPressureSource": "AI 核心临界压力",
     "breakthroughBuildingHint": "继续重构、编译、挑战，或在 25 个以上 AI 核心的压力下推进奇点筹备。",
     "breakthroughReadyHint": "奇点筹备完成。达到所需 CP 后即可进行技术奇点。",
+    "singularityCpRequirement": "奇点 CP 条件",
+    "singularityReadinessRequirement": "筹备度条件",
+    "requirementReady": "已达成",
+    "requirementMissing": "未达成",
+    "singularityNeedCpHint": "筹备度已完成，继续将算力推进到 {target} CP 以触发技术奇点。",
+    "singularityNeedReadinessHint": "算力条件已满足，还需要将奇点筹备度提升到 {target}。",
+    "singularityTriggerHint": "两项条件均已满足。现在就可以触发技术奇点。",
+    "singularityStarterTitle": "第二纪元基础规则",
+    "singularityStarterBody": "范式会消耗 SP 购买，并在重构与编译发布后继续保留。第一次进入时，先熟悉学派限制与可逆机制，就足够开始探索了。",
+    "singularityStarterRulePersistence": "已购范式会跨越重构与发布保留",
+    "singularityStarterRuleSchoolLimit": "效率 / 抽象 / 敏捷三大学派最多同时发展两条",
+    "singularityStarterRuleDebt": "技术债务可在高 CP 代价下返还被冻结的 SP",
     "statistics": "统计数据",
     "totalRefactors": "总重构次数",
     "totalRefactorPoints": "总重构点 (RP)",
@@ -79,6 +91,7 @@
     "efficiency": "效率:",
     "architecturalOverheadHint": "架构过载：拥有超过25个 AI 核心会降低总算力产出效率",
     "architecturalOverheadToast": "架构过载：当前 {cores} 个 AI 核心，超过 {threshold} 后会衰减；当前总算力倍率 {efficiency}。",
+    "architecturalOverheadActionToast": "架构过载：当前 {cores} 个 AI 核心，效率为 {efficiency}。已切换到统计页，可查看当前倍率与 API 缓解状态。",
     "generators": "生成器",
     "automation": "自动化",
     "challenges": "挑战",
@@ -115,6 +128,10 @@
     "apiMitigationInactive": "未生效",
     "overheadNotTriggered": "未触发衰减",
     "overheadTriggered": "效率衰减中",
+    "overheadGuidanceTitle": "当前状态",
+    "overheadGuidanceRefactor": "架构过载已生效。继续增加 AI 核心仍能推进进度，但每次新增带来的总产出收益会比阈值前更弱。",
+    "overheadGuidancePrestige": "你当前处于发布循环内。架构过载会压低继续堆叠 AI 核心的边际收益，重构与发布循环的权重会自然上升。",
+    "overheadGuidanceSingularity": "奇点条件已经接近或达成。此时架构过载更像最后冲刺时的效率折损，而不是需要长期停留的常态。",
     "singularityEventDescription": "第一纪元的终极重置事件，重置进度以换取 SP，并开启第二纪元。",
     "becomeGenesis": "化身创世 (Become Genesis)",
     "technicalDebt": "技术债务",
@@ -134,7 +151,12 @@
     "refactoringInProgress": "正在重构",
     "willRefund": "将返还",
     "needsRepayment": "需要偿还",
+    "currentlyHave": "当前持有",
+    "stillNeeds": "仍需补足",
+    "frozenSkills": "被冻结的技能",
     "globalCpPenalty": "(全局 CP 产出 -10%)",
+    "techDebtWaitHint": "这次重构已经生效，但债务仍未还清。继续推进当前回合，直到 CP 达到偿还条件。",
+    "techDebtReadyHint": "偿还条件已满足。确认后会返还被冻结的 SP，并重新开放受影响的选择。",
     "confirmRepayment": "确认偿还",
     "unknownSkill": "未知技能",
     "requestRefactor": "申请重构",
@@ -178,17 +200,20 @@
   "challenges": {
     "challenge1Title": "挑战 1：终极考验",
     "challenge1Rule": "1-7 阶生成器的“购买10个”指数加成效果减半。",
-    "challengeGoal": "在此规则下，达成一次“重构”。",
+    "challenge1Goal": "在此规则下，以至少 15 个 AI 核心完成一次重构。",
     "challenge1Reward": "所有生成器的“购买 10 个”奖励效果从 x1.65 永久提升至 x1.8。",
     "challenge2Title": "挑战 2：白手起家",
     "challenge2Rule": "所有来自“重构”的加成（代码优雅度、全局乘数）全部失效。",
+    "challenge2Goal": "在此规则下，单次重构至少获得 8 点 RP。",
     "challenge2Reward": "“重构点 (RP)”的获取量永久提升 50%。",
     "challenge3Title": "挑战 3：线性世纪",
-    "challenge3Rule": "所有生成器的“购买10个”指数加成大幅削弱。",
-    "challenge3Reward": "“购买10个”奖励的第一档上限从100个永久提升至120个。",
+    "challenge3Rule": "5-8 阶生成器无法获得“购买10个”指数加成。",
+    "challenge3Goal": "在此规则下，单次重构至少获得 12 点 RP。",
+    "challenge3Reward": "“购买10个”奖励的第一档上限从 100 个永久提升至 120 个。",
     "challenge4Title": "挑战 4：逆水行舟",
-    "challenge4Rule": "所有生成器的成本增长率 costMultiplier 提升 0.08。",
-    "challenge4Reward": "永久降低所有生成器的基础成本 5%。"
+    "challenge4Rule": "架构过载从 10 个 AI 核心开始触发，且衰减更强。",
+    "challenge4Goal": "在此规则下，以至少 20 个 AI 核心完成一次重构。",
+    "challenge4Reward": "架构过载惩罚永久降低 20%。"
   },
   "toast": {
     "refactorSuggestion": "代码结构已达瓶颈，建议进行重构",
@@ -219,11 +244,11 @@
     },
     "pointer_arithmetic": {
       "name": "指针算术",
-      "description": "“变量”和“函数”的产出获得 x10 的直接乘法加成。"
+      "description": "“变量”和“函数”的产出获得 x4 的直接乘法加成。"
     },
     "memory_management": {
       "name": "内存管理",
-      "description": "资源分支：所有生成器的基础成本降低 20%，但成本增长率增加 0.01。"
+      "description": "资源分支：所有生成器的基础成本降低 20%。"
     },
     "supply_chain_optimization": {
       "name": "供应链优化",
@@ -235,7 +260,7 @@
     },
     "assembly_instruction": {
       "name": "汇编指令",
-      "description": "算力分支终极技能：总 CP 产出获得一个永久加成，数值等于你“代码重构”次数的平方。"
+      "description": "算力分支终极技能：所有生成器产出获得 x(重构次数 * 4) 加成，最高 x500。"
     },
     "compiler_optimization": {
       "name": "编译器优化",
@@ -247,11 +272,11 @@
     },
     "design_patterns": {
       "name": "设计模式",
-      "description": "“类”、“模块”和“库”的产出，会根据其下一阶生成器的数量获得额外乘法加成。"
+      "description": "所有生成器产出提升 60%，并解锁抽象学派的分支选择。"
     },
     "polymorphism": {
       "name": "多态",
-      "description": "级联分支：每种生成器的“买十奖励”效果，会额外对其上一阶生成器生效 20%。"
+      "description": "级联分支：二阶以上生成器会继承低一阶“买十奖励”增量的 5%，继承倍率最高 x3。"
     },
     "enterprise_architecture": {
       "name": "企业级架构",
@@ -271,7 +296,7 @@
     },
     "dynamic_typing": {
       "name": "动态类型",
-      "description": "每当你购买一个生成器时，你立即免费获得一个低一阶的生成器。"
+      "description": "每当你购买一个生成器时，你立即免费获得两个低一阶的生成器。"
     },
     "jit_compilation": {
       "name": "即时编译",
@@ -279,7 +304,7 @@
     },
     "code_generation": {
       "name": "代码生成",
-      "description": "价值分支跨界协同：手动“代码重构”时，所有生成器数量临时翻倍，持续 10 秒。"
+      "description": "价值分支跨界协同：手动超频基础收益从 5% CPS 提升至 8% CPS，且代码狂潮充能速度提升 50%。"
     },
     "refactoring_tools": {
       "name": "重构工具",
@@ -293,9 +318,13 @@
   "singularity": {
     "confirmTitle": "确认进入技术奇点？",
     "description": "这将是你当前纪元的终点。你将重置所有算力(CP)和生成器，但会{keep}所有重构点(RP)、版本号和挑战进度，以换取强大的{sp}，开启一个全新的纪元。",
+    "gainPreview": "本次奇点将获得",
     "keepText": "保留",
     "spText": "奇点算力 (SP)",
-    "irreversible": "此操作不可逆转。"
+    "irreversible": "此操作不可逆转。",
+    "firstBriefingLabel": "第二纪元提示",
+    "firstBriefingPrimary": "奇点算力会用来购买编程范式，这些购买会在之后的重构与编译发布中继续保留。",
+    "firstBriefingSecondary": "第二纪元一开始就存在学派限制与技术债务机制，但后者需要付出很高的 CP 才能重规划路线。"
   },
   "paradigmModal": {
     "title": "解锁新的范式？",

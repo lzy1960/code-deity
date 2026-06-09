@@ -102,6 +102,10 @@ export const prestigeThresholds = {
   CODE_RUSH_MULTIPLIER: 100, // 100x manual click power (10000% increase)
   NEURAL_BOOST_CODE_RUSH_EFFECT: 'duration', // 'charge_speed' or 'duration'
   NEURAL_BOOST_CODE_RUSH_BONUS_PERCENT: 50, // 50% bonus
+
+  // Technical Debt
+  TECH_DEBT_BASE_EXPONENT: 117,
+  TECH_DEBT_SP_EXPONENT: 1.25,
 }
 
 // #region NARRATIVE

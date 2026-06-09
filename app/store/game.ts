@@ -114,6 +114,21 @@ const isActiveChallenge = (value: unknown): value is GameState['activeChallenge'
   return value === 'none' || value === 'challenge1' || value === 'challenge2' || value === 'challenge3' || value === 'challenge4'
 }
 
+const challengeGoalThresholds = {
+  challenge1: {
+    minAiCores: 15,
+  },
+  challenge2: {
+    minRefactorGain: new Decimal(8),
+  },
+  challenge3: {
+    minRefactorGain: new Decimal(12),
+  },
+  challenge4: {
+    minAiCores: 20,
+  },
+} as const
+
 export const useGameStore = defineStore('game', {
   // #region -------- STATE --------
   state: (): GameState => ({
@@ -196,14 +211,21 @@ export const useGameStore = defineStore('game', {
     // --- Soft Cap: Architectural Overhead ---
     architecturalOverheadPenalty: state => {
       const aiCores = state.generators[7]!.bought
-      if (aiCores <= prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES) return 1
+      const threshold = state.activeChallenge === 'challenge4' ? 10 : prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES
+      if (aiCores <= threshold) return 1
 
       let penaltyFactor = 0.3
+      if (state.activeChallenge === 'challenge4') {
+        penaltyFactor *= 1.75
+      }
+      if (state.challengeCompletions.challenge4) {
+        penaltyFactor *= 0.8
+      }
       if (state.paradigms.api_interface) {
         penaltyFactor *= 0.5 // Penalty effect is reduced by 50%
       }
 
-      return 1 / (1 + penaltyFactor * Math.log10(aiCores - (prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES - 1)))
+      return 1 / (1 + penaltyFactor * Math.log10(aiCores - (threshold - 1)))
     },
 
     // --- Core Production Calculation ---
@@ -215,16 +237,11 @@ export const useGameStore = defineStore('game', {
       // 基于响应式依赖一次性预计算所有生成器的有效配置，Pinia 会按依赖（paradigms / challengeCompletions / activeChallenge）缓存。
       // 取代了原本每次调用都 spread 创建对象的实现，游戏循环中调用 8+ 次/tick 的开销显著降低。
       const memoryManagement = this.paradigms.memory_management
-      const challenge4Completed = this.challengeCompletions.challenge4
-      const challenge4Active = this.activeChallenge === 'challenge4'
-
       const map = new Map<number, GeneratorConfig>()
       for (const original of generatorConfigs) {
         let baseCost = original.baseCost
         let costMultiplier = original.costMultiplier
         if (memoryManagement) baseCost = baseCost.times(0.8)
-        if (challenge4Completed) baseCost = baseCost.times(0.95)
-        if (challenge4Active) costMultiplier = costMultiplier.plus(0.08)
         map.set(original.id, {
           ...original,
           baseCost,
@@ -309,8 +326,8 @@ export const useGameStore = defineStore('game', {
         if (this.activeChallenge === 'challenge1' && id <= 7) {
           bonus = bonus.pow(0.5)
         }
-        if (this.activeChallenge === 'challenge3') {
-          bonus = bonus.pow(0.4)
+        if (this.activeChallenge === 'challenge3' && id >= 5) {
+          bonus = new Decimal(1)
         }
 
         // ## Abstraction School: Polymorphism ##
@@ -410,7 +427,7 @@ export const useGameStore = defineStore('game', {
 
         // ## Efficiency School ##
         if (this.paradigms.pointer_arithmetic && (id === 1 || id === 2)) {
-          production = production.times(10)
+          production = production.times(4)
         }
         if (this.paradigms.bit_manipulation) {
           production = production.times(1.5)
@@ -421,7 +438,7 @@ export const useGameStore = defineStore('game', {
 
         // ## Abstraction School: Design Patterns ##
         if (this.paradigms.design_patterns) {
-          production = production.times(1.2)
+          production = production.times(1.6)
         }
 
         return production
@@ -540,7 +557,7 @@ export const useGameStore = defineStore('game', {
       const gain = Decimal.floor(
         Decimal.sqrt(this.currency.log10() - 120).times(6)
       )
-      return gain.max(this.singularityCount === 0 ? 3 : 1)
+      return gain.max(3)
     },
 
     paradigmPurchaseAnalysis() {
@@ -743,16 +760,16 @@ export const useGameStore = defineStore('game', {
 
       const cost = this.costForAmount(id, amountToBuy)
 
-      if (this.currency.gte(cost)) {
-        this.currency = this.currency.minus(cost)
-        const generator = this.generators[id - 1]!
-        generator.amount = generator.amount.plus(amountToBuy)
-        generator.bought += amountToBuy.toNumber()
+        if (this.currency.gte(cost)) {
+          this.currency = this.currency.minus(cost)
+          const generator = this.generators[id - 1]!
+          generator.amount = generator.amount.plus(amountToBuy)
+          generator.bought += amountToBuy.toNumber()
 
         // ## Agility School: Dynamic Typing ##
         if (this.paradigms.dynamic_typing && id > 1) {
           const prevGenerator = this.generators[id - 2]!
-          prevGenerator.amount = prevGenerator.amount.plus(amountToBuy)
+          prevGenerator.amount = prevGenerator.amount.plus(amountToBuy.times(2))
         }
       }
       this.checkNarrativeMilestones()
@@ -795,19 +812,23 @@ export const useGameStore = defineStore('game', {
 
       const gain = this.refactorGain
       if (gain.lte(0)) return
-      const completedChallenge = this.activeChallenge !== 'none'
+      const aiCores = this.generators[7]?.bought ?? 0
+      const challengeToCheck = this.activeChallenge === 'none' ? null : this.activeChallenge
+      const completedChallenge = challengeToCheck
+        ? this.didCompleteChallenge(challengeToCheck, gain, aiCores)
+        : false
 
       // --- Challenge Completion Check ---
-      if (this.activeChallenge === 'challenge1') {
+      if (completedChallenge && this.activeChallenge === 'challenge1') {
         this.challengeCompletions.challenge1 = true
         this.activeChallenge = 'none' // Auto-exit challenge on completion
-      } else if (this.activeChallenge === 'challenge2') {
+      } else if (completedChallenge && this.activeChallenge === 'challenge2') {
         this.challengeCompletions.challenge2 = true
         this.activeChallenge = 'none'
-      } else if (this.activeChallenge === 'challenge3') {
+      } else if (completedChallenge && this.activeChallenge === 'challenge3') {
         this.challengeCompletions.challenge3 = true
         this.activeChallenge = 'none'
-      } else if (this.activeChallenge === 'challenge4') {
+      } else if (completedChallenge && this.activeChallenge === 'challenge4') {
         this.challengeCompletions.challenge4 = true
         this.activeChallenge = 'none'
       }
@@ -985,6 +1006,23 @@ export const useGameStore = defineStore('game', {
       this.pendingOfflineGains = null
     },
 
+    didCompleteChallenge(
+      challenge: Exclude<GameState['activeChallenge'], 'none'>,
+      refactorGain: Decimal,
+      aiCores: number,
+    ) {
+      switch (challenge) {
+        case 'challenge1':
+          return aiCores >= challengeGoalThresholds.challenge1.minAiCores
+        case 'challenge2':
+          return refactorGain.gte(challengeGoalThresholds.challenge2.minRefactorGain)
+        case 'challenge3':
+          return refactorGain.gte(challengeGoalThresholds.challenge3.minRefactorGain)
+        case 'challenge4':
+          return aiCores >= challengeGoalThresholds.challenge4.minAiCores
+      }
+    },
+
     // --- Narrative Actions ---
     checkNarrativeMilestones() {
       // 全部解锁后直接 return，避免游戏循环每 50ms 都遍历整个里程碑列表
@@ -1069,8 +1107,12 @@ export const useGameStore = defineStore('game', {
           frozenSP = frozenSP.plus(config.cost)
         }
       }
-      // Cost formula: 10^(total_frozen_sp * 1.5 + 120)
-      const cpCost = Decimal.pow(10, frozenSP.toNumber() * 1.5 + 120)
+      // Cost formula: 10^(total_frozen_sp * 1.25 + 117)
+      // This keeps tech debt expensive, but lets core midgame pivots happen before it feels purely theoretical.
+      const cpCost = Decimal.pow(
+        10,
+        frozenSP.toNumber() * prestigeThresholds.TECH_DEBT_SP_EXPONENT + prestigeThresholds.TECH_DEBT_BASE_EXPONENT
+      )
 
       return { frozenParadigms, frozenSP, cpCost }
     },

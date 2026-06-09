@@ -20,6 +20,31 @@
             <template #sp><span class="keep font-black text-[#bbf7d0]">{{ $t('singularity.spText') }}</span></template>
           </i18n-t>
         </p>
+        <div class="sp-readout">
+          <span>{{ $t('singularity.gainPreview') }}</span>
+          <b>+{{ formatNumber(gameStore.singularityGain) }} {{ $t('common.singularityPowerShort') }}</b>
+        </div>
+        <div class="checklist-grid">
+          <article class="check-card ready">
+            <div>
+              <span>{{ $t('common.singularityCpRequirement') }}</span>
+              <b>{{ cpProgressLabel }}</b>
+            </div>
+            <strong>{{ $t('common.requirementReady') }}</strong>
+          </article>
+          <article v-if="isFirstSingularity" class="check-card ready">
+            <div>
+              <span>{{ $t('common.singularityReadinessRequirement') }}</span>
+              <b>{{ readinessProgressLabel }}</b>
+            </div>
+            <strong>{{ $t('common.requirementReady') }}</strong>
+          </article>
+        </div>
+        <div v-if="isFirstSingularity" class="starter-hint">
+          <span>{{ $t('singularity.firstBriefingLabel') }}</span>
+          <b>{{ $t('singularity.firstBriefingPrimary') }}</b>
+          <p>{{ $t('singularity.firstBriefingSecondary') }}</p>
+        </div>
         <p class="warning-copy rounded-lg border border-yellow-300/25 bg-yellow-950/20 p-2.5 text-center text-[0.76rem] font-extrabold text-yellow-200">{{ $t('singularity.irreversible') }}</p>
 
         <footer class="action-row mt-3.5 grid grid-cols-2 gap-2.5">
@@ -32,9 +57,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSingularityModal } from '~/composables/useSingularityModal'
+import { useGameStore } from '~/store/game'
+import { formatNumber } from '~/utils/format'
+import { prestigeThresholds } from '~~/game/configs'
 
 const modal = useSingularityModal()
+const gameStore = useGameStore()
+const isFirstSingularity = computed(() => gameStore.singularityCount === 0)
+const cpProgressLabel = computed(() => `${formatNumber(gameStore.currency)} / 1e120`)
+const readinessProgressLabel = computed(() => `${Math.min(prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED, Math.max(0, gameStore.effectiveBreakthroughReadiness)).toFixed(0)}/${prestigeThresholds.BREAKTHROUGH_READINESS_REQUIRED}`)
 </script>
 
 <style scoped>
@@ -107,6 +140,99 @@ const modal = useSingularityModal()
   font-weight: 900;
 }
 
+.sp-readout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(134, 239, 172, 0.24);
+  border-radius: 8px;
+  background: rgba(5, 46, 22, 0.22);
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.sp-readout span {
+  color: #b9cde0;
+  font-size: 0.74rem;
+}
+
+.sp-readout b {
+  color: #bbf7d0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.check-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(134, 239, 172, 0.22);
+  border-radius: 8px;
+  background: rgba(5, 46, 22, 0.18);
+  padding: 10px;
+}
+
+.check-card span {
+  display: block;
+  color: #8eadcc;
+  font-size: 0.66rem;
+}
+
+.check-card b {
+  display: block;
+  margin-top: 4px;
+  color: #f8fbff;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.check-card strong {
+  color: #bbf7d0;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.starter-hint {
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 8px;
+  background: rgba(23, 37, 84, 0.22);
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.starter-hint span {
+  display: block;
+  color: #93c5fd;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.starter-hint b {
+  display: block;
+  margin-top: 4px;
+  color: #dbeafe;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.starter-hint p {
+  margin-top: 6px;
+  color: #c7d8e7;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 .warning-copy {
   border: 1px solid rgba(250, 204, 21, 0.24);
   border-radius: 8px;
@@ -143,5 +269,11 @@ const modal = useSingularityModal()
   border: 1px solid rgba(76, 165, 255, 0.44);
   background: linear-gradient(180deg, rgba(56, 153, 250, 0.34), rgba(28, 112, 190, 0.3));
   color: #fff;
+}
+
+@media (max-width: 640px) {
+  .checklist-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

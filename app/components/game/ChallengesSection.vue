@@ -12,7 +12,7 @@
       <ChallengeItem
         :title="$t('challenges.challenge1Title')"
         :rule="$t('challenges.challenge1Rule')"
-        :goal="$t('challenges.challengeGoal')"
+        :goal="$t('challenges.challenge1Goal')"
         :reward="$t('challenges.challenge1Reward')"
         :is-completed="gameStore.challengeCompletions.challenge1"
         :is-active="gameStore.activeChallenge === 'challenge1'"
@@ -24,7 +24,7 @@
       <ChallengeItem
         :title="$t('challenges.challenge2Title')"
         :rule="$t('challenges.challenge2Rule')"
-        :goal="$t('challenges.challengeGoal')"
+        :goal="$t('challenges.challenge2Goal')"
         :reward="$t('challenges.challenge2Reward')"
         :is-completed="gameStore.challengeCompletions.challenge2"
         :is-active="gameStore.activeChallenge === 'challenge2'"
@@ -36,7 +36,7 @@
       <ChallengeItem
         :title="$t('challenges.challenge3Title')"
         :rule="$t('challenges.challenge3Rule')"
-        :goal="$t('challenges.challengeGoal')"
+        :goal="$t('challenges.challenge3Goal')"
         :reward="$t('challenges.challenge3Reward')"
         :is-completed="gameStore.challengeCompletions.challenge3"
         :is-active="gameStore.activeChallenge === 'challenge3'"
@@ -48,7 +48,7 @@
       <ChallengeItem
         :title="$t('challenges.challenge4Title')"
         :rule="$t('challenges.challenge4Rule')"
-        :goal="$t('challenges.challengeGoal')"
+        :goal="$t('challenges.challenge4Goal')"
         :reward="$t('challenges.challenge4Reward')"
         :is-completed="gameStore.challengeCompletions.challenge4"
         :is-active="gameStore.activeChallenge === 'challenge4'"

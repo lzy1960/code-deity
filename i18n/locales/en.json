@@ -68,6 +68,18 @@
     "breakthroughPressureSource": "AI Core pressure",
     "breakthroughBuildingHint": "Keep refactoring, compiling, completing challenges, or sustaining pressure above 25 AI Cores to prepare the singularity.",
     "breakthroughReadyHint": "Breakthrough preparation is complete. Reach the CP requirement to trigger the singularity.",
+    "singularityCpRequirement": "Singularity CP requirement",
+    "singularityReadinessRequirement": "Readiness requirement",
+    "requirementReady": "Ready",
+    "requirementMissing": "Missing",
+    "singularityNeedCpHint": "Readiness is complete. Push your Computing Power to {target} CP to trigger the singularity.",
+    "singularityNeedReadinessHint": "The CP condition is met, but breakthrough readiness still needs to reach {target}.",
+    "singularityTriggerHint": "Both conditions are met. You can trigger the singularity now.",
+    "singularityStarterTitle": "Second Era ground rules",
+    "singularityStarterBody": "Paradigms are purchased with SP and persist through Refactor and Compile & Release. On your first entry, understanding school limits and reversibility is enough to start exploring.",
+    "singularityStarterRulePersistence": "Purchased paradigms persist through Refactor and Release",
+    "singularityStarterRuleSchoolLimit": "Only two of the Efficiency / Abstraction / Agility schools can be developed at once",
+    "singularityStarterRuleDebt": "Technical Debt can refund frozen SP later at a high CP cost",
     "statistics": "Statistics",
     "totalRefactors": "Total Refactors",
     "totalRefactorPoints": "Total Refactor Points (RP)",
@@ -79,6 +91,7 @@
     "efficiency": "Efficiency:",
     "architecturalOverheadHint": "Architectural Overhead: Having more than 25 AI Cores reduces total CP output efficiency",
     "architecturalOverheadToast": "Architectural Overhead: {cores} AI Cores owned. Output starts decaying above {threshold}; current total CP multiplier is {efficiency}.",
+    "architecturalOverheadActionToast": "Architectural Overhead: {cores} AI Cores owned, efficiency is {efficiency}. Switched to the Stats tab so you can inspect the current multiplier and API mitigation.",
     "generators": "Generators",
     "automation": "Automation",
     "challenges": "Challenges",
@@ -115,6 +128,10 @@
     "apiMitigationInactive": "Inactive",
     "overheadNotTriggered": "No Decay",
     "overheadTriggered": "Efficiency Decaying",
+    "overheadGuidanceTitle": "Current state",
+    "overheadGuidanceRefactor": "Architectural Overhead is active. Additional AI Cores still advance progress, but each new one adds less total output than it did before the threshold.",
+    "overheadGuidancePrestige": "You are inside the release loop now. Architectural Overhead lowers the marginal value of stacking more AI Cores, so the prestige loop naturally carries more of the run.",
+    "overheadGuidanceSingularity": "The Singularity condition is close or already met. At this point the overhead is better read as a final sprint tax than a long-term state to sit in.",
     "singularityEventDescription": "The ultimate reset event of the First Era, resetting progress in exchange for SP and initiating the Second Era.",
     "becomeGenesis": "Become Genesis (BG)",
     "technicalDebt": "Technical Debt",
@@ -134,7 +151,12 @@
     "refactoringInProgress": "Refactoring",
     "willRefund": "Will refund",
     "needsRepayment": "Needs repayment",
+    "currentlyHave": "Currently have",
+    "stillNeeds": "Still need",
+    "frozenSkills": "Frozen skills",
     "globalCpPenalty": "(Global CP output -10%)",
+    "techDebtWaitHint": "This refactor is already in effect, but the debt is not paid off yet. Keep progressing this loop until the CP requirement is met.",
+    "techDebtReadyHint": "Repayment is ready. Confirming will refund the frozen SP and reopen the affected choices.",
     "confirmRepayment": "Confirm Repayment",
     "unknownSkill": "Unknown Skill",
     "requestRefactor": "Request Refactor",
@@ -177,17 +199,20 @@
   "challenges": {
     "challenge1Title": "Challenge 1: Ultimate Test",
     "challenge1Rule": "Generators 1-7 only receive half-strength \"Buy 10\" exponential bonuses.",
-    "challengeGoal": "Under this rule, achieve one \"Refactor\".",
+    "challenge1Goal": "Under this rule, complete a Refactor with at least 15 AI Cores.",
     "challenge1Reward": "The \"Buy 10\" bonus effect for all generators is permanently increased from x1.65 to x1.8.",
     "challenge2Title": "Challenge 2: From Scratch",
     "challenge2Rule": "All bonuses from \"Refactor\" (Code Elegance, Global Multiplier) are disabled.",
+    "challenge2Goal": "Under this rule, earn at least 8 RP from a single Refactor.",
     "challenge2Reward": "Refactor Points (RP) gain is permanently increased by 50%.",
     "challenge3Title": "Challenge 3: Linear Age",
-    "challenge3Rule": "All generators receive heavily weakened \"Buy 10\" exponential bonuses.",
+    "challenge3Rule": "Generators 5-8 cannot benefit from \"Buy 10\" exponential bonuses.",
+    "challenge3Goal": "Under this rule, earn at least 12 RP from a single Refactor.",
     "challenge3Reward": "The first tier cap of the \"Buy 10\" bonus is permanently increased from 100 to 120.",
     "challenge4Title": "Challenge 4: Against the Current",
-    "challenge4Rule": "The cost growth rate (costMultiplier) of all generators is increased by 0.08.",
-    "challenge4Reward": "Permanently reduce the base cost of all generators by 5%."
+    "challenge4Rule": "Architectural Overhead starts at 10 AI Cores and decays harder.",
+    "challenge4Goal": "Under this rule, complete a Refactor with at least 20 AI Cores.",
+    "challenge4Reward": "Architectural Overhead penalties are permanently reduced by 20%."
   },
   "toast": {
     "refactorSuggestion": "Code structure has reached a bottleneck, consider refactoring",
@@ -218,11 +243,11 @@
     },
     "pointer_arithmetic": {
       "name": "Pointer Arithmetic",
-      "description": "'Variables' and 'Functions' production gain a direct x10 multiplicative bonus."
+      "description": "'Variables' and 'Functions' production gain a direct x4 multiplicative bonus."
     },
     "memory_management": {
       "name": "Memory Management",
-      "description": "Resource Branch: All generator base costs are reduced by 20%, but cost growth rate increases by 0.01."
+      "description": "Resource Branch: All generator base costs are reduced by 20%."
     },
     "supply_chain_optimization": {
       "name": "Supply Chain Optimization",
@@ -234,7 +259,7 @@
     },
     "assembly_instruction": {
       "name": "Assembly Instruction",
-      "description": "Power Branch Ultimate Skill: Total CP output gains a permanent bonus equal to the square of your 'Code Refactor' count."
+      "description": "Power Branch Ultimate Skill: all generator production gains x(refactor count * 4), capped at x500."
     },
     "compiler_optimization": {
       "name": "Compiler Optimization",
@@ -246,11 +271,11 @@
     },
     "design_patterns": {
       "name": "Design Patterns",
-      "description": "'Class', 'Module', and 'Library' production gain an additional multiplicative bonus based on the quantity of their next-tier generator."
+      "description": "All generator production is increased by 60%, and the Abstraction branch choices are unlocked."
     },
     "polymorphism": {
       "name": "Polymorphism",
-      "description": "Cascade Branch: The 'Buy Ten Reward' effect of each generator additionally applies 20% to its previous tier generator."
+      "description": "Cascade Branch: tier 2+ generators inherit 5% of the previous tier's 'Buy Ten Reward' bonus growth, capped at x3 inherited multiplier."
     },
     "enterprise_architecture": {
       "name": "Enterprise Architecture",
@@ -270,7 +295,7 @@
     },
     "dynamic_typing": {
       "name": "Dynamic Typing",
-      "description": "Each time you purchase a generator, you immediately gain a free generator of the next lower tier."
+      "description": "Each time you purchase a generator, you immediately gain two free generators of the next lower tier."
     },
     "jit_compilation": {
       "name": "JIT Compilation",
@@ -278,7 +303,7 @@
     },
     "code_generation": {
       "name": "Code Generation",
-      "description": "Cross-Domain Synergy: When manually 'Code Refactoring', all generator quantities are temporarily doubled for 10 seconds."
+      "description": "Cross-Domain Synergy: manual overclock base gain increases from 5% CPS to 8% CPS, and Code Rush charges 50% faster."
     },
     "refactoring_tools": {
       "name": "Refactoring Tools",
@@ -292,9 +317,13 @@
   "singularity": {
     "confirmTitle": "Confirm Entering Singularity?",
     "description": "This will be the end of your current era. You will reset all Computing Power (CP) and generators, but will {keep} all Refactor Points (RP), Version numbers, and challenge progress, in exchange for powerful {sp} to start a new era.",
+    "gainPreview": "This singularity will grant",
     "keepText": "keep",
     "spText": "Singularity Power (SP)",
-    "irreversible": "This action cannot be reversed."
+    "irreversible": "This action cannot be reversed.",
+    "firstBriefingLabel": "Second Era briefing",
+    "firstBriefingPrimary": "Singularity Power is spent on Programming Paradigms, and those purchases persist through later Refactors and Compile & Release runs.",
+    "firstBriefingSecondary": "The Second Era starts with school limits and Technical Debt already in play, but re-planning a route later requires a large CP repayment."
   },
   "paradigmModal": {
     "title": "Unlock new paradigm?",

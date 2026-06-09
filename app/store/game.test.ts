@@ -116,12 +116,21 @@ describe('Game Store - Core Mechanics', () => {
       expect(store.buy10Bonus(1).toNumber()).toBeCloseTo(Math.sqrt(1.65), 6)
     })
 
-    it('challenge3 keeps a heavily weakened buy bonus instead of hard-disabling it', () => {
-      store.generators[0]!.bought = 10
-      store.activeChallenge = 'challenge3'
+  it('challenge3 keeps buy10 bonuses intact for early generators', () => {
+    store.generators[0]!.bought = 10
+    store.activeChallenge = 'challenge3'
 
-      expect(store.buy10Bonus(1).toNumber()).toBeCloseTo(Math.pow(1.65, 0.4), 6)
-    })
+    expect(store.buy10Bonus(1).toNumber()).toBeCloseTo(1.65, 6)
+  })
+
+  it('challenge3 disables buy10 bonuses only for generators 5-8', () => {
+    store.generators[3]!.bought = 10
+    store.generators[4]!.bought = 10
+    store.activeChallenge = 'challenge3'
+
+    expect(store.buy10Bonus(4).toNumber()).toBeCloseTo(1.65, 6)
+    expect(store.buy10Bonus(5).toString()).toBe('1')
+  })
 
     it('polymorphism inherits a capped portion of the previous generator buy bonus', () => {
       store.paradigms.polymorphism = true
@@ -210,6 +219,34 @@ describe('Game Store - Singularity & Paradigms', () => {
     expect(store.singularityPower.toString()).toBe('8')
   })
 
+  it('limits players to two starter schools', () => {
+    store.singularityPower = new Decimal(20)
+    store.purchaseParadigm('system_kernel')
+    store.purchaseParadigm('efficiency_starter')
+    store.purchaseParadigm('abstraction_starter')
+
+    expect(store.paradigms.efficiency_starter).toBe(true)
+    expect(store.paradigms.abstraction_starter).toBe(true)
+
+    store.purchaseParadigm('agility_starter')
+
+    expect(store.paradigms.agility_starter).toBeUndefined()
+  })
+
+  it('blocks mutually exclusive branch purchases', () => {
+    store.singularityPower = new Decimal(20)
+    store.purchaseParadigm('system_kernel')
+    store.purchaseParadigm('abstraction_starter')
+    store.purchaseParadigm('design_patterns')
+    store.purchaseParadigm('polymorphism')
+
+    expect(store.paradigms.polymorphism).toBe(true)
+
+    store.purchaseParadigm('dependency_injection')
+
+    expect(store.paradigms.dependency_injection).toBeUndefined()
+  })
+
   it('should not be able to purchase the same paradigm twice', () => {
     store.singularityPower = new Decimal(10)
     store.purchaseParadigm('system_kernel')
@@ -224,6 +261,56 @@ describe('Game Store - Singularity & Paradigms', () => {
     store.breakthroughReadiness = 100
     expect(store.canSingularity).toBe(true)
     expect(store.singularityGain.toString()).toBe('3')
+  })
+
+  it('grants at least 3 SP for repeat singularities at the threshold', () => {
+    store.singularityCount = 1
+    store.currency = new Decimal('1e120')
+
+    expect(store.canSingularity).toBe(true)
+    expect(store.singularityGain.toString()).toBe('3')
+  })
+
+  it('pointer arithmetic creates a clear early production spike for generators 1 and 2 only', () => {
+    store.paradigms.system_kernel = true
+    store.paradigms.efficiency_starter = true
+    store.paradigms.pointer_arithmetic = true
+    store.generators[0]!.amount = new Decimal(1)
+    store.generators[1]!.amount = new Decimal(1)
+    store.generators[2]!.amount = new Decimal(1)
+
+    expect(store.generatorProduction(1).toString()).toBe('5')
+    expect(store.generatorProduction(2).toString()).toBe('5')
+    expect(store.generatorProduction(3).toString()).toBe('1.25')
+  })
+
+  it('dynamic typing fills the lower tier when buying a higher generator', () => {
+    store.paradigms.dynamic_typing = true
+    store.currency = new Decimal('1e12')
+
+    store.buyGenerator(2)
+
+    expect(store.generators[1]!.amount.toString()).toBe('1')
+    expect(store.generators[0]!.amount.toString()).toBe('2')
+  })
+
+  it('code generation improves both click power and Code Rush charge speed', () => {
+    store.generators[0]!.amount = new Decimal(100)
+    const baseClickPower = store.manualClickPower
+    store.manualClick()
+    const baseCharge = store.codeRushCharge
+
+    store.hardReset()
+    store.generators[0]!.amount = new Decimal(100)
+    store.paradigms.code_generation = true
+    const buffedClickPower = store.manualClickPower
+    store.manualClick()
+    const buffedCharge = store.codeRushCharge
+
+    expect(baseClickPower.toString()).toBe('5')
+    expect(buffedClickPower.toString()).toBe('8')
+    expect(baseCharge).toBe(2)
+    expect(buffedCharge).toBe(3)
   })
 })
 
@@ -422,12 +509,29 @@ describe('Game Store - architecturalOverheadPenalty', () => {
     expect(store.architecturalOverheadPenalty).toBeGreaterThan(0)
   })
 
+  it('challenge4 starts architectural overhead much earlier and hits harder', () => {
+    store.generators[7]!.bought = 15
+    expect(store.architecturalOverheadPenalty).toBe(1)
+
+    store.activeChallenge = 'challenge4'
+    expect(store.architecturalOverheadPenalty).toBeLessThan(1)
+  })
+
   it('reduces penalty when api_interface paradigm is purchased', () => {
     store.generators[7]!.bought = 50
     const withoutParadigm = store.architecturalOverheadPenalty
     store.paradigms.api_interface = true
     const withParadigm = store.architecturalOverheadPenalty
     expect(withParadigm).toBeGreaterThan(withoutParadigm)
+  })
+
+  it('challenge4 reward permanently softens architectural overhead', () => {
+    store.generators[7]!.bought = 50
+    const basePenalty = store.architecturalOverheadPenalty
+
+    store.challengeCompletions.challenge4 = true
+
+    expect(store.architecturalOverheadPenalty).toBeGreaterThan(basePenalty)
   })
 })
 
@@ -539,12 +643,25 @@ describe('Game Store - Breakthrough readiness', () => {
     store.version = 2
     store.activeChallenge = 'challenge2'
     store.generators[7]!.bought = 10
-    store.currency = new Decimal('1e20')
+    store.currency = new Decimal('1e80')
 
     store.refactor()
 
     expect(store.challengeCompletions.challenge2).toBe(true)
     expect(store.breakthroughReadiness).toBe(25)
+  })
+
+  it('unfinished challenges stay active and do not grant challenge readiness', () => {
+    store.version = 2
+    store.activeChallenge = 'challenge2'
+    store.generators[7]!.bought = 10
+    store.currency = new Decimal('1e20')
+
+    store.refactor()
+
+    expect(store.challengeCompletions.challenge2).toBe(false)
+    expect(store.activeChallenge).toBe('challenge2')
+    expect(store.breakthroughReadiness).toBe(0)
   })
 
   it('AI core pressure slowly advances readiness after the first compile', () => {
@@ -603,6 +720,13 @@ describe('Game Store - Technical Debt flow', () => {
     expect(store.paradigms.efficiency_starter).toBeUndefined()
     expect(store.paradigms.pointer_arithmetic).toBeUndefined()
     expect(store.paradigms.system_kernel).toBe(true) // upstream untouched
+  })
+
+  it('keeps core midgame debt expensive but below the previous late-game curve', () => {
+    const { frozenSP, cpCost } = store.calculateRefactorCost('efficiency_starter')
+
+    expect(frozenSP.toString()).toBe('6')
+    expect(cpCost.log10()).toBeCloseTo(124.5, 6)
   })
 
   it('cancel restores frozen paradigms', () => {
@@ -673,5 +797,102 @@ describe('Game Store - Code Rush', () => {
     expect(store.codeRushCharge).toBe(0)
     store.manualClick()
     expect(store.codeRushCharge).toBe(0)
+  })
+})
+
+describe('Game Store - Second Era route smoke', () => {
+  const createSecondEraStore = (paradigms: string[] = []) => {
+    setActivePinia(createPinia())
+    const store = useGameStore()
+    store.currency = new Decimal(10)
+    store.refactorPoints = new Decimal(120)
+    store.refactorCount = 18
+    store.version = 5
+    store.singularityCount = 1
+    store.unlockedSingularity = true
+    store.buyMultiplier = 'max'
+
+    for (const id of paradigms) {
+      store.paradigms[id] = true
+    }
+
+    return store
+  }
+
+  const simulateRoute = (paradigms: string[], maxSeconds = 300) => {
+    const store = createSecondEraStore(paradigms)
+    const milestones = {
+      functionAt: null as number | null,
+      classAt: null as number | null,
+      moduleAt: null as number | null,
+      libraryAt: null as number | null,
+    }
+
+    const recordMilestones = (elapsedSeconds: number) => {
+      if (milestones.functionAt === null && store.generators[1]!.bought > 0) milestones.functionAt = elapsedSeconds
+      if (milestones.classAt === null && store.generators[2]!.bought > 0) milestones.classAt = elapsedSeconds
+      if (milestones.moduleAt === null && store.generators[3]!.bought > 0) milestones.moduleAt = elapsedSeconds
+      if (milestones.libraryAt === null && store.generators[4]!.bought > 0) milestones.libraryAt = elapsedSeconds
+    }
+
+    for (let elapsedMs = 0; elapsedMs <= maxSeconds * 1000; elapsedMs += 100) {
+      for (let id = 8; id >= 1; id--) {
+        store.buyGenerator(id)
+      }
+      recordMilestones(elapsedMs / 1000)
+      if (milestones.libraryAt !== null) break
+      store.simulateProgress(100)
+    }
+
+    return {
+      milestones,
+      cps: store.cps.toString(),
+      currency: store.currency.toString(),
+      bought: store.generators.map(g => g.bought),
+    }
+  }
+
+  const simulateWindow = (paradigms: string[], seconds = 30) => {
+    const store = createSecondEraStore(paradigms)
+
+    for (let elapsedMs = 0; elapsedMs < seconds * 1000; elapsedMs += 100) {
+      for (let id = 8; id >= 1; id--) {
+        store.buyGenerator(id)
+      }
+      store.simulateProgress(100)
+    }
+
+    return {
+      cps: store.cps.toString(),
+      currency: store.currency.toString(),
+      bought: store.generators.map(g => g.bought),
+    }
+  }
+
+  it('keeps the first core routes distinct while all improving over baseline', () => {
+    const baseline = simulateRoute([])
+    const efficiency = simulateRoute(['system_kernel', 'efficiency_starter', 'pointer_arithmetic'])
+    const abstraction = simulateRoute(['system_kernel', 'abstraction_starter', 'design_patterns'])
+    const agility = simulateRoute(['system_kernel', 'agility_starter', 'dynamic_typing'])
+
+    expect(baseline.milestones.moduleAt).not.toBeNull()
+    expect(efficiency.milestones.moduleAt).not.toBeNull()
+    expect(abstraction.milestones.moduleAt).not.toBeNull()
+    expect(agility.milestones.moduleAt).not.toBeNull()
+
+    expect(efficiency.milestones.libraryAt!).toBeLessThan(abstraction.milestones.libraryAt!)
+    expect(abstraction.milestones.libraryAt!).toBeLessThan(agility.milestones.libraryAt!)
+    expect(agility.milestones.libraryAt!).toBeLessThan(baseline.milestones.libraryAt!)
+  })
+
+  it('still gives every first core route a stronger 30-second stack than baseline', () => {
+    const baseline30 = simulateWindow([])
+    const efficiency30 = simulateWindow(['system_kernel', 'efficiency_starter', 'pointer_arithmetic'])
+    const abstraction30 = simulateWindow(['system_kernel', 'abstraction_starter', 'design_patterns'])
+    const agility30 = simulateWindow(['system_kernel', 'agility_starter', 'dynamic_typing'])
+
+    expect(efficiency30.bought[5]).toBeGreaterThan(abstraction30.bought[5])
+    expect(abstraction30.bought[5]).toBeGreaterThan(agility30.bought[5])
+    expect(agility30.bought[5]).toBeGreaterThan(baseline30.bought[5])
   })
 })

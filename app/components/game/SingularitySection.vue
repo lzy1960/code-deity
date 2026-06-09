@@ -23,6 +23,19 @@
       <span>{{ $t('common.youHaveChosenToDevelop') }} <b>{{ purchasedSchools.join(` ${$t('common.and')} `) }}</b> {{ $t('common.school') }}，<b>{{ lockedSchool }}</b> {{ $t('common.schoolSkillsLockedHint') }}</span>
     </div>
 
+    <section v-if="showFirstEntryBriefing" class="starter-recommendation">
+      <header>
+        <p>SECOND ERA BASICS</p>
+        <h3>{{ $t('common.singularityStarterTitle') }}</h3>
+      </header>
+      <p>{{ $t('common.singularityStarterBody') }}</p>
+      <div class="starter-chip-row">
+        <span class="starter-chip">{{ $t('common.singularityStarterRulePersistence') }}</span>
+        <span class="starter-chip">{{ $t('common.singularityStarterRuleSchoolLimit') }}</span>
+        <span class="starter-chip emphasis">{{ $t('common.singularityStarterRuleDebt') }}</span>
+      </div>
+    </section>
+
     <div class="flow-container w-full h-[70vh]">
       <div class="flow-inner">
         <VueFlow
@@ -90,6 +103,12 @@ const lockedSchool = computed(() => {
   const lockedStarterId = schoolStarterIds.find(id => !gameStore.paradigms[id])
   return lockedStarterId ? t(`paradigms.${lockedStarterId}.name`) : null
 })
+
+const showFirstEntryBriefing = computed(() =>
+  gameStore.unlockedSingularity
+  && gameStore.singularityCount === 1
+  && Object.keys(gameStore.paradigms).length === 0
+)
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
@@ -302,6 +321,64 @@ onMounted(() => {
   padding: 10px 12px;
   font-size: 0.8rem;
   transform: translateX(-50%);
+}
+
+.starter-recommendation {
+  margin-bottom: 12px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(15, 31, 46, 0.92), rgba(9, 19, 29, 0.96)),
+    radial-gradient(circle at 0% 0%, rgba(96, 165, 250, 0.14), transparent 34%);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.22);
+  padding: 12px;
+}
+
+.starter-recommendation header p {
+  color: #93c5fd;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.starter-recommendation header h3 {
+  margin-top: 2px;
+  color: #f8fbff;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.starter-recommendation > p {
+  margin-top: 8px;
+  color: #c7d8e7;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.starter-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.starter-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #dbeafe;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.starter-chip.emphasis {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: rgba(69, 48, 12, 0.36);
+  color: #fde68a;
 }
 
 @media (max-width: 640px) {

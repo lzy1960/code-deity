@@ -284,7 +284,7 @@ const handleCompileAndRelease = () => {
 
 const handleArchitecturalOverheadClick = () => {
   activeTab.value = 'stats';
-  toast.addToast(t('common.architecturalOverheadToast', {
+  toast.addToast(t('common.architecturalOverheadActionToast', {
     cores: formatNumber(gameStore.generators[7]?.bought ?? 0),
     threshold: prestigeThresholds.ARCHITECTURAL_OVERHEAD_AI_CORES,
     efficiency: `${(gameStore.architecturalOverheadPenalty * 100).toFixed(1)}%`,
