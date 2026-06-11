@@ -11,16 +11,6 @@
       </span>
     </header>
 
-    <div class="readiness-readout">
-      <div class="readiness-copy">
-        <span>{{ $t('common.currentReadiness') }}</span>
-        <strong>{{ progressLabel }}</strong>
-      </div>
-      <div class="readiness-track" aria-hidden="true">
-        <span :style="{ width: `${progressPercent}%` }" />
-      </div>
-    </div>
-
     <div class="requirement-grid">
       <article class="requirement-card cp-card" :class="{ ready: isCpReady }" :style="cpRequirementStyle">
         <div class="requirement-copy">
@@ -133,7 +123,6 @@ const readinessHint = computed(() =>
 }
 
 .panel-header,
-.readiness-readout,
 .source-grid,
 .hint {
   position: relative;
@@ -188,51 +177,6 @@ const readinessHint = computed(() =>
   border-color: rgba(96, 165, 250, 0.28);
   background: rgba(23, 37, 84, 0.4);
   color: #bfdbfe;
-}
-
-.readiness-readout {
-  margin-top: 14px;
-  border: 1px solid rgba(251, 191, 36, 0.16);
-  border-radius: 8px;
-  background: rgba(4, 15, 18, 0.54);
-  padding: 12px;
-}
-
-.readiness-copy {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.readiness-copy span,
-.hint,
-.source-grid span {
-  color: #b9cde0;
-  font-size: 0.72rem;
-}
-
-.readiness-copy strong {
-  color: #fde68a;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
-  font-size: 1.15rem;
-  font-weight: 900;
-}
-
-.readiness-track {
-  height: 9px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.9);
-  margin-top: 10px;
-}
-
-.readiness-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #fbbf24, #86efac);
-  transition: width 0.25s ease;
 }
 
 .requirement-grid {
@@ -344,6 +288,12 @@ const readinessHint = computed(() =>
 .source-grid .iconify {
   flex: 0 0 auto;
   color: #fbbf24;
+}
+
+.hint,
+.source-grid span {
+  color: #b9cde0;
+  font-size: 0.72rem;
 }
 
 .hint {
