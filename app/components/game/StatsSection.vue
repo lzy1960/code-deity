@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '~/store/game'
-import { formatNumber } from '~/utils/format'
+import { formatDuration, formatNumber } from '~/utils/format'
 import { prestigeThresholds } from '~~/game/configs'
 
 const gameStore = useGameStore()
@@ -95,6 +95,7 @@ const architectureEfficiency = computed(() => `${(gameStore.architecturalOverhea
 const isArchitectureEfficient = computed(() => gameStore.architecturalOverheadPenalty >= 1)
 const rpVersionBonus = computed(() => formatNumber(gameStore.rpBonus.minus(1).times(100)))
 const aiCoreCount = computed(() => gameStore.generators[7]?.bought ?? 0)
+const completedChallengesLabel = computed(() => `${gameStore.completedChallengesCount}/4`)
 const overheadStatus = computed(() =>
   isArchitectureEfficient.value ? t('common.overheadNotTriggered') : t('common.overheadTriggered')
 )
@@ -115,24 +116,49 @@ const overheadStatusDetail = computed(() => {
 
 const metrics = computed(() => [
   {
+    label: t('common.totalPlayTime'),
+    value: formatDuration(gameStore.totalPlayTimeMs),
+    icon: 'mdi:clock-time-eight-outline',
+  },
+  {
+    label: t('common.totalOfflineTime'),
+    value: formatDuration(gameStore.totalOfflineTimeMs),
+    icon: 'mdi:timer-sand',
+  },
+  {
+    label: t('common.totalManualClicks'),
+    value: formatNumber(gameStore.totalManualClicks),
+    icon: 'mdi:gesture-tap-button',
+  },
+  {
+    label: t('common.lifetimeCodePower'),
+    value: formatNumber(gameStore.lifetimeCodePower),
+    icon: 'mdi:flash-outline',
+  },
+  {
+    label: t('common.totalRefactorPoints'),
+    value: formatNumber(gameStore.lifetimeRefactorPoints),
+    icon: 'mdi:hexagon-multiple-outline',
+  },
+  {
     label: t('common.totalRefactors'),
     value: formatNumber(gameStore.refactorCount),
     icon: 'mdi:source-branch',
   },
   {
-    label: t('common.totalRefactorPoints'),
-    value: formatNumber(gameStore.refactorPoints),
-    icon: 'mdi:hexagon-multiple-outline',
+    label: t('common.totalSingularities'),
+    value: formatNumber(gameStore.singularityCount),
+    icon: 'mdi:creation-outline',
   },
   {
-    label: t('common.currentVersion'),
+    label: t('common.completedChallenges'),
+    value: completedChallengesLabel.value,
+    icon: 'mdi:trophy-outline',
+  },
+  {
+    label: t('common.currentVersionStat'),
     value: formatNumber(gameStore.version),
     icon: 'mdi:tag-outline',
-  },
-  {
-    label: t('common.cps'),
-    value: formatNumber(gameStore.cps),
-    icon: 'mdi:pulse',
   },
 ])
 </script>

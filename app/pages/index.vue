@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue';
 import { useGameStore } from '~/store/game';
 import { prestigeThresholds } from '~~/game/configs';
-import AppHeader from '~/components/layout/AppHeader.vue';
 import AppFooter from '~/components/layout/AppFooter.vue';
 import GeneratorItem from '~/components/game/GeneratorItem.vue';
 import RefactorSection from '~/components/game/RefactorSection.vue';
@@ -20,13 +19,19 @@ import { useSingularityModal } from '~/composables/useSingularityModal';
 import { useToast } from '~/composables/useToast';
 import { useOnboarding } from '~/composables/useOnboarding';
 import { useSpotlight } from '~/composables/useSpotlight';
+import { useHelpModal } from '~/composables/useHelpModal';
+import { useGenesisLogModal } from '~/composables/useGenesisLogModal';
+import { useSettingsModal } from '~/composables/useSettingsModal';
 import { formatNumber } from '~/utils/format';
 
 const gameStore = useGameStore();
 const SingularitySection = defineAsyncComponent(() => import('~/components/game/SingularitySection.vue'));
 const singularityModal = useSingularityModal();
 const toast = useToast();
-const { t } = useI18n();
+const helpModal = useHelpModal();
+const genesisLogModal = useGenesisLogModal();
+const settingsModal = useSettingsModal();
+const { t, locale } = useI18n();
 const { shouldShowTour, shouldShowCodeRushTour, completeTour, completeCodeRushTour } = useOnboarding();
 const { spotlightRect, update: updateSpotlightRect, clear: clearSpotlight, forwardClickIfInsideSpotlight } = useSpotlight();
 
@@ -193,7 +198,7 @@ onUnmounted(() => {
 const activeTab = ref('generators');
 const hasShownRefactorMessage = ref(false);
 const hasShownOverloadMessage = ref(false);
-const bottomSheetHeight = ref(65);
+const bottomSheetHeight = ref(72);
 const isDraggingSheet = ref(false);
 let sheetDragStartY = 0;
 let sheetDragStartHeight = 65;
@@ -203,7 +208,7 @@ const bottomSheetStyle = computed(() => ({
 }));
 
 function clampSheetHeight(height: number) {
-  return Math.min(86, Math.max(38, height));
+  return Math.min(92, Math.max(46, height));
 }
 
 function handleSheetPointerMove(event: PointerEvent) {
@@ -230,7 +235,7 @@ function startSheetDrag(event: PointerEvent) {
 }
 
 function toggleSheetHeight() {
-  bottomSheetHeight.value = bottomSheetHeight.value < 64 ? 65 : 42;
+  bottomSheetHeight.value = bottomSheetHeight.value < 68 ? 72 : 50;
 }
 
 // Floating numbers state
@@ -299,32 +304,21 @@ const unlockedGenerators = computed(() => {
   return gameStore.generators.filter(g => gameStore.isGeneratorUnlocked(g.id));
 });
 
-const tabTitleMap: Record<string, string> = {
-  generators: $t('common.generators'),
-  upgrades:   $t('common.progression'),
-  challenges: $t('common.challenges'),
-  automation: $t('common.automation'),
-  singularity: $t('common.singularity'),
-  stats:      $t('common.stats'),
-};
-
-const headerTitle = computed(() => {
-  if (!isGeneratorSectionUnlocked.value) return $t('index.gameTitle');
-  return tabTitleMap[activeTab.value] ?? activeTab.value;
-});
-
 const buyGenerator = (id: number) => {
   gameStore.buyGenerator(id);
 };
 
-const desktopNavItems = computed(() => [
-  { id: 'generators', label: $t('common.generators'), short: 'GEN', icon: 'mdi:memory', unlocked: true },
-  { id: 'upgrades',   label: $t('common.progression'), short: 'ADV', icon: 'mdi:rocket-launch', unlocked: gameStore.isRefactorUnlocked },
-  { id: 'challenges', label: $t('common.challenges'), short: 'CH',  icon: 'mdi:trophy-variant', unlocked: gameStore.isChallengesUnlocked },
-  { id: 'automation', label: $t('common.automation'), short: 'AUTO',icon: 'mdi:robot', unlocked: gameStore.isAutomationUnlocked },
-  { id: 'singularity',label: $t('common.singularity'),short: 'SP',  icon: 'mdi:creation', unlocked: gameStore.unlockedSingularity },
-  { id: 'stats',      label: $t('common.stats'),      short: 'STAT',icon: 'mdi:chart-bar', unlocked: true },
-]);
+const desktopNavItems = computed(() => {
+  locale.value
+  return [
+    { id: 'generators', label: t('common.generators'), short: t('common.generatorsShort'), icon: 'mdi:memory', unlocked: true },
+    { id: 'upgrades', label: t('common.progression'), short: t('common.progressionShort'), icon: 'mdi:rocket-launch', unlocked: gameStore.isRefactorUnlocked },
+    { id: 'challenges', label: t('common.challenges'), short: t('common.challengesShort'), icon: 'mdi:trophy-variant', unlocked: gameStore.isChallengesUnlocked },
+    { id: 'automation', label: t('common.automation'), short: t('common.automationShort'), icon: 'mdi:robot', unlocked: gameStore.isAutomationUnlocked },
+    { id: 'singularity', label: t('common.singularity'), short: t('common.singularityShort'), icon: 'mdi:creation', unlocked: gameStore.unlockedSingularity },
+    { id: 'stats', label: t('common.stats'), short: t('common.statsShort'), icon: 'mdi:chart-bar', unlocked: true },
+  ];
+});
 
 const getDesktopNavUnlockHint = (item: { id: string; unlocked: boolean }): string => {
   if (item.unlocked) return '';
@@ -461,15 +455,6 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
       </Transition>
     </div>
 
-    <!-- ── Header ─────────────────────────────────────── -->
-    <div class="relative shrink-0 sticky top-0 z-30">
-      <AppHeader
-        :title="headerTitle"
-        :can-singularity="gameStore.canSingularity"
-        @singularity-click="handleSingularityReset"
-      />
-    </div>
-
     <!-- ══════════════════════════════════════════════════
          MOBILE LAYOUT  (hidden on lg+)
          CodeScene fills screen, bottom sheet overlays it
@@ -523,6 +508,30 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
         >
           <span class="sheet-handle w-8 h-0.5 rounded-full" />
         </button>
+
+        <div class="mobile-command-dock shrink-0 px-3 pb-2">
+          <button
+            v-if="gameStore.canSingularity"
+            class="command-pill command-pill-singularity"
+            type="button"
+            @click="handleSingularityReset"
+          >
+            <Icon name="mdi:creation" class="text-base" />
+            <span>{{ $t('common.singularity') }}</span>
+          </button>
+
+          <div class="utility-cluster">
+            <button type="button" class="utility-btn" @click="genesisLogModal.show()">
+              <Icon name="mdi:console-line" class="text-[1.15rem]" />
+            </button>
+            <button type="button" class="utility-btn" @click="helpModal.show()">
+              <Icon name="mdi:help-circle-outline" class="text-[1.15rem]" />
+            </button>
+            <button type="button" class="utility-btn" @click="settingsModal.show()">
+              <Icon name="mdi:cog" class="text-[1.15rem]" />
+            </button>
+          </div>
+        </div>
 
         <!-- Code Rush + 倍率选择器（合并为一行，generators tab only） -->
         <div v-if="activeTab === 'generators'" class="px-3 pb-1.5 shrink-0 flex items-center gap-2">
@@ -624,34 +633,59 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
       <!-- ── Right: tab nav + scrollable content ──────── -->
       <div class="desktop-content-shell flex-1 flex flex-col overflow-hidden">
-
-        <!-- Horizontal tab navigation bar -->
-        <nav class="desktop-tabs">
-          <TransitionGroup name="tab-appear" tag="div" class="desktop-tab-list">
-          <a
-            v-for="item in desktopNavItems.filter(t => t.unlocked)"
-            :key="item.id"
-            @click="handleDesktopNavClick(item)"
-            class="desktop-tab"
-            :class="[
-              activeTab === item.id
-                ? 'active'
-                : item.unlocked
-                  ? ''
-                  : 'locked',
-            ]"
-          >
-            <Icon :name="item.icon" />
-            <span>{{ item.label }}</span>
-            <small>{{ item.short }}</small>
-            <Icon v-if="!item.unlocked" name="mdi:lock-outline" class="lock-icon" />
-          </a>
-          </TransitionGroup>
-        </nav>
-
-        <!-- Scrollable content -->
         <div class="content-scroll flex-1 overflow-y-auto p-5">
           <div :class="{ 'mx-auto max-w-2xl': activeTab !== 'singularity' }" class="space-y-4 pb-6">
+            <section class="desktop-control-cluster">
+              <div class="desktop-control-copy">
+                <p class="desktop-control-kicker">CONTROL SURFACE</p>
+                <h2>{{ desktopNavItems.find(item => item.id === activeTab)?.label ?? $t('common.generators') }}</h2>
+              </div>
+
+              <div class="desktop-control-actions">
+                <button
+                  v-if="gameStore.canSingularity"
+                  class="command-pill command-pill-singularity"
+                  type="button"
+                  @click="handleSingularityReset"
+                >
+                  <Icon name="mdi:creation" class="text-base" />
+                  <span>{{ $t('common.singularity') }}</span>
+                </button>
+
+                <div class="utility-cluster">
+                  <button type="button" class="utility-btn" @click="genesisLogModal.show()">
+                    <Icon name="mdi:console-line" class="text-[1.15rem]" />
+                  </button>
+                  <button type="button" class="utility-btn" @click="helpModal.show()">
+                    <Icon name="mdi:help-circle-outline" class="text-[1.15rem]" />
+                  </button>
+                  <button type="button" class="utility-btn" @click="settingsModal.show()">
+                    <Icon name="mdi:cog" class="text-[1.15rem]" />
+                  </button>
+                </div>
+              </div>
+
+              <TransitionGroup name="tab-appear" tag="div" class="desktop-tab-list">
+                <a
+                  v-for="item in desktopNavItems"
+                  :key="item.id"
+                  @click="handleDesktopNavClick(item)"
+                  class="desktop-tab"
+                  :class="[
+                    activeTab === item.id
+                      ? 'active'
+                      : item.unlocked
+                        ? ''
+                        : 'locked',
+                  ]"
+                >
+                  <Icon :name="item.icon" />
+                  <span>{{ item.label }}</span>
+                  <small>{{ item.short }}</small>
+                  <Icon v-if="!item.unlocked" name="mdi:lock-outline" class="lock-icon" />
+                </a>
+              </TransitionGroup>
+            </section>
 
             <!-- Code Rush + multiplier row (generators tab) -->
             <div v-if="activeTab === 'generators' && isGeneratorSectionUnlocked" class="flex items-center gap-2">
@@ -754,18 +788,57 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 .tab-appear-enter-active { transition: all 0.22s ease; }
 .tab-appear-enter-from   { opacity: 0; transform: translateY(8px); }
 
-.desktop-tabs {
-  flex-shrink: 0;
-  overflow-x: auto;
-  border-bottom: 1px solid #253f56;
-  background: #0d1823;
-  box-shadow: none;
-  padding: 10px 14px;
+.mobile-command-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.desktop-control-cluster {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #253f56;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(15, 29, 42, 0.96), rgba(10, 19, 28, 0.98)),
+    radial-gradient(circle at top left, rgba(56, 153, 250, 0.12), transparent 45%);
+  padding: 16px;
+}
+
+.desktop-control-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desktop-control-kicker {
+  color: #6ea9d8;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.desktop-control-copy h2 {
+  color: #e5f3ff;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.desktop-control-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .desktop-tab-list {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -839,6 +912,57 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 .desktop-tab .lock-icon {
   font-size: 0.76rem;
   opacity: 0.7;
+}
+
+.utility-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.utility-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(110, 169, 216, 0.22);
+  border-radius: 12px;
+  background: rgba(13, 29, 42, 0.82);
+  color: #9ec4e4;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.utility-btn:hover {
+  border-color: rgba(56, 153, 250, 0.4);
+  background: rgba(26, 55, 76, 0.92);
+  color: #f3f9ff;
+  transform: translateY(-1px);
+}
+
+.command-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 2.45rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.command-pill-singularity {
+  border: 1px solid rgba(134, 239, 172, 0.34);
+  background: linear-gradient(180deg, rgba(22, 101, 52, 0.48), rgba(20, 83, 45, 0.4));
+  color: #dcfce7;
+  box-shadow: 0 0 14px rgba(134, 239, 172, 0.16);
+  animation: singularity-ready 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes singularity-ready {
+  from { box-shadow: 0 0 10px rgba(134, 239, 172, 0.14); }
+  to { box-shadow: 0 0 18px rgba(134, 239, 172, 0.26); }
 }
 
 /* ── Floating click numbers ─────────────────────────── */
@@ -965,4 +1089,18 @@ watch(() => gameStore.isCompileUnlocked, (isUnlocked, wasUnlocked) => {
 
 .onboarding-fade-enter-active { transition: opacity 0.4s ease; }
 .onboarding-fade-enter-from { opacity: 0; }
+
+@media (max-width: 1023px) {
+  .utility-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 10px;
+  }
+
+  .command-pill {
+    min-height: 2.2rem;
+    font-size: 0.72rem;
+    padding: 0 12px;
+  }
+}
 </style>

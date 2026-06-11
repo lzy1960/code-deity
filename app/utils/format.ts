@@ -21,6 +21,19 @@ export function formatNumber(value?: Decimal | number): string {
 }
 
 /**
+ * Formats a duration as H:MM:SS using total elapsed hours.
+ * Example: 3_661_000 -> "1:01:01"
+ */
+export function formatDuration(durationMs?: number): string {
+  const totalSeconds = Math.max(0, Math.floor((durationMs ?? 0) / 1000))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+/**
  * Parses a game name string like "中文 (English)" and returns the appropriate part based on locale.
  * @param name The game name string.
  * @param locale The current locale code (e.g., 'en', 'zh-CN').

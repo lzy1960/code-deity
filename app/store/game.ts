@@ -35,6 +35,11 @@ export interface GameState {
   lastUpdateTime: number
   lastCloudSync: number | null // Timestamp of the last successful cloud sync
   currentTime: number // Added for reactivity of time-dependent getters
+  totalPlayTimeMs: number
+  totalOfflineTimeMs: number
+  totalManualClicks: number
+  lifetimeCodePower: Decimal
+  lifetimeRefactorPoints: Decimal
   currency: Decimal // CP, Code Power
   generators: Generator[]
   buyMultiplier: BuyMultiplier
@@ -97,7 +102,7 @@ type DecimalToString<T> = {
 
 export type SerializableGameState = DecimalToString<GameState>
 
-const CURRENT_SAVE_VERSION = '1.0.6'
+const CURRENT_SAVE_VERSION = '1.0.8'
 
 const defaultChallengeCompletions = (): ChallengeCompletion => ({
   challenge1: false,
@@ -136,6 +141,11 @@ export const useGameStore = defineStore('game', {
     lastUpdateTime: Date.now(),
     lastCloudSync: null,
     currentTime: Date.now(), // Initialize with current time
+    totalPlayTimeMs: 0,
+    totalOfflineTimeMs: 0,
+    totalManualClicks: 0,
+    lifetimeCodePower: new Decimal(0),
+    lifetimeRefactorPoints: new Decimal(0),
     currency: new Decimal(0),
     generators: generatorConfigs.map(config => ({
       id: config.id,
@@ -528,6 +538,7 @@ export const useGameStore = defineStore('game', {
     hasPendingOfflineGains: (state): boolean => {
       return state.pendingOfflineGains !== null
     },
+    completedChallengesCount: state => Object.values(state.challengeCompletions).filter(Boolean).length,
 
     // --- Singularity ---
     earnedBreakthroughReadiness: state => {
@@ -616,6 +627,11 @@ export const useGameStore = defineStore('game', {
       this.saveVersion = CURRENT_SAVE_VERSION
       this.lastUpdateTime = s.lastUpdateTime ?? Date.now()
       this.lastCloudSync = s.lastCloudSync ?? null
+      this.totalPlayTimeMs = Math.max(0, s.totalPlayTimeMs ?? 0)
+      this.totalOfflineTimeMs = Math.max(0, s.totalOfflineTimeMs ?? 0)
+      this.totalManualClicks = Math.max(0, s.totalManualClicks ?? 0)
+      this.lifetimeCodePower = new Decimal(s.lifetimeCodePower ?? 0)
+      this.lifetimeRefactorPoints = new Decimal(s.lifetimeRefactorPoints ?? 0)
       this.currency = new Decimal(s.currency ?? 0)
       this.refactorPoints = new Decimal(s.refactorPoints ?? 0)
       this.refactorCount = s.refactorCount ?? 0
@@ -687,6 +703,11 @@ export const useGameStore = defineStore('game', {
         lastUpdateTime: this.lastUpdateTime,
         lastCloudSync: this.lastCloudSync,
         currentTime: this.currentTime,
+        totalPlayTimeMs: this.totalPlayTimeMs,
+        totalOfflineTimeMs: this.totalOfflineTimeMs,
+        totalManualClicks: this.totalManualClicks,
+        lifetimeCodePower: decToStr(this.lifetimeCodePower),
+        lifetimeRefactorPoints: decToStr(this.lifetimeRefactorPoints),
         currency: decToStr(this.currency),
         generators: this.generators.map(g => ({
           id: g.id,
@@ -744,6 +765,8 @@ export const useGameStore = defineStore('game', {
     manualClick() {
       const clickPower = this.manualClickPower;
       this.currency = this.currency.plus(clickPower)
+      this.lifetimeCodePower = this.lifetimeCodePower.plus(clickPower)
+      this.totalManualClicks += 1
       this.checkNarrativeMilestones()
 
       // Code Rush charging logic
@@ -835,6 +858,7 @@ export const useGameStore = defineStore('game', {
 
       if (gain.gt(0)) {
         this.refactorPoints = this.refactorPoints.plus(gain)
+        this.lifetimeRefactorPoints = this.lifetimeRefactorPoints.plus(gain)
         this.refactorCount += 1
       }
       if (completedChallenge) {
@@ -929,6 +953,12 @@ export const useGameStore = defineStore('game', {
       this.saveVersion = CURRENT_SAVE_VERSION
       this.lastUpdateTime = Date.now()
       this.lastCloudSync = null
+      this.currentTime = Date.now()
+      this.totalPlayTimeMs = 0
+      this.totalOfflineTimeMs = 0
+      this.totalManualClicks = 0
+      this.lifetimeCodePower = new Decimal(0)
+      this.lifetimeRefactorPoints = new Decimal(0)
       this.currency = new Decimal(0)
       this.generators = generatorConfigs.map(config => ({
         id: config.id,
@@ -995,7 +1025,9 @@ export const useGameStore = defineStore('game', {
     applyOfflineGains() {
       if (!this.pendingOfflineGains) return
 
+      this.totalOfflineTimeMs += Math.max(0, this.pendingOfflineGains.diff * 1000)
       this.currency = this.currency.plus(this.pendingOfflineGains.cp)
+      this.lifetimeCodePower = this.lifetimeCodePower.plus(this.pendingOfflineGains.cp)
       for (const gain of this.pendingOfflineGains.generatorGains ?? []) {
         const generator = this.generators[gain.id - 1]
         if (generator) {

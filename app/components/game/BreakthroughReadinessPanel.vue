@@ -22,14 +22,19 @@
     </div>
 
     <div class="requirement-grid">
-      <article class="requirement-card" :class="{ ready: isCpReady }">
+      <article class="requirement-card cp-card" :class="{ ready: isCpReady }" :style="cpRequirementStyle">
         <div class="requirement-copy">
           <span>{{ $t('common.singularityCpRequirement') }}</span>
           <strong>{{ cpProgressLabel }}</strong>
         </div>
         <b>{{ isCpReady ? $t('common.requirementReady') : $t('common.requirementMissing') }}</b>
       </article>
-      <article v-if="requiresReadiness" class="requirement-card" :class="{ ready: isReadinessReady }">
+      <article
+        v-if="requiresReadiness"
+        class="requirement-card readiness-card"
+        :class="{ ready: isReadinessReady }"
+        :style="readinessRequirementStyle"
+      >
         <div class="requirement-copy">
           <span>{{ $t('common.singularityReadinessRequirement') }}</span>
           <strong>{{ progressLabel }}</strong>
@@ -76,6 +81,10 @@ const cpRequired = new Decimal('1e120')
 const requiresReadiness = computed(() => gameStore.singularityCount === 0)
 const currentReadiness = computed(() => Math.min(required, Math.max(0, gameStore.effectiveBreakthroughReadiness)))
 const progressPercent = computed(() => (currentReadiness.value / required) * 100)
+const cpProgressPercent = computed(() => {
+  if (gameStore.currency.lte(0)) return 0
+  return Math.min(100, Math.max(0, (gameStore.currency.log10() / cpRequired.log10()) * 100))
+})
 const progressLabel = computed(() => {
   const value = currentReadiness.value
   const displayValue = Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)
@@ -85,6 +94,12 @@ const cpProgressLabel = computed(() => `${formatNumber(gameStore.currency)} / 1e
 const isReadinessReady = computed(() => gameStore.effectiveBreakthroughReadiness >= required)
 const isCpReady = computed(() => gameStore.currency.gte(cpRequired))
 const isFullyReady = computed(() => isCpReady.value && (!requiresReadiness.value || isReadinessReady.value))
+const cpRequirementStyle = computed(() => ({
+  '--progress-fill': `${cpProgressPercent.value}%`,
+}))
+const readinessRequirementStyle = computed(() => ({
+  '--progress-fill': `${progressPercent.value}%`,
+}))
 const readinessHint = computed(() =>
   isFullyReady.value
     ? t('common.singularityTriggerHint')
@@ -228,6 +243,7 @@ const readinessHint = computed(() =>
 }
 
 .requirement-card {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -236,11 +252,43 @@ const readinessHint = computed(() =>
   border-radius: 8px;
   background: rgba(16, 26, 35, 0.66);
   padding: 10px;
+  isolation: isolate;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.requirement-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, var(--progress-color) 0, var(--progress-color) var(--progress-fill, 0%), transparent var(--progress-fill, 0%), transparent 100%);
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .requirement-card.ready {
   border-color: rgba(74, 222, 128, 0.18);
   background: rgba(5, 46, 22, 0.22);
+}
+
+.requirement-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cp-card {
+  --progress-color: rgba(56, 153, 250, 0.18);
+}
+
+.readiness-card {
+  --progress-color: rgba(251, 191, 36, 0.18);
+}
+
+.requirement-card.ready::before {
+  background:
+    linear-gradient(90deg, rgba(74, 222, 128, 0.24) 0, rgba(74, 222, 128, 0.24) var(--progress-fill, 100%), transparent var(--progress-fill, 100%), transparent 100%);
 }
 
 .requirement-copy {

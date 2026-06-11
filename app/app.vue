@@ -9,6 +9,7 @@ import SingularityConfirmationModal from '~/components/game/SingularityConfirmat
 import RefactorConfirmationModal from '~/components/game/RefactorConfirmationModal.vue'
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
+import SettingsPanel from '~/components/layout/SettingsPanel.vue'
 import ToastManager from '~/components/layout/ToastManager.vue'
 import LanguageModal from '~/components/layout/LanguageModal.vue'
 import AutoSaveNotifier from '~/components/layout/AutoSaveNotifier.vue'
@@ -148,6 +149,7 @@ watch(() => gameStore.automatorStates, () => {
     <RefactorConfirmationModal />
     <TechDebtPanel />
     <HelpModal />
+    <SettingsPanel />
     <ToastManager />
     <LanguageModal />
     <GenesisLogModal />

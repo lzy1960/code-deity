@@ -45,6 +45,9 @@ export class GameEngine {
     store.currentTime = now
     const rawDeltaMs = now - store.lastUpdateTime
     const deltaMs = Math.min(rawDeltaMs, MAX_TICK_DELTA_MS)
+    if (deltaMs > 0) {
+      store.totalPlayTimeMs += deltaMs
+    }
     this.simulateProgress(deltaMs)
 
     // Code Rush 过期检查
@@ -84,7 +87,9 @@ export class GameEngine {
     let cpGain = productions[0]!
     const penalty = store.architecturalOverheadPenalty
     if (penalty < 1) cpGain = cpGain.times(penalty)
-    store.currency = store.currency.plus(cpGain.times(diff))
+    const cpGained = cpGain.times(diff)
+    store.currency = store.currency.plus(cpGained)
+    store.lifetimeCodePower = store.lifetimeCodePower.plus(cpGained)
 
     // ## Abstraction School: Supply Chain Optimization ##
     if (store.paradigms.supply_chain_optimization) {

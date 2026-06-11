@@ -31,6 +31,7 @@ const emit = defineEmits(['update:activeTab']);
 const router = useRouter();
 const gameStore = useGameStore();
 const toast = useToast();
+const { t, locale } = useI18n();
 
 interface Tab {
   id: string;
@@ -41,16 +42,19 @@ interface Tab {
   path?: string;
 }
 
-const unlockedTabs = computed(() => tabs.filter(t => t.isUnlocked()))
+const tabs = computed<Tab[]>(() => {
+  locale.value
+  return [
+    { id: 'generators', name: t('common.generators'), icon: 'dns', isUnlocked: () => true },
+    { id: 'upgrades', name: t('common.progression'), icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
+    { id: 'automation', name: t('common.automation'), icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
+    { id: 'challenges', name: t('common.challenges'), icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
+    { id: 'singularity', name: t('common.singularity'), icon: 'creation', isUnlocked: () => gameStore.unlockedSingularity },
+    { id: 'stats', name: t('common.stats'), icon: 'chart-bar', isUnlocked: () => true },
+  ];
+})
 
-const tabs: Tab[] = [
-  { id: 'generators', name: $t('common.generators'), icon: 'dns', isUnlocked: () => true },
-  { id: 'upgrades', name: $t('common.progression'), icon: 'rocket-launch', isUnlocked: () => gameStore.isRefactorUnlocked },
-  { id: 'automation', name: $t('common.automation'), icon: 'robot', isUnlocked: () => gameStore.isAutomationUnlocked },
-  { id: 'challenges', name: $t('common.challenges'), icon: 'trophy', isUnlocked: () => gameStore.isChallengesUnlocked },
-  { id: 'singularity', name: $t('common.singularity'), icon: 'creation', isUnlocked: () => gameStore.unlockedSingularity },
-  { id: 'stats', name: $t('common.stats'), icon: 'chart-bar', isUnlocked: () => true },
-];
+const unlockedTabs = computed(() => tabs.value.filter(tab => tab.isUnlocked()))
 
 const isActive = (tabId: string) => props.activeTab === tabId;
 
@@ -78,10 +82,10 @@ const getTabClass = (tab: Tab) => {
 const getTabTitle = (tab: Tab): string => {
   if (tab.isUnlocked()) return '';
   switch (tab.id) {
-    case 'upgrades': return $t('common.unlockRefactorHint');
-    case 'automation': return $t('common.unlockAutomationHint');
-    case 'challenges': return $t('common.unlockChallengesHint');
-    default: return $t('common.locked');
+    case 'upgrades': return t('common.unlockRefactorHint');
+    case 'automation': return t('common.unlockAutomationHint');
+    case 'challenges': return t('common.unlockChallengesHint');
+    default: return t('common.locked');
   }
 };
 </script>

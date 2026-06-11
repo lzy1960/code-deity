@@ -14,6 +14,11 @@ describe('Game Store - Core Mechanics', () => {
   it('should have a clean initial state', () => {
     const store = useGameStore()
     expect(store.currency.toString()).toBe('0')
+    expect(store.totalPlayTimeMs).toBe(0)
+    expect(store.totalOfflineTimeMs).toBe(0)
+    expect(store.totalManualClicks).toBe(0)
+    expect(store.lifetimeCodePower.toString()).toBe('0')
+    expect(store.lifetimeRefactorPoints.toString()).toBe('0')
     expect(store.refactorPoints.toString()).toBe('0')
     expect(store.version).toBe(0)
     expect(store.generators.every(g => g.amount.eq(0) && g.bought === 0)).toBe(true)
@@ -334,6 +339,11 @@ describe('Game Store - Serialization roundtrip', () => {
   it('preserves a clean initial state', () => {
     const out = roundtrip(store)
     expect(out.currency.toString()).toBe('0')
+    expect(out.totalPlayTimeMs).toBe(0)
+    expect(out.totalOfflineTimeMs).toBe(0)
+    expect(out.totalManualClicks).toBe(0)
+    expect(out.lifetimeCodePower.toString()).toBe('0')
+    expect(out.lifetimeRefactorPoints.toString()).toBe('0')
     expect(out.refactorPoints.toString()).toBe('0')
     expect(out.singularityPower.toString()).toBe('0')
     expect(out.version).toBe(0)
@@ -344,6 +354,11 @@ describe('Game Store - Serialization roundtrip', () => {
   })
 
   it('preserves all Decimal fields with very large numbers', () => {
+    store.totalPlayTimeMs = 987654
+    store.totalOfflineTimeMs = 123456
+    store.totalManualClicks = 321
+    store.lifetimeCodePower = new Decimal('8.88e188')
+    store.lifetimeRefactorPoints = new Decimal('4.56e78')
     store.currency = new Decimal('1.234e308')
     store.refactorPoints = new Decimal('9.87e150')
     store.singularityPower = new Decimal('5e50')
@@ -351,6 +366,11 @@ describe('Game Store - Serialization roundtrip', () => {
     store.generators[2]!.bought = 1234
 
     const out = roundtrip(store)
+    expect(out.totalPlayTimeMs).toBe(987654)
+    expect(out.totalOfflineTimeMs).toBe(123456)
+    expect(out.totalManualClicks).toBe(321)
+    expect(out.lifetimeCodePower.toString()).toBe(store.lifetimeCodePower.toString())
+    expect(out.lifetimeRefactorPoints.toString()).toBe(store.lifetimeRefactorPoints.toString())
     expect(out.currency.toString()).toBe(store.currency.toString())
     expect(out.refactorPoints.toString()).toBe(store.refactorPoints.toString())
     expect(out.singularityPower.toString()).toBe(store.singularityPower.toString())
@@ -443,7 +463,12 @@ describe('Game Store - Serialization roundtrip', () => {
       activeChallenge: 'missing' as any,
     })
 
-    expect(store.saveVersion).toBe('1.0.6')
+    expect(store.saveVersion).toBe('1.0.8')
+    expect(store.totalPlayTimeMs).toBe(0)
+    expect(store.totalOfflineTimeMs).toBe(0)
+    expect(store.totalManualClicks).toBe(0)
+    expect(store.lifetimeCodePower.toString()).toBe('0')
+    expect(store.lifetimeRefactorPoints.toString()).toBe('0')
     expect(store.generators).toHaveLength(8)
     expect(store.generators[0]!.amount.toString()).toBe('12')
     expect(store.generators[0]!.bought).toBe(3)
@@ -479,6 +504,7 @@ describe('Game Store - simulateProgress', () => {
     store.generators[0]!.amount = new Decimal(10)
     store.simulateProgress(1000) // 1 second
     expect(store.currency.toNumber()).toBeGreaterThan(0)
+    expect(store.lifetimeCodePower.toString()).toBe('10')
   })
 
   it('cascades production from higher tiers down to lower tiers', () => {
@@ -487,6 +513,41 @@ describe('Game Store - simulateProgress', () => {
     expect(store.generators[0]!.amount.toString()).toBe('0')
     store.simulateProgress(2000) // 2 seconds
     expect(store.generators[0]!.amount.toNumber()).toBeGreaterThan(0)
+  })
+})
+
+describe('Game Store - telemetry', () => {
+  let store: ReturnType<typeof useGameStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useGameStore()
+  })
+
+  it('tracks earned RP as a lifetime total', () => {
+    store.generators[7]!.bought = 10
+    store.currency = new Decimal('1e40')
+
+    store.refactor()
+
+    expect(store.refactorPoints.toString()).toBe('3')
+    expect(store.lifetimeRefactorPoints.toString()).toBe('3')
+  })
+
+  it('clears telemetry counters on hard reset', () => {
+    store.totalPlayTimeMs = 12_345
+    store.totalOfflineTimeMs = 98_765
+    store.totalManualClicks = 67
+    store.lifetimeCodePower = new Decimal(890)
+    store.lifetimeRefactorPoints = new Decimal(12)
+
+    store.hardReset()
+
+    expect(store.totalPlayTimeMs).toBe(0)
+    expect(store.totalOfflineTimeMs).toBe(0)
+    expect(store.totalManualClicks).toBe(0)
+    expect(store.lifetimeCodePower.toString()).toBe('0')
+    expect(store.lifetimeRefactorPoints.toString()).toBe('0')
   })
 })
 
@@ -572,6 +633,7 @@ describe('Game Store - calculateOfflineProgress', () => {
     store.lastUpdateTime = Date.now() - 12_000
     store.calculateOfflineProgress()
     expect(store.pendingOfflineGains).not.toBeNull()
+    expect(store.totalOfflineTimeMs).toBe(0)
     expect(store.pendingOfflineGains!.generatorGains.some(gain => gain.id === 1 && gain.amount.gt(0))).toBe(true)
   })
 
@@ -587,6 +649,8 @@ describe('Game Store - calculateOfflineProgress', () => {
 
     store.applyOfflineGains()
     expect(store.currency.toString()).toBe('50')
+    expect(store.totalOfflineTimeMs).toBe(30_000)
+    expect(store.lifetimeCodePower.toString()).toBe('50')
     expect(store.generators[0]!.amount.toString()).toBe('10')
     expect(store.generators[2]!.amount.toString()).toBe('2')
     expect(store.pendingOfflineGains).toBeNull()
@@ -615,6 +679,7 @@ describe('Game Store - gameLoop', () => {
     store.gameLoop()
 
     expect(store.currency.toString()).toBe('10')
+    expect(store.totalPlayTimeMs).toBe(10_000)
     expect(store.lastUpdateTime).toBe(now)
   })
 })
@@ -788,6 +853,8 @@ describe('Game Store - Code Rush', () => {
   it('manual click charges Code Rush when not active', () => {
     expect(store.codeRushCharge).toBe(0)
     store.manualClick()
+    expect(store.totalManualClicks).toBe(1)
+    expect(store.lifetimeCodePower.toString()).toBe(store.manualClickPower.toString())
     expect(store.codeRushCharge).toBeGreaterThan(0)
   })
 
