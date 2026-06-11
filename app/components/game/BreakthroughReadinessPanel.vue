@@ -34,21 +34,19 @@
     </div>
 
     <div class="source-grid">
-      <article>
-        <Icon name="mdi:source-branch-sync" />
-        <span>{{ $t('common.breakthroughRefactorSource') }}</span>
-      </article>
-      <article>
-        <Icon name="mdi:package-variant-closed-check" />
-        <span>{{ $t('common.breakthroughCompileSource') }}</span>
-      </article>
-      <article>
-        <Icon name="mdi:trophy-variant-outline" />
-        <span>{{ $t('common.breakthroughChallengeSource') }}</span>
-      </article>
-      <article>
-        <Icon name="mdi:cpu-64-bit" />
-        <span>{{ $t('common.breakthroughPressureSource') }}</span>
+      <article
+        v-for="item in sourceItems"
+        :key="item.id"
+        :class="{ ready: item.ready }"
+      >
+        <div class="source-copy">
+          <Icon :name="item.icon" />
+          <span>{{ item.label }}</span>
+        </div>
+        <b v-if="item.ready">
+          <Icon name="mdi:check-decagram" />
+          {{ $t('common.requirementReady') }}
+        </b>
       </article>
     </div>
 
@@ -90,6 +88,34 @@ const cpRequirementStyle = computed(() => ({
 const readinessRequirementStyle = computed(() => ({
   '--progress-fill': `${progressPercent.value}%`,
 }))
+const sourceItems = computed(() => [
+  {
+    id: 'refactor',
+    icon: 'mdi:source-branch-sync',
+    label: t('common.breakthroughRefactorSource'),
+    ready: gameStore.refactorGain.gte(prestigeThresholds.BREAKTHROUGH_REFACTOR_GAIN_THRESHOLD),
+  },
+  {
+    id: 'compile',
+    icon: 'mdi:package-variant-closed-check',
+    label: t('common.breakthroughCompileSource'),
+    ready: gameStore.refactorPoints.gte(gameStore.compileCost),
+  },
+  {
+    id: 'challenge',
+    icon: 'mdi:trophy-variant-outline',
+    label: t('common.breakthroughChallengeSource'),
+    ready: Object.values(gameStore.challengeCompletions).some(Boolean),
+  },
+  {
+    id: 'pressure',
+    icon: 'mdi:cpu-64-bit',
+    label: t('common.breakthroughPressureSource'),
+    ready:
+      gameStore.version > 0 &&
+      (gameStore.generators[7]?.bought ?? 0) > prestigeThresholds.BREAKTHROUGH_PRESSURE_AI_CORES,
+  },
+])
 const readinessHint = computed(() =>
   isFullyReady.value
     ? t('common.singularityTriggerHint')
@@ -277,17 +303,46 @@ const readinessHint = computed(() =>
 .source-grid article {
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
   border: 1px solid rgba(251, 191, 36, 0.12);
   border-radius: 8px;
   background: rgba(16, 26, 35, 0.66);
   padding: 9px;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.source-grid article.ready {
+  border-color: rgba(74, 222, 128, 0.24);
+  background: linear-gradient(180deg, rgba(9, 42, 26, 0.88), rgba(7, 31, 21, 0.92));
+}
+
+.source-copy {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
 }
 
 .source-grid .iconify {
   flex: 0 0 auto;
   color: #fbbf24;
+}
+
+.source-grid article.ready .iconify:first-child {
+  color: #86efac;
+}
+
+.source-grid article b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: #bbf7d0;
+  font-size: 0.64rem;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .hint,
