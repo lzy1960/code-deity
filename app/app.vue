@@ -6,6 +6,7 @@ import OfflineProgressModal from '~/components/game/OfflineProgressModal.vue'
 import ExitConfirmationModal from '~/components/layout/ExitConfirmationModal.vue'
 import ParadigmPurchaseModal from '~/components/game/ParadigmPurchaseModal.vue'
 import SingularityConfirmationModal from '~/components/game/SingularityConfirmationModal.vue'
+import CompileConfirmationModal from '~/components/game/CompileConfirmationModal.vue'
 import RefactorConfirmationModal from '~/components/game/RefactorConfirmationModal.vue'
 import TechDebtPanel from '~/components/game/TechDebtPanel.vue'
 import HelpModal from '~/components/layout/HelpModal.vue'
@@ -146,6 +147,7 @@ watch(() => gameStore.automatorStates, () => {
     <ExitConfirmationModal />
     <ParadigmPurchaseModal />
     <SingularityConfirmationModal />
+    <CompileConfirmationModal />
     <RefactorConfirmationModal />
     <TechDebtPanel />
     <HelpModal />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue';
+import Decimal from 'break_infinity.js';
 import { useGameStore } from '~/store/game';
 import { prestigeThresholds } from '~~/game/configs';
 import AppFooter from '~/components/layout/AppFooter.vue';
@@ -22,6 +23,7 @@ import { useSpotlight } from '~/composables/useSpotlight';
 import { useHelpModal } from '~/composables/useHelpModal';
 import { useGenesisLogModal } from '~/composables/useGenesisLogModal';
 import { useSettingsModal } from '~/composables/useSettingsModal';
+import { useCompileConfirmationModal } from '~/composables/useCompileConfirmationModal';
 import { formatNumber } from '~/utils/format';
 
 const gameStore = useGameStore();
@@ -31,6 +33,7 @@ const toast = useToast();
 const helpModal = useHelpModal();
 const genesisLogModal = useGenesisLogModal();
 const settingsModal = useSettingsModal();
+const compileModal = useCompileConfirmationModal();
 const { t, locale } = useI18n();
 const { shouldShowTour, shouldShowCodeRushTour, completeTour, completeCodeRushTour } = useOnboarding();
 const { spotlightRect, update: updateSpotlightRect, clear: clearSpotlight, forwardClickIfInsideSpotlight } = useSpotlight();
@@ -283,8 +286,45 @@ const handleSingularityReset = () => {
 };
 
 const handleCompileAndRelease = () => {
-  gameStore.compileAndRelease();
-  gameStore.reconcileBreakthroughReadiness();
+  const currentRefactorPoints = gameStore.refactorPoints
+  const remainingRefactorPoints = currentRefactorPoints.minus(gameStore.compileCost)
+  const versionMultiplier = gameStore.paradigms.enterprise_architecture ? 1.5 : 1
+
+  let projectedBaseBonus = remainingRefactorPoints.times(0.1)
+  if (gameStore.paradigms.jit_compilation) {
+    projectedBaseBonus = projectedBaseBonus.times(1.25)
+  }
+
+  let projectedRpBonus = new Decimal(1).plus(
+    projectedBaseBonus.times(Decimal.pow(1.2, (gameStore.version + 1) * versionMultiplier))
+  )
+
+  if (gameStore.paradigms.compiler_optimization) {
+    let totalBuyBonusLevels = 0
+    for (const gen of gameStore.generators) {
+      totalBuyBonusLevels += gameStore.getBuyBonus(gen.bought)
+    }
+    projectedRpBonus = projectedRpBonus.times(1 + totalBuyBonusLevels * 0.01)
+  }
+
+  compileModal.show(
+    {
+      currentVersion: gameStore.version,
+      nextVersion: gameStore.version + 1,
+      currentRefactorPoints,
+      remainingRefactorPoints,
+      currentRpBonus: gameStore.rpBonus,
+      projectedRpBonus,
+      readinessBefore: Math.min(100, Math.max(0, gameStore.effectiveBreakthroughReadiness)),
+      readinessAfter: Math.min(100, Math.max(0, gameStore.effectiveBreakthroughReadiness + prestigeThresholds.BREAKTHROUGH_COMPILE_REWARD)),
+      unlockAutomation: !gameStore.isAutomationUnlocked,
+      unlockChallenges: !gameStore.isChallengesUnlocked && gameStore.version + 1 >= 2,
+    },
+    () => {
+      gameStore.compileAndRelease();
+      gameStore.reconcileBreakthroughReadiness();
+    }
+  );
 };
 
 const handleArchitecturalOverheadClick = () => {
